@@ -50,8 +50,10 @@ echo "== Secret token / password patterns in tracked content =="
 # .env.example / config.env.example do not false-positive.
 pat='(Authorization:[[:space:]]*Bearer|HF_TOKEN=[^[:space:]]|HUGGING_FACE_HUB_TOKEN=[^[:space:]]|GITHUB_TOKEN=[^[:space:]]|OPENAI_API_KEY=[^[:space:]]|API_KEY=[^[:space:]]|PASSWORD=[^[:space:]]|SECRET=[^[:space:]]|BEGIN (OPENSSH|RSA|EC|DSA) PRIVATE KEY|ghp_[A-Za-z0-9]{20,}|hf_[A-Za-z0-9]{20,}|sk-[A-Za-z0-9]{20,})'
 hits=""
+SELF="scripts/security_check.sh"
 while IFS= read -r f; do
   [[ -f "$f" ]] || continue
+  [[ "$f" == "$SELF" ]] && continue   # the checker contains its own pattern text
   if grep -rniE "$pat" "$f" >/dev/null 2>&1; then hits="$hits $f"; fi
 done <<< "$FILES"
 [[ -z "$hits" ]] && ok "no token/password patterns" || { fail "token/password pattern in: $hits"; }
