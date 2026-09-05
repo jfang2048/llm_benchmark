@@ -43,7 +43,7 @@ RUN cmake -S . -B build \
     && cmake --build build \
        --config Release \
        -j"$(nproc)" \
-       --target llama-server llama-cli
+       --target llama-server llama-cli llama-quantize
 
 EXPOSE 8000
 
