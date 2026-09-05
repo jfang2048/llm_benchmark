@@ -46,6 +46,26 @@ and contain no personal data. The same prompt bytes are sent to both models in
 the same order. AIPerf is configured with `cache_prompt=false` on every request
 to remove prompt-cache reuse as a confounder.
 
+## Two fairness views
+
+Benchmark v2 measures two distinct things and **never merges them into one
+score**:
+
+1. **Semantic workload** — identical user-visible prompt bytes, identical output
+   token cap, identical serving settings. This answers: *"which model serves the
+   same user workload faster?"* (This is the v1 comparison, retained as
+   historical diagnostic.)
+
+2. **Token-controlled workload** — controlled ISL and OSL, so both models process
+   an approximately equal *token* workload. This answers: *"how do the models
+   behave under approximately equal token workload?"* Implemented by the
+   `shape` suite (`./scripts/benchmark.sh shape`). ISL is controlled with the
+   Qwen3-4B reference tokenizer and is therefore approximate for Spark-X2.5-4B,
+   whose tokenizer differs.
+
+The two views answer different questions and are reported in separate result
+files; cross-model tokens/s remains secondary because the tokenizers differ.
+
 ## Metric definitions
 
 | Metric | Meaning | Better |

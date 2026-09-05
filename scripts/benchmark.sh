@@ -90,7 +90,15 @@ case "$MODE" in
     read -r -a CONCURRENCIES <<< "${CONCURRENCIES:-1 2 3 4 6 8}"
     OUTPUT_TOKENS="${OUTPUT_TOKENS:-128}"
     ;;
-  shape|open-loop|startup|soak|sessions)
+  shape)
+    # P3 token-shape benchmark: ISL/OSL profiles at c1 and c4.
+    REQUESTS="${REQUESTS:-60}"
+    WARMUP="${WARMUP:-5}"
+    REPEATS="${REPEATS:-1}"
+    read -r -a CONCURRENCIES <<< "${CONCURRENCIES:-1 4}"
+    OUTPUT_TOKENS="${OUTPUT_TOKENS:-128}"
+    ;;
+  open-loop|startup|soak|sessions)
     echo "ERROR: mode '$MODE' is part of Benchmark v2 and is not implemented yet." >&2
     echo "       See BACKLOG.md '## Benchmark v2' for the staged plan." >&2
     exit 0
@@ -531,6 +539,7 @@ PY
 
 run_cell(){
   local arm="$1" suite="$2" isl="$3" conc="$4" rep="$5"
+  local osl="${6:-$OUTPUT_TOKENS}"
   local dir="$OUT/$suite/$arm/isl_${isl}/c_${conc}/rep_${rep}"
   local artifact="$dir/artifacts"
   local gpu="$dir/gpu.csv"
@@ -549,7 +558,6 @@ run_cell(){
   telemetry_start "$gpu"
   cmd=(aiperf profile
     --model "${MODEL[$arm]}"
-    --tokenizer builtin
     --url "${URL[$arm]}"
     --endpoint-type chat
     --streaming
@@ -563,14 +571,14 @@ run_cell(){
     --request-count "$REQUESTS"
     --warmup-request-count "$WARMUP"
     --random-seed "$SEED"
-    --osl "$OUTPUT_TOKENS"
+    --osl "$osl"
     --extra-inputs '{"temperature":0,"ignore_eos":true,"cache_prompt":false}'
     --artifact-dir "$artifact"
     --profile-export-level records
     --no-auto-plot)
 
   if [[ "$isl" == "raw" ]]; then
-    cmd+=(--input-file "$WORKLOAD" --custom-dataset-type single_turn --dataset-sampling-strategy sequential)
+    cmd+=(--tokenizer builtin --input-file "$WORKLOAD" --custom-dataset-type single_turn --dataset-sampling-strategy sequential)
   else
     # Numeric ISL: synthetic token-controlled inputs via the reference tokenizer.
     cmd+=(--tokenizer Qwen/Qwen3-4B --apply-chat-template --isl "$isl")
@@ -751,15 +759,12 @@ run_capacity() {
   echo "stop_reason=${stop_reason:-NONE}" > "$OUT/capacity_stop.txt"
 }
 
-if [[ "$MODE" == "capacity" ]]; then
-  log "===== CAPACITY benchmark (closed-loop adaptive sweep) ====="
-  run_capacity
-  write_resource_summary
-  # Aggregate (mean + 95% CI; CI is 0 for the single-repeat capacity cells).
+write_aggregate() {
   python3 - "$ROWS" "$OUT/aggregate.tsv" <<'PY'
 import csv, math, statistics, sys
 src, dst = sys.argv[1:]
 rows = list(csv.DictReader(open(src, encoding='utf-8'), delimiter='\t'))
+rows = [r for r in rows if r['suite'] not in ('sanity', 'smoke')]
 keys = sorted({(r['suite'], r['arm'], r['isl'], r['concurrency']) for r in rows})
 metrics = ['error_rate_pct','ttft_p50_ms','ttft_p95_ms','itl_p50_ms','itl_p95_ms','latency_p50_ms','latency_p95_ms','request_tps','output_tps','peak_vram_mib','peak_power_w']
 with open(dst, 'w', newline='', encoding='utf-8') as f:
@@ -785,8 +790,53 @@ with open(dst, 'w', newline='', encoding='utf-8') as f:
             out += [f'{mean:.4f}', f'{ci:.4f}']
         w.writerow(out)
 PY
+}
+
+# P3 token-shape profiles: (ISL, OSL). ISL is controlled with the Qwen3-4B
+# reference tokenizer (approximate for Spark-X2.5-4B, whose tokenizer differs).
+SHAPE_PROFILE_ORDER="short_chat balanced summarization rag_medium generation"
+declare -A SHAPE_PROFILES=(
+  [short_chat]="128 128"
+  [balanced]="512 512"
+  [summarization]="1024 128"
+  [rag_medium]="2048 128"
+  [generation]="128 512"
+)
+
+run_shape() {
+  local profile isl osl conc arm spec
+  for profile in $SHAPE_PROFILE_ORDER; do
+    read -r isl osl <<< "${SHAPE_PROFILES[$profile]}"
+    for conc in "${CONCURRENCIES[@]}"; do
+      for arm in "${ALL_ARMS[@]}"; do
+        run_cell "$arm" "shape_${profile}" "$isl" "$conc" 1 "$osl" || true
+        log "shape profile=$profile isl=$isl osl=$osl arm=$arm c=$conc"
+      done
+    done
+  done
+}
+
+if [[ "$MODE" == "capacity" ]]; then
+  log "===== CAPACITY benchmark (closed-loop adaptive sweep) ====="
+  run_capacity
+  write_resource_summary
+  write_aggregate
   write_v2_manifest
   log "===== capacity complete ====="
+  log "repeats=$ROWS"
+  log "aggregate=$OUT/aggregate.tsv"
+  log "resource_summary=$OUT/resource_summary.tsv"
+  log "manifest=$OUT/manifest.json"
+  exit 0
+fi
+
+if [[ "$MODE" == "shape" ]]; then
+  log "===== SHAPE benchmark (token ISL/OSL profiles) ====="
+  run_shape
+  write_resource_summary
+  write_aggregate
+  write_v2_manifest
+  log "===== shape complete ====="
   log "repeats=$ROWS"
   log "aggregate=$OUT/aggregate.tsv"
   log "resource_summary=$OUT/resource_summary.tsv"
