@@ -20,8 +20,14 @@ set -uo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 MODEL_DIR="${MODEL_DIR:-$ROOT/models}"
-RESULT_ROOT="$ROOT/results/runs"
 [[ -f "$ROOT/benchmark/config.env" ]] && set -a && . "$ROOT/benchmark/config.env" && set +a || true
+MODE="${MODE:-final}"
+# v1 (final/smoke) keeps the historical results/runs/ layout; Benchmark v2
+# suites write to results/v2/runs/.
+case "$MODE" in
+  final|smoke) RESULT_ROOT="$ROOT/results/runs" ;;
+  *)           RESULT_ROOT="$ROOT/results/v2/runs" ;;
+esac
 
 if [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then
   cat <<'EOF'
@@ -49,11 +55,13 @@ RUN_ID="$(date +%Y%m%d_%H%M%S)"
 OUT="$RESULT_ROOT/$RUN_ID"
 SUMMARY="$OUT/summary.txt"
 REPORT="$OUT/model_comparison.md"
-ROWS="$OUT/results.tsv"
+case "$MODE" in
+  final|smoke) ROWS="$OUT/results.tsv" ;;
+  *)           ROWS="$OUT/repeats.tsv" ;;
+esac
 WORKLOAD="$OUT/model_workload.jsonl"
 ERRORS="$OUT/error_details.tsv"
 CONFIG_REPORT="$OUT/runtime_config.txt"
-MODE="${MODE:-final}"
 
 # Recognized modes. final/smoke preserve the historical methodology; reliability
 # is the Benchmark v2 P0 gate. Other v2 suites are staged (see BACKLOG.md).
@@ -73,7 +81,16 @@ case "$MODE" in
     read -r -a CONCURRENCIES <<< "${CONCURRENCIES:-1 4}"
     OUTPUT_TOKENS="${OUTPUT_TOKENS:-128}"
     ;;
-  capacity|shape|open-loop|startup|soak|sessions)
+  capacity)
+    # P2 closed-loop capacity discovery: adaptive sweep, stop on reliability /
+    # OOM / thermal. Default sweep 1 2 3 4 6 8 (server has --parallel 4).
+    REQUESTS="${REQUESTS:-60}"
+    WARMUP="${WARMUP:-5}"
+    REPEATS="${REPEATS:-1}"
+    read -r -a CONCURRENCIES <<< "${CONCURRENCIES:-1 2 3 4 6 8}"
+    OUTPUT_TOKENS="${OUTPUT_TOKENS:-128}"
+    ;;
+  shape|open-loop|startup|soak|sessions)
     echo "ERROR: mode '$MODE' is part of Benchmark v2 and is not implemented yet." >&2
     echo "       See BACKLOG.md '## Benchmark v2' for the staged plan." >&2
     exit 0
@@ -552,9 +569,10 @@ run_cell(){
     --profile-export-level records
     --no-auto-plot)
 
-  if [[ "$suite" == model || "$suite" == smoke || "$suite" == sanity ]]; then
+  if [[ "$isl" == "raw" ]]; then
     cmd+=(--input-file "$WORKLOAD" --custom-dataset-type single_turn --dataset-sampling-strategy sequential)
   else
+    # Numeric ISL: synthetic token-controlled inputs via the reference tokenizer.
     cmd+=(--tokenizer Qwen/Qwen3-4B --apply-chat-template --isl "$isl")
   fi
 
@@ -570,6 +588,7 @@ run_cell(){
   row=$(parse_run "$artifact" "$arm" "$suite" "$isl" "$conc" "$rep" "$rc" "$gpu")
   extract_error_details "$artifact" "$arm" "$suite" "$conc" "$rep"
   printf '%s\n' "$row" >> "$ROWS"
+  ROW_LAST="$row"
   status="$(printf '%s' "$row" | cut -f6)"
   log "DONE suite=$suite arm=$arm isl=$isl c=$conc rep=$rep status=$status elapsed=${elapsed}s rc=$rc"
 
@@ -643,6 +662,137 @@ REQUESTS="$SANITY_REQUESTS"
 WARMUP="$SANITY_WARMUP"
 OUTPUT_TOKENS="$SANITY_OSL"
 log "AIPerf sanity gate PASS for both models"
+
+# ===== Benchmark v2: capacity suite (P2) =====
+VRAM_LIMIT_MIB="${VRAM_LIMIT_MIB:-6000}"
+THERMAL_LIMIT_C="${THERMAL_LIMIT_C:-85}"
+
+write_v2_manifest() {
+  local commit
+  commit="$(cd "$ROOT" && git rev-parse HEAD 2>/dev/null || echo unknown)"
+  python3 - "$OUT/manifest.json" "$MODE" "$RUN_ID" "$commit" "$WORKLOAD" <<'PY'
+import json, os, sys, hashlib, datetime, subprocess
+dst, mode, run_id, commit, workload = sys.argv[1:]
+SPARK_SHA = "7934660bfc5b9bf04be0a0ac6179a1d16e1d4331b448857c86b8b2801b3ef72c"
+QWEN_SHA = "7485fe6f11af29433bc51cab58009521f205840f5b4ae3a32fa7f92e8534fdf5"
+def sha256_file(p):
+    h = hashlib.sha256()
+    with open(p, "rb") as f:
+        for b in iter(lambda: f.read(1 << 20), b""):
+            h.update(b)
+    return h.hexdigest()
+gpu = subprocess.run(["nvidia-smi", "--query-gpu=name,driver_version,memory.total",
+                      "--format=csv,noheader,nounits"],
+                     capture_output=True, text=True).stdout.strip().split("\n")[0]
+m = {
+    "run_id": run_id,
+    "mode": mode,
+    "git_commit": commit,
+    "models": ["Spark-X2.5-4B-Q4_K_M", "Qwen3-4B-Q4_K_M"],
+    "model_sha256": {
+        "Spark-X2.5-4B-Q4_K_M.gguf": SPARK_SHA,
+        "Qwen3-4B-Q4_K_M.gguf": QWEN_SHA,
+    },
+    "aiperf_version": "0.12.0",
+    "gpu": gpu,
+    "serving_flags": ["--ctx-size", "9216", "--parallel", "4", "--cont-batching", "--metrics", "--n-gpu-layers", "999"],
+    "workload_sha256": sha256_file(workload),
+    "config": {
+        "connection_reuse": os.environ.get("CONNECTION_REUSE", "never"),
+        "temperature": 0, "ignore_eos": True, "cache_prompt": False,
+        "requests_per_cell": os.environ.get("REQUESTS", "60"),
+        "output_tokens": os.environ.get("OUTPUT_TOKENS", "128"),
+        "seed": os.environ.get("SEED", "42"),
+    },
+    "generated_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+}
+json.dump(m, open(dst, "w", encoding="utf-8"), indent=2)
+PY
+  log "manifest=$OUT/manifest.json"
+}
+
+write_resource_summary() {
+  python3 - "$ROWS" "$OUT/resource_summary.tsv" <<'PY'
+import csv, sys
+src, dst = sys.argv[1:]
+rows = list(csv.DictReader(open(src, encoding="utf-8"), delimiter="\t"))
+with open(dst, "w", newline="", encoding="utf-8") as f:
+    w = csv.writer(f, delimiter="\t")
+    w.writerow(["arm", "suite", "isl", "concurrency", "repeat",
+                "peak_vram_mib", "peak_power_w", "avg_gpu_util_pct", "peak_temp_c"])
+    for r in rows:
+        w.writerow([r["arm"], r["suite"], r["isl"], r["concurrency"], r["repeat"],
+                    r["peak_vram_mib"], r["peak_power_w"], r["avg_gpu_util_pct"], r["peak_temp_c"]])
+PY
+}
+
+run_capacity() {
+  local conc arm stop_reason=""
+  for conc in "${CONCURRENCIES[@]}"; do
+    for arm in "${ALL_ARMS[@]}"; do
+      run_cell "$arm" capacity raw "$conc" 1 || true
+      local sr vram temp
+      sr="$(printf '%s' "$ROW_LAST" | cut -f11)"
+      vram="$(printf '%s' "$ROW_LAST" | cut -f28)"
+      temp="$(printf '%s' "$ROW_LAST" | cut -f31)"
+      log "capacity arm=$arm c=$conc success_rate=${sr}% vram=${vram}MiB temp=${temp}C"
+      if awk "BEGIN{exit !($sr < $RELIABILITY_MIN_SUCCESS)}"; then
+        stop_reason="RELIABILITY_STOP arm=$arm c=$conc success_rate=${sr}%"
+      elif awk "BEGIN{exit !($vram >= $VRAM_LIMIT_MIB)}"; then
+        stop_reason="VRAM_STOP arm=$arm c=$conc vram=${vram}MiB"
+      elif awk "BEGIN{exit !($temp >= $THERMAL_LIMIT_C)}"; then
+        stop_reason="THERMAL_STOP arm=$arm c=$conc temp=${temp}C"
+      fi
+      [[ -n "$stop_reason" ]] && break
+    done
+    [[ -n "$stop_reason" ]] && { log "STOP: $stop_reason"; break; }
+  done
+  if [[ -z "$stop_reason" ]]; then log "capacity sweep completed without a stop condition."; fi
+  echo "stop_reason=${stop_reason:-NONE}" > "$OUT/capacity_stop.txt"
+}
+
+if [[ "$MODE" == "capacity" ]]; then
+  log "===== CAPACITY benchmark (closed-loop adaptive sweep) ====="
+  run_capacity
+  write_resource_summary
+  # Aggregate (mean + 95% CI; CI is 0 for the single-repeat capacity cells).
+  python3 - "$ROWS" "$OUT/aggregate.tsv" <<'PY'
+import csv, math, statistics, sys
+src, dst = sys.argv[1:]
+rows = list(csv.DictReader(open(src, encoding='utf-8'), delimiter='\t'))
+keys = sorted({(r['suite'], r['arm'], r['isl'], r['concurrency']) for r in rows})
+metrics = ['error_rate_pct','ttft_p50_ms','ttft_p95_ms','itl_p50_ms','itl_p95_ms','latency_p50_ms','latency_p95_ms','request_tps','output_tps','peak_vram_mib','peak_power_w']
+with open(dst, 'w', newline='', encoding='utf-8') as f:
+    w = csv.writer(f, delimiter='\t')
+    w.writerow(['suite','arm','isl','concurrency','pass_runs','unstable_runs','failed_runs','parsed_runs'] + [z for m in metrics for z in (m+'_mean', m+'_ci95')])
+    for k in keys:
+        rr = [r for r in rows if (r['suite'], r['arm'], r['isl'], r['concurrency']) == k]
+        pass_r = [r for r in rr if r['status'] == 'PASS']
+        unstable_r = [r for r in rr if r['status'] == 'UNSTABLE']
+        parsed = pass_r + unstable_r
+        failed_r = [r for r in rr if r['status'] not in ('PASS','UNSTABLE')]
+        out = [*k, len(pass_r), len(unstable_r), len(failed_r), len(parsed)]
+        for m in metrics:
+            xs = [float(r[m]) for r in parsed if r.get(m,'') not in ('','NA')]
+            if not xs:
+                out += ['', '']; continue
+            mean = statistics.mean(xs)
+            if len(xs) == 1:
+                ci = 0.0
+            else:
+                t95 = {2:12.706,3:4.303,4:3.182,5:2.776,6:2.571}
+                ci = t95.get(len(xs)-1, 1.96) * statistics.stdev(xs) / math.sqrt(len(xs))
+            out += [f'{mean:.4f}', f'{ci:.4f}']
+        w.writerow(out)
+PY
+  write_v2_manifest
+  log "===== capacity complete ====="
+  log "repeats=$ROWS"
+  log "aggregate=$OUT/aggregate.tsv"
+  log "resource_summary=$OUT/resource_summary.tsv"
+  log "manifest=$OUT/manifest.json"
+  exit 0
+fi
 
 if [[ "$MODE" == "smoke" ]]; then
   log "===== smoke: model comparison pipeline ====="

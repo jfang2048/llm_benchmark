@@ -84,6 +84,7 @@ spark-x25/models/
 benchmark/models/
 .local-archive/
 results/runs/
+results/v2/runs/
 
 # =====================================================================
 # Superseded workspace layout (historical scripts/configs kept local;

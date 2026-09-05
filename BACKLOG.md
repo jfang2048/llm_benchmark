@@ -105,8 +105,8 @@ Goal: make the benchmark scientifically trustworthy. The historical run
 relabeled as a historical diagnostic, not a final ranking.
 
 - [x] P0 Reliability diagnosis  (root cause + hard gate)
-- [ ] P1 Benchmark semantics and schema
-- [ ] P2 Capacity benchmark (closed-loop adaptive sweep 1 2 3 4 6 8)
+- [x] P1 Benchmark semantics and schema  (results/v2/README.md)
+- [x] P2 Capacity benchmark (closed-loop adaptive sweep 1 2 3 4 6 8)
 - [ ] P3 ISL/OSL workload benchmark (short_chat/balanced/summarization/rag_medium/generation)
 - [ ] P4 Open-loop / goodput benchmark (25-110% of stable capacity)
 - [ ] P5 Startup and sustained-load benchmark
@@ -144,5 +144,4 @@ confirmed: aiohttp pooled connection reuse racing with the llama.cpp HTTP server
 closing keep-alive connections.
 
 ## Next Action
-P0 complete. Continue P1 (Benchmark v2 semantics and result schema under
-results/v2/), then P2 capacity sweep.
+P0-P2 complete. Continue P3 (token-shape benchmark) and P4 (open-loop/goodput).
