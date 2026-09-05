@@ -66,6 +66,60 @@ score**:
 The two views answer different questions and are reported in separate result
 files; cross-model tokens/s remains secondary because the tokenizers differ.
 
+## Benchmark v2: reliability-gated methodology
+
+Benchmark v2 (see `results/v2/README.md` and `BACKLOG.md`) makes the
+measurement scientifically trustworthy before any performance claim. The
+historical run is retained as a diagnostic, not a ranking.
+
+### Reliability gate (P0)
+
+Transport success must reach **&ge; 99.5%** before a performance run is
+accepted. The historical failure mode was a client-side `aiohttp` transport
+error (`ServerDisconnectedError`): AIPerf's default pooled connection reuse
+raced with the llama.cpp HTTP server closing keep-alive connections. The fix is
+`--connection-reuse-strategy never`. The runner refuses a final publication run
+when the gate fails unless `FORCE_UNSTABLE=1`, which marks the run
+`INVALID_FOR_RANKING`.
+
+### Terminology
+
+Runs are classified explicitly, and a parsed-but-unstable run is never called
+"valid":
+
+- `pass_runs` / `unstable_runs` / `failed_runs` — repeats by outcome.
+- `parsed_runs` — repeats whose results were successfully parsed
+  (`pass_runs` + `unstable_runs`).
+- `attempted_requests` / `successful_requests` / `failed_requests` — request
+  counts within a cell.
+- Latency metrics are always over **successful requests** and labeled as such.
+
+### Suites
+
+| Suite | Question it answers | Key metrics |
+|---|---|---|
+| `reliability` | Is transport stable enough to measure? | success rate, error classification |
+| `capacity` | What throughput does the model sustain vs concurrency? | request throughput, error rate, latency |
+| `shape` | How does the model behave under controlled ISL/OSL? | TTFT/ITL vs token shape |
+| `open-loop` | How much Poisson load stays SLO-compliant? | goodput (DistServe definition), SLO compliance |
+| `startup` | How long does process cold start take? | container start, model ready, first token |
+| `soak` | Does sustained load cause thermal degradation? | GPU temp/power/util, SM clock, throttle flag |
+| `sessions` | How does latency grow with conversation context? | TTFT by turn index |
+| `backend` | llama.cpp vs vLLM+GGUF on the same GGUF? | engine A/B, kept separate from model ranking |
+
+### Energy metric
+
+`gpu_energy_j` is a **GPU-side energy estimate** (integral of 500 ms
+`nvidia-smi` power sampling over the telemetry window, including warmup/idle).
+It is not full-system energy and is not MLPerf Power compliant; derived
+`gpu_j_per_request` / `gpu_j_per_output_token` carry the same caveat.
+
+### Engine comparison scope
+
+The `backend` suite compares the same Qwen GGUF on llama.cpp vs vLLM+GGUF. It
+is an engine A/B only and is never merged into the Spark-vs-Qwen model ranking;
+a Qwen-AWQ arm is treated as a quantization/deployment comparison.
+
 ## Metric definitions
 
 | Metric | Meaning | Better |

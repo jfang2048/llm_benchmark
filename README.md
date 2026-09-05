@@ -86,6 +86,36 @@ ranking, and the underlying transport instability means the latency/throughput
 differences above should be treated as preliminary until Benchmark v2 passes
 its reliability gate.
 
+## Benchmark v2 (current)
+
+Benchmark v2 rebuilds the measurement on a scientifically stronger foundation.
+The historical run above is retained as provenance but is **not** a final
+ranking; v2 adds a hard reliability gate and staged suites.
+
+- **P0 Reliability gate.** Transport success must reach &ge; 99.5% before any
+  performance claim. `./scripts/benchmark.sh reliability` diagnoses transport
+  stability (root cause: aiohttp pooled connection reuse racing with the
+  llama.cpp HTTP server closing keep-alive connections; fix:
+  `--connection-reuse-strategy never`). A final run that fails the gate is
+  refused unless `FORCE_UNSTABLE=1`, which marks it `INVALID_FOR_RANKING`.
+- **Suites** (each a `make benchmark-*` target, each writing its own result
+  files under `results/v2/`):
+  - `reliability` — transport stability diagnostic (the gate).
+  - `capacity` — closed-loop throughput/error sweep vs concurrency.
+  - `shape` — token-controlled ISL/OSL workload sweep.
+  - `open-loop` — Poisson load sweep with SLO/goodput compliance.
+  - `startup` — process cold-start latency.
+  - `soak` — sustained-load + thermal degradation (GPU telemetry).
+  - `sessions` — multi-turn latency by turn (+ optional prefix-cache A/B).
+  - `backend` — engine comparison (same Qwen GGUF on llama.cpp vs vLLM+GGUF),
+    kept separate from the model ranking.
+- **Terminology** distinguishes `pass_runs` / `unstable_runs` / `failed_runs` /
+  `parsed_runs`, and latency is reported over successful requests only. A
+  parsed-but-unstable run is never called valid.
+- **Schema, suites, and metric definitions:** [results/v2/README.md](results/v2/README.md).
+- **Dashboard:** https://jfang2048.github.io/llm_benchmark/v2/ (capacity,
+  shape, SLO/goodput, sessions, Pareto/energy, and run-validity views).
+
 ## Quick Start
 
 ```bash
@@ -185,5 +215,9 @@ results use generic paths (`$HOME/llm`) and loopback addresses only.
 ## Project Status
 
 The validated final experiment (run `20260904_192416`) is published and
-reproducible. The engine-comparison work (llama.cpp vs vLLM) is documented in
+reproducible; it is relabeled as a **historical diagnostic**. Benchmark v2 is
+implemented end-to-end (reliability gate, capacity/shape/open-loop/startup/soak/
+sessions/backend suites, GPU-side energy metrics, and a v2 dashboard); the
+full final matrix is run and published once the reliability gate passes. The
+earlier engine-comparison work (llama.cpp vs vLLM) is documented in
 [docs/experiment-history.md](docs/experiment-history.md) as historical context.
