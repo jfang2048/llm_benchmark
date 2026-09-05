@@ -788,8 +788,12 @@ PY
 }
 
 run_capacity() {
-  local conc arm stop_reason=""
-  for conc in "${CONCURRENCIES[@]}"; do
+  local conc arm stop_reason="" concs
+  # The capacity discovery must sweep even when the caller (open-loop/soak) did
+  # not set CONCURRENCIES; fall back to the standard sweep.
+  concs=("${CONCURRENCIES[@]}")
+  [[ ${#concs[@]} -eq 0 ]] && concs=(1 2 3 4 6 8)
+  for conc in "${concs[@]}"; do
     for arm in "${ALL_ARMS[@]}"; do
       run_cell "$arm" capacity raw "$conc" 1 || true
       local sr vram temp
