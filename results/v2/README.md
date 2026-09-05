@@ -91,6 +91,14 @@ serving scenarios, but this repository is **not** claiming MLPerf compliance.
 The max SLO-compliant request rate is derived as the highest load point whose
 `good_request_fraction` remains at or near 1.0.
 
+### sessions.tsv
+Multi-turn sessions (`sessions` suite): per (model, `cache_prompt`, turn index)
+the mean/median TTFT over that turn's requests. Default runs use
+`cache_prompt=false` (no prefix-cache reuse, consistent with the rest of the
+benchmark). With `SESSIONS_CACHE=1`, a second `cache_prompt=true` pass is
+recorded for a prefix-cache comparison; cache-enabled results are never mixed
+into the no-cache model comparison.
+
 ### workload_manifest.json
 Describes the workload used (prompt count, hash, ISL/OSL profile, sampling).
 

@@ -117,9 +117,10 @@ case "$MODE" in
     OUTPUT_TOKENS="${OUTPUT_TOKENS:-128}"
     ;;
   sessions)
-    echo "ERROR: mode '$MODE' is part of Benchmark v2 and is not implemented yet." >&2
-    echo "       See BACKLOG.md '## Benchmark v2' for the staged plan." >&2
-    exit 0
+    # P7 multi-turn sessions (latency by turn) + optional prefix-cache experiment.
+    REQUESTS="${REQUESTS:-80}"
+    WARMUP="${WARMUP:-5}"
+    OUTPUT_TOKENS="${OUTPUT_TOKENS:-64}"
     ;;
   smoke|*)
     REQUESTS="${REQUESTS:-8}"
@@ -1232,6 +1233,126 @@ if [[ "$MODE" == "soak" ]]; then
   log "repeats=$ROWS"
   log "aggregate=$OUT/aggregate.tsv"
   log "soak_summary=$OUT/soak_summary.tsv"
+  log "manifest=$OUT/manifest.json"
+  exit 0
+fi
+
+# ===== P7 sessions + prefix-cache experiment =====
+SESSIONS_CONVERSATIONS="${SESSIONS_CONVERSATIONS:-20}"
+SESSIONS_TURNS="${SESSIONS_TURNS:-4}"
+SESSIONS_CACHE="${SESSIONS_CACHE:-0}"
+
+run_sessions_cell() {
+  local arm="$1" cache="$2"
+  local tag="nocache"; [[ "$cache" == "true" ]] && tag="cache"
+  local dir="$OUT/sessions/$arm/$tag"
+  local artifact="$dir/artifacts"
+  local gpu="$dir/gpu.csv"
+  local console="$dir/aiperf.log"
+  mkdir -p "$artifact"
+  local events="$dir/docker-events.jsonl"
+  log "sessions arm=$arm cache_prompt=$cache"
+  if ! start_arm "$arm" "$events"; then
+    log "FATAL: startup failed during sessions: $arm"
+    return 20
+  fi
+  telemetry_start "$gpu"
+  cmd=(aiperf profile
+    --model "${MODEL[$arm]}"
+    --url "${URL[$arm]}"
+    --endpoint-type chat
+    --streaming
+    --connection-reuse-strategy "$CONNECTION_REUSE"
+    --use-legacy-max-tokens
+    --use-server-token-count
+    --request-timeout-seconds "${REQUEST_TIMEOUT:-180}"
+    --wait-for-model-timeout 10
+    --wait-for-model-mode both
+    --concurrency 1
+    --request-count "$REQUESTS"
+    --warmup-request-count "$WARMUP"
+    --random-seed "$SEED"
+    --osl "$OUTPUT_TOKENS"
+    --extra-inputs "{\"temperature\":0,\"ignore_eos\":true,\"cache_prompt\":$cache}"
+    --conversation-num "$SESSIONS_CONVERSATIONS"
+    --conversation-turn-mean "$SESSIONS_TURNS"
+    --conversation-turn-delay-mean 0
+    --artifact-dir "$artifact"
+    --profile-export-level records
+    --no-auto-plot
+    --tokenizer builtin)
+  local rc row
+  timeout --signal=TERM --kill-after=15s "${CELL_TIMEOUT:-900}s" "${cmd[@]}" > "$console" 2>&1
+  rc=$?
+  telemetry_stop
+  docker logs --timestamps --since "${CURRENT_START_EPOCH:-0}" "${CONTAINER[$arm]}" > "$dir/server.log" 2>&1 || true
+  stop_event_capture
+  row=$(parse_run "$artifact" "$arm" "sessions" "raw" "1" "1" "$rc" "$gpu")
+  extract_error_details "$artifact" "$arm" "sessions" "1" "1"
+  printf '%s\n' "$row" >> "$ROWS"
+  ROW_LAST="$row"
+  printf '%s\t%s\t%s\n' "$arm" "$cache" "$artifact" >> "$OUT/sessions_cells.tsv"
+  docker stop "${CONTAINER[$arm]}" >/dev/null 2>&1 || true
+  sleep "$COOLDOWN_SECONDS"
+  return 0
+}
+
+write_sessions_summary() {
+  python3 - "$OUT/sessions_cells.tsv" "$OUT/sessions.tsv" <<'PY'
+import csv, json, os, statistics, sys
+cells, dst = sys.argv[1:]
+agg = {}   # (arm, cache, turn) -> [ttft, ...]
+for line in open(cells, encoding='utf-8'):
+    parts = line.rstrip('\n').split('\t')
+    if len(parts) < 3:
+        continue
+    arm, cache, artifact = parts[:3]
+    rec = os.path.join(artifact, 'profile_export.jsonl')
+    for l in open(rec, encoding='utf-8', errors='replace'):
+        try:
+            r = json.loads(l)
+        except Exception:
+            continue
+        md = r.get('metadata') or {}
+        if md.get('benchmark_phase') not in (None, 'profiling'):
+            continue
+        if r.get('error') is not None:
+            continue
+        turn = md.get('turn_index')
+        m = r.get('metrics') or {}
+        ttft = (m.get('time_to_first_token') or {}).get('value')
+        if ttft is not None and turn is not None:
+            agg.setdefault((arm, cache, turn), []).append(ttft)
+with open(dst, 'w', newline='', encoding='utf-8') as f:
+    w = csv.writer(f, delimiter='\t')
+    w.writerow(['arm', 'cache_prompt', 'turn', 'requests', 'ttft_mean_ms', 'ttft_p50_ms'])
+    for (arm, cache, turn), xs in sorted(agg.items()):
+        w.writerow([arm, cache, turn, len(xs), f'{statistics.mean(xs):.2f}', f'{statistics.median(xs):.2f}'])
+print(f'sessions_summary written: {len(agg)} rows')
+PY
+}
+
+run_sessions() {
+  local arm
+  for arm in "${ALL_ARMS[@]}"; do
+    run_sessions_cell "$arm" "false" || true
+    if [[ "$SESSIONS_CACHE" == "1" ]]; then
+      run_sessions_cell "$arm" "true" || true
+    fi
+  done
+}
+
+if [[ "$MODE" == "sessions" ]]; then
+  log "===== SESSIONS benchmark (multi-turn, latency by turn) ====="
+  run_sessions
+  write_resource_summary
+  write_aggregate
+  write_sessions_summary
+  write_v2_manifest
+  log "===== sessions complete ====="
+  log "repeats=$ROWS"
+  log "aggregate=$OUT/aggregate.tsv"
+  log "sessions=$OUT/sessions.tsv"
   log "manifest=$OUT/manifest.json"
   exit 0
 fi
