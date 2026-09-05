@@ -1,0 +1,22 @@
+# Normalize line endings for text files; keep shell scripts executable-consistent.
+* text=auto
+
+# Shell scripts must stay LF on all platforms.
+*.sh text eol=lf
+
+# Python and configs: LF.
+*.py text eol=lf
+*.md text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.json text eol=lf
+*.tsv text eol=lf
+*.jsonl text eol=lf
+*.txt text eol=lf
+*.env text eol=lf
+*.example text eol=lf
+
+# Generated binary-ish report assets.
+*.svg text eol=lf
+*.html text eol=lf
+*.csv text eol=lf

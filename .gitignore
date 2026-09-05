@@ -1,0 +1,107 @@
+# =====================================================================
+# Secrets — never commit
+# =====================================================================
+.env
+.env.*
+!.env.example
+!.github/**/*.env.example
+!benchmark/config.env.example
+
+# =====================================================================
+# Model weights — reproduced via scripts/download_models.sh, never in git
+# =====================================================================
+*.gguf
+*.safetensors
+*.bin
+*.pt
+*.pth
+*.ckpt
+*.ggml
+models/*.gguf
+
+# =====================================================================
+# Model / runtime caches
+# =====================================================================
+**/hf-cache/
+**/vllm-cache/
+**/.cache/
+**/torch_compile_cache/
+**/.agent_harnesses.json
+**/CACHEDIR.TAG
+
+# =====================================================================
+# Python
+# =====================================================================
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# =====================================================================
+# Build / distribution
+# =====================================================================
+build/
+dist/
+*.o
+*.so
+*.egg-info/
+
+# =====================================================================
+# Runtime / logs / lock files
+# =====================================================================
+*.pid
+*.lock
+*.log
+*.tmp
+*~
+.DS_Store
+Thumbs.db
+
+# =====================================================================
+# Backup files
+# =====================================================================
+*.bak
+*.orig
+*.before-*
+
+# =====================================================================
+# Raw sensitive inventory and historical experiment state (local only)
+# =====================================================================
+benchmark/inventory/
+benchmark/results/
+benchmark/results-cross/
+benchmark/results-model/
+benchmark/artifacts/
+vllm-qwen3/bench-results/
+vllm-qwen3/metrics-idle.txt
+vllm-qwen3/hf-cache/
+vllm-qwen3/vllm-cache/
+spark-x25/models/
+benchmark/models/
+.local-archive/
+results/runs/
+
+# =====================================================================
+# Superseded workspace layout (historical scripts/configs kept local;
+# canonical versions live under scripts/, docker/, configs/, monitoring/)
+# =====================================================================
+benchmark/cross_benchmark*.sh
+benchmark/model_benchmark_*.sh
+benchmark/prepare_cross_bench*.sh
+benchmark/bench_llm.sh
+benchmark/Dockerfile.vllm-gguf
+benchmark/cross_bench_provenance.txt
+spark-x25/
+vllm-qwen3/
+
+# =====================================================================
+# Editors / OS
+# =====================================================================
+.vscode/
+.idea/
+*.swp
+*.swo

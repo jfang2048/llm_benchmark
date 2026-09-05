@@ -1,0 +1,4 @@
+# Reporting-only Python dependencies for scripts/generate_report.py.
+# Small, pinned surface: the interactive dashboard is built with Plotly
+# and emitted as a fully static HTML page (no backend server).
+plotly==5.24.1
