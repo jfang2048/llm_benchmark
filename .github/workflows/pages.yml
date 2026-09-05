@@ -6,7 +6,9 @@ on:
     paths:
       - "docs/**"
       - "results/final/**"
+      - "results/v2/**"
       - "scripts/generate_report.py"
+      - "scripts/generate_v2_report.py"
       - "requirements-report.txt"
       - ".github/workflows/pages.yml"
   workflow_dispatch:
@@ -36,6 +38,9 @@ jobs:
 
       - name: Regenerate report artifacts
         run: python3 scripts/generate_report.py
+
+      - name: Regenerate v2 report artifacts
+        run: python3 scripts/generate_v2_report.py || true
 
       - name: Setup Pages
         uses: actions/configure-pages@v5

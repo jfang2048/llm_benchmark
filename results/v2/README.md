@@ -111,6 +111,14 @@ engine comparison.
 ### workload_manifest.json
 Describes the workload used (prompt count, hash, ISL/OSL profile, sampling).
 
+## Dashboard v2
+
+`scripts/generate_v2_report.py` reads the v2 run data directly and regenerates
+`docs/v2/index.html` (interactive Plotly dashboard) and
+`docs/data/v2_benchmark.json` (normalized records). Views: capacity curve,
+token-shape sweep, open-loop SLO/goodput, session latency by turn,
+Pareto/energy, and run validity (pass/unstable/failed). Run `make report-v2`.
+
 ## Terminology
 
 - `attempted_requests` — every request AIPerf dispatched in a cell.

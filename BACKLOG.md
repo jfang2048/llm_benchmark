@@ -113,7 +113,7 @@ relabeled as a historical diagnostic, not a final ranking.
 - [x] P6 Resource / energy metrics (GPU-side energy estimate)
 - [x] P7 Optional sessions / cache benchmark (multi-turn latency by turn)
 - [x] P8 Optional backend comparison (qwen_llama vs qwen_vllm_gguf)
-- [ ] P9 Dashboard v2 (normalized records, SLO/Pareto/heatmap views)
+- [x] P9 Dashboard v2 (normalized records, SLO/Pareto/heatmap views)
 - [ ] P10 Documentation
 - [ ] P11 Final validation and publish
 
@@ -144,4 +144,4 @@ confirmed: aiohttp pooled connection reuse racing with the llama.cpp HTTP server
 closing keep-alive connections.
 
 ## Next Action
-P0-P8 complete. Continue P9 (dashboard v2: normalized records, SLO/Pareto/heatmap views), then P10 docs, P11 validation+publish.
+P0-P9 complete. Continue P10 (documentation), then P11 (final validation and publish). Note: the v2 dashboard currently renders the small validation runs under results/v2/runs/; the full matrix runs in P11 and the dashboard is regenerated from committed data.

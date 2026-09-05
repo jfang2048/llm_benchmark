@@ -7,6 +7,8 @@ NVIDIA RTX 3060 Laptop GPU (6 GiB VRAM), under identical runtime settings and
 an identical workload.
 
 > **Interactive dashboard:** https://jfang2048.github.io/llm_benchmark/
+>
+> **Benchmark v2 dashboard:** https://jfang2048.github.io/llm_benchmark/v2/
 
 ![Request throughput](docs/assets/throughput_summary.svg)
 ![E2E latency](docs/assets/latency_summary.svg)
