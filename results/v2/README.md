@@ -2,8 +2,10 @@
 
 Benchmark v2 separates its results from the historical v1 dataset
 (`results/final/`). v2 runs land under `results/v2/runs/<RUN_ID>/` and are
-git-ignored; a validated, sanitized final v2 run is promoted to
-`results/v2/final/` (to be created once the reliability gate passes).
+git-ignored; after the reliability gate passes, `make curate-v2`
+(`scripts/curate_v2_final.py`) promotes the latest run per suite's summary
+files into `results/v2/final/<suite>/` — the committed publication dataset
+(no raw logs, per-request artifacts, or GPU telemetry).
 
 ## Schema
 

@@ -31,6 +31,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 RUNS = ROOT / "results" / "v2" / "runs"
+FINAL_RUNS = ROOT / "results" / "v2" / "final"
 DOCS = ROOT / "docs"
 DATA_DIR = DOCS / "data"
 
@@ -73,10 +74,10 @@ def read_tsv(path):
     return list(csv.DictReader(open(path, encoding="utf-8"), delimiter="\t"))
 
 
-def discover_runs():
+def discover_runs(base):
     """Return {mode: run_dir} using the latest run directory per mode."""
     runs = {}
-    for manifest in sorted(RUNS.glob("*/manifest.json")):
+    for manifest in sorted(Path(base).glob("*/manifest.json")):
         try:
             m = json.loads(manifest.read_text(encoding="utf-8"))
         except Exception:
@@ -471,13 +472,17 @@ function scrollToChart(k) {{
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--runs", default=str(RUNS))
+    ap.add_argument("--runs", default=None,
+                    help="runs directory (default: results/v2/final if curated, else results/v2/runs)")
     ap.add_argument("--out", default=str(DOCS / "v2"))
     args = ap.parse_args()
 
-    runs = discover_runs()
+    runs_base = args.runs
+    if runs_base is None:
+        runs_base = str(FINAL_RUNS) if list(FINAL_RUNS.glob("*/manifest.json")) else str(RUNS)
+    runs = discover_runs(runs_base)
     if not runs:
-        print(f"NOTE: no v2 runs found under {args.runs} — skipping v2 dashboard.",
+        print(f"NOTE: no v2 runs found under {runs_base} — skipping v2 dashboard.",
               file=sys.stderr)
         sys.exit(0)
 

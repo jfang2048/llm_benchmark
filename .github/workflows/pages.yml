@@ -9,6 +9,7 @@ on:
       - "results/v2/**"
       - "scripts/generate_report.py"
       - "scripts/generate_v2_report.py"
+      - "scripts/curate_v2_final.py"
       - "requirements-report.txt"
       - ".github/workflows/pages.yml"
   workflow_dispatch:

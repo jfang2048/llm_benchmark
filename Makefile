@@ -15,7 +15,7 @@
 SHELL := /bin/bash
 SCRIPTS := scripts
 
-.PHONY: help preflight setup deploy healthcheck benchmark benchmark-smoke benchmark-reliability benchmark-capacity benchmark-shape benchmark-openloop benchmark-startup benchmark-soak benchmark-sessions benchmark-backend report report-v2 reproduce security clean
+.PHONY: help preflight setup deploy healthcheck benchmark benchmark-smoke benchmark-reliability benchmark-capacity benchmark-shape benchmark-openloop benchmark-startup benchmark-soak benchmark-sessions benchmark-backend report report-v2 curate-v2 reproduce security clean
 
 help:
 	@printf '%s\n' \
@@ -37,6 +37,7 @@ help:
 	  "  make benchmark-backend      Run the P8 llama.cpp vs vLLM+GGUF comparison" \
 	  "  make report           Rebuild the interactive report from committed data" \
 	  "  make report-v2        Rebuild the Benchmark v2 dashboard from v2 run data" \
+	  "  make curate-v2        Curate latest v2 runs into results/v2/final/" \
 	  "  make reproduce        One-command end-to-end reproduction" \
 	  "  make security         Run the pre-push security/privacy checker" \
 	  "  make clean            Tear down benchmark containers"
@@ -93,6 +94,10 @@ report:
 report-v2:
 	@if [ -x .venv/bin/python ]; then .venv/bin/python $(SCRIPTS)/generate_v2_report.py; \
 	else python3 $(SCRIPTS)/generate_v2_report.py; fi
+
+curate-v2:
+	@if [ -x .venv/bin/python ]; then .venv/bin/python $(SCRIPTS)/curate_v2_final.py; \
+	else python3 $(SCRIPTS)/curate_v2_final.py; fi
 
 reproduce:
 	./$(SCRIPTS)/reproduce.sh
