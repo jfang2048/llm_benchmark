@@ -2,12 +2,10 @@
   "schema_version": 1,
   "description": "Curated Benchmark v2 publication dataset (summary files only).",
   "modes": {
+    "backend": "20260905_144103",
     "capacity": "20260905_151020",
-    "shape": "20260905_180318",
-    "open-loop": "20260905_200549",
     "sessions": "20260905_200846",
-    "startup": "20260905_201323",
-    "soak": "20260905_201437",
-    "backend": "20260905_144103"
+    "shape": "20260905_180318",
+    "startup": "20260905_201323"
   }
 }

@@ -1,5 +1,0 @@
-arm	suite	isl	concurrency	repeat	status	error_rate_pct	attempted_requests	successful_requests	failed_requests	success_rate_pct	input_tokens_avg	output_tokens_avg	ttft_avg_ms	ttft_p50_ms	ttft_p95_ms	ttft_p99_ms	itl_avg_ms	itl_p50_ms	itl_p95_ms	itl_p99_ms	latency_avg_ms	latency_p50_ms	latency_p95_ms	latency_p99_ms	request_tps	output_tps	peak_vram_mib	peak_power_w	avg_gpu_util_pct	peak_temp_c	gpu_energy_j	gpu_j_per_request	gpu_j_per_output_token
-spark_llama	sanity	raw	1	0	PASS	0.0000	1	1	0	100.0000	59.0000	16.0000	118.2528	118.2528	118.2528	118.2528	15.1060	15.1060	15.1060	15.1060	344.8435	344.8435	344.8435	344.8435	2.8743	45.9886	3439.0000	48.7600	10.0000	62.0000	183.1850	183.1850	11.4491
-qwen_llama	sanity	raw	1	0	PASS	0.0000	1	1	0	100.0000	49.0000	16.0000	96.9843	96.9843	96.9843	96.9843	11.0705	11.0705	11.0705	11.0705	263.0425	263.0425	263.0425	263.0425	3.7610	60.1758	3881.0000	39.3700	6.0000	60.0000	155.8850	155.8850	9.7428
-spark_llama	soak	raw	16	1	FAIL_AIPERF		0	None	0																		3437.0000	23.8100	0.0000	57.0000	23.8100		
-qwen_llama	soak	raw	16	1	FAIL_AIPERF		0	None	0																		3881.0000	24.5900	0.0000	56.0000	24.5900		

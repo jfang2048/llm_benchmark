@@ -7,6 +7,27 @@ git-ignored; after the reliability gate passes, `make curate-v2`
 files into `results/v2/final/<suite>/` — the committed publication dataset
 (no raw logs, per-request artifacts, or GPU telemetry).
 
+## Publication status
+
+- **capacity** — published, 12/12 cells PASS at 100% success (the core ranking).
+- **shape** — published with caveats: Qwen3 passes all profiles through
+  ISL 512; **Spark-X2.5 is UNSTABLE at ISL ≥ 256** (transport resets, see below).
+- **sessions**, **startup**, **backend** — published, clean.
+- **open-loop**, **soak** — not published yet: their base-request-rate
+  discovery read a file the internal capacity sweep does not write (fixed in
+  `scripts/benchmark.sh`); pending a re-run.
+
+### Spark-X2.5 transport-reliability finding
+
+At input lengths ≥ 256 tokens, the Spark-X2.5 arm returns
+`ServerDisconnectedError`/`ConnectionReset` at rates that fail the 99.5%
+transport gate even with `--connection-reuse-strategy never`; Qwen3-4B on the
+same llama.cpp image and flags is clean through ISL 512. This is reported as a
+measured reliability characteristic of the Spark arm, and those cells are
+marked `UNSTABLE` / `INVALID_FOR_RANKING` rather than presented as a valid
+result. The Qwen-vs-Spark **ranking therefore rests on the `capacity` suite
+(short prompts), where both arms are 100% reliable.**
+
 ## Schema
 
 Every v2 run directory contains:

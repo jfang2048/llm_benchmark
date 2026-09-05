@@ -82,6 +82,16 @@ raced with the llama.cpp HTTP server closing keep-alive connections. The fix is
 when the gate fails unless `FORCE_UNSTABLE=1`, which marks the run
 `INVALID_FOR_RANKING`.
 
+### Measured arm-specific reliability
+
+The Spark-X2.5-4B arm returns `ServerDisconnectedError`/`ConnectionReset` at
+input lengths ≥ 256 tokens even with `--connection-reuse-strategy never`,
+while Qwen3-4B on the same llama.cpp image and flags is clean through ISL 512.
+This is recorded as a measured reliability characteristic of the Spark arm
+(see `results/v2/README.md`); the affected shape cells are marked `UNSTABLE` /
+`INVALID_FOR_RANKING` and the model ranking rests on the short-prompt `capacity`
+suite, where both arms are 100% reliable.
+
 ### Terminology
 
 Runs are classified explicitly, and a parsed-but-unstable run is never called

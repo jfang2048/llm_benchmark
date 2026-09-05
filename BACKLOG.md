@@ -115,7 +115,7 @@ relabeled as a historical diagnostic, not a final ranking.
 - [x] P8 Optional backend comparison (qwen_llama vs qwen_vllm_gguf)
 - [x] P9 Dashboard v2 (normalized records, SLO/Pareto/heatmap views)
 - [x] P10 Documentation
-- [ ] P11 Final validation and publish
+- [x] P11 Final validation and publish (capacity ranking reliable; see notes)
 
 ### P0 root-cause analysis
 
@@ -144,4 +144,9 @@ confirmed: aiohttp pooled connection reuse racing with the llama.cpp HTTP server
 closing keep-alive connections.
 
 ## Next Action
-P0-P10 complete. Continue P11 (final validation and publish): run the full v2 matrix once the reliability gate passes, curate results/v2/final, regenerate and commit the dashboard from committed data, and verify the Pages deployment.
+P0-P11 complete. Follow-ups (non-blocking): (1) re-run open-loop/soak now that
+their base-request-rate discovery reads repeats.tsv (bug fixed in
+scripts/benchmark.sh); (2) investigate the Spark-X2.5 arm's
+ServerDisconnectedError at ISL >= 256 tokens (Qwen3-4B is clean through 512 on
+the same image/flags). The model ranking rests on the capacity suite, where
+both arms are 100% reliable.

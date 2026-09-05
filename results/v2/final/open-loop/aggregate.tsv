@@ -1,3 +1,0 @@
-suite	arm	isl	concurrency	pass_runs	unstable_runs	failed_runs	parsed_runs	error_rate_pct_mean	error_rate_pct_ci95	ttft_p50_ms_mean	ttft_p50_ms_ci95	ttft_p95_ms_mean	ttft_p95_ms_ci95	itl_p50_ms_mean	itl_p50_ms_ci95	itl_p95_ms_mean	itl_p95_ms_ci95	latency_p50_ms_mean	latency_p50_ms_ci95	latency_p95_ms_mean	latency_p95_ms_ci95	request_tps_mean	request_tps_ci95	output_tps_mean	output_tps_ci95	peak_vram_mib_mean	peak_vram_mib_ci95	peak_power_w_mean	peak_power_w_ci95
-openloop	qwen_llama	raw	16	0	0	6	0																						
-openloop	spark_llama	raw	16	0	0	6	0																						

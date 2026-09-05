@@ -3,10 +3,8 @@
   "runs": {
     "backend": "backend",
     "capacity": "capacity",
-    "open-loop": "open-loop",
     "sessions": "sessions",
     "shape": "shape",
-    "soak": "soak",
     "startup": "startup"
   },
   "arm_labels": {
@@ -556,22 +554,6 @@
       "request_tps": 1.0438,
       "error_rate_pct": 0.0,
       "ttft_p50_ms": 3811.5138
-    }
-  ],
-  "soak": [
-    {
-      "arm": "spark_llama",
-      "temp_max_c": 57.0,
-      "power_max_w": 23.8,
-      "util_max_pct": 0.0,
-      "throttled": "no"
-    },
-    {
-      "arm": "qwen_llama",
-      "temp_max_c": 56.0,
-      "power_max_w": 24.6,
-      "util_max_pct": 0.0,
-      "throttled": "no"
     }
   ],
   "startup": [
