@@ -144,6 +144,7 @@ REPEATS="${REPEATS:-1}"
 MAX_ERROR_RATE="${MAX_ERROR_RATE:-1.0}"
 STARTUP_TIMEOUT="${STARTUP_TIMEOUT:-180}"
 COOLDOWN_SECONDS="${COOLDOWN_SECONDS:-5}"
+CELL_TIMEOUT="${CELL_TIMEOUT:-1800}"
 MAX_START_TEMP_C="${MAX_START_TEMP_C:-70}"
 TEMP_WAIT_TIMEOUT="${TEMP_WAIT_TIMEOUT:-120}"
 
@@ -856,7 +857,7 @@ declare -A SHAPE_PROFILES=(
   [short_chat]="128 128"
   [balanced]="256 256"
   [summarization]="512 128"
-  [rag_medium]="1024 128"
+  [rag_medium]="768 128"
   [generation]="128 512"
 )
 
@@ -1002,10 +1003,11 @@ run_openloop() {
     # Derive R from a quick capacity discovery run (max stable request_tps).
     log "OPEN_LOOP_BASE_RPS unset; running capacity discovery to derive R"
     run_capacity
-    base=$(python3 - "$OUT/aggregate.tsv" <<'PY'
+    base=$(python3 - "$ROWS" <<'PY'
 import csv, sys
 rows = list(csv.DictReader(open(sys.argv[1], encoding='utf-8'), delimiter='\t'))
-vals = [float(r['request_tps_mean']) for r in rows if r.get('request_tps_mean') not in ('', 'NA') and r['suite'] == 'capacity']
+vals = [float(r['request_tps']) for r in rows
+        if r['suite'] == 'capacity' and r.get('request_tps') not in ('', 'NA')]
 print(max(vals) if vals else '0')
 PY
 )
@@ -1218,10 +1220,11 @@ run_soak() {
   if [[ -z "$SOAK_BASE_RPS" ]]; then
     log "SOAK_BASE_RPS unset; running capacity discovery to derive R"
     run_capacity
-    base=$(python3 - "$OUT/aggregate.tsv" <<'PY'
+    base=$(python3 - "$ROWS" <<'PY'
 import csv, sys
 rows = list(csv.DictReader(open(sys.argv[1], encoding='utf-8'), delimiter='\t'))
-vals = [float(r['request_tps_mean']) for r in rows if r.get('request_tps_mean') not in ('', 'NA') and r['suite'] == 'capacity']
+vals = [float(r['request_tps']) for r in rows
+        if r['suite'] == 'capacity' and r.get('request_tps') not in ('', 'NA')]
 print(max(vals) if vals else '0')
 PY
 )
