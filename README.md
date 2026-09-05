@@ -51,7 +51,15 @@ comparison, not a model-quality evaluation.
 
 Full details: [docs/environment.md](docs/environment.md).
 
-## Key Results
+## Historical Results (v1 — diagnostic)
+
+> **Note:** the published run `20260904_192416` is a **historical diagnostic
+> benchmark**. It exhibited substantial `ServerDisconnectedError` rates (a
+> client-side transport artifact), so it is **not** presented as a trustworthy
+> final performance ranking. It is retained as provenance: it helped discover
+> the transport instability and motivated **Benchmark v2**, whose reliability
+> gate (`./scripts/benchmark.sh reliability`) must pass before any new ranking
+> is published.
 
 Request throughput and E2E latency (mean of 4 repeats) for the two models:
 
@@ -62,7 +70,7 @@ Request throughput and E2E latency (mean of 4 repeats) for the two models:
 | 3 | 0.932 | 0.589 | 3121 | 5023 |
 | 4 | 1.024 | 1.290 | 3824 | 3066 |
 
-Highlights (see [results/final/model_comparison.md](results/final/model_comparison.md)):
+Observed highlights (see [results/final/model_comparison.md](results/final/model_comparison.md)):
 
 - **At concurrency 1, Qwen3-4B is faster** (lower TTFT/ITL/E2E latency, higher
   throughput) with comparable reliability.
@@ -71,7 +79,10 @@ Highlights (see [results/final/model_comparison.md](results/final/model_comparis
 - **At concurrency 4, Qwen3-4B recovers** and leads again, but both models show
   nonzero error rates (`ServerDisconnectedError`), so reliability is the gate.
 
-These are deployment measurements on one machine, not a general quality ranking.
+These are deployment measurements on one machine, not a general quality
+ranking, and the underlying transport instability means the latency/throughput
+differences above should be treated as preliminary until Benchmark v2 passes
+its reliability gate.
 
 ## Quick Start
 

@@ -94,4 +94,51 @@ https://github.com/jfang2048/llm_benchmark
 
 ## Next Action
 
-None — project complete. See README for usage.
+P0 of Benchmark v2 (reliability diagnosis) in progress — see below.
+
+---
+
+## Benchmark v2
+
+Goal: make the benchmark scientifically trustworthy. The historical run
+`20260904_192416` (v1) has substantial `ServerDisconnectedError` rates and is
+relabeled as a historical diagnostic, not a final ranking.
+
+- [ ] P0 Reliability diagnosis  (root cause + hard gate)
+- [ ] P1 Benchmark semantics and schema
+- [ ] P2 Capacity benchmark (closed-loop adaptive sweep 1 2 3 4 6 8)
+- [ ] P3 ISL/OSL workload benchmark (short_chat/balanced/summarization/rag_medium/generation)
+- [ ] P4 Open-loop / goodput benchmark (25-110% of stable capacity)
+- [ ] P5 Startup and sustained-load benchmark
+- [ ] P6 Resource / energy metrics (GPU-side energy estimate)
+- [ ] P7 Optional sessions / cache benchmark
+- [ ] P8 Optional backend comparison (qwen_llama vs qwen_vllm_gguf)
+- [ ] P9 Dashboard v2 (normalized records, SLO/Pareto/heatmap views)
+- [ ] P10 Documentation
+- [ ] P11 Final validation and publish
+
+### P0 root-cause analysis
+
+`ServerDisconnectedError` is a client-side aiohttp transport error, not a
+serving failure. Evidence: every errored request fails at a deterministic
+~204 ms (successes ~2015 ms), the container never restarts (docker events show
+only `start`), and the llama.cpp server logs zero errors (all accepted requests
+complete with `truncated=0`). AIPerf defaults to `--connection-reuse-strategy
+pooled`, reusing keep-alive connections that the server closes — the leading
+candidate mechanism for the intermittent failure.
+
+Fix (implemented in `scripts/benchmark.sh`): default `CONNECTION_REUSE=never`
+(fresh connection per request), plus a hard transport-reliability gate
+(`RELIABILITY_MIN_SUCCESS=99.5`); a failed final run is refused unless
+`FORCE_UNSTABLE=1`, which marks it `INVALID_FOR_RANKING`.
+
+### P0 diagnostic (confirmation in progress)
+
+- c1 80-request pooled vs never: both returned 0 errors (historical c1 rate is
+  ~4%, too low to reproduce reliably with n=80).
+- c4 200-request pooled vs never: running; c4 had ~5-28% historical error, so
+  it is the intended reproduction cell.
+
+## Next Action
+Confirm the reliability fix at c4 (200 requests), then relabel v1 (done in
+README + dashboard) and continue P1.

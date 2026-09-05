@@ -433,6 +433,13 @@ def write_index_html(records):
   <h1>Local LLM Inference Benchmark — Interactive Dashboard</h1>
   <p>Spark-X2.5-4B-Q4_K_M vs Qwen3-4B-Q4_K_M on llama.cpp · RTX 3060 Laptop GPU (6 GiB VRAM)
      · 80 requests/cell · 4 repeats · output cap 128 tokens · error bars = 95% CI (n=4)</p>
+  <div style="background:#3a2b12;border:1px solid #7a5a1e;border-radius:8px;padding:10px 14px;margin-top:10px;font-size:13px;">
+    <strong>Historical diagnostic benchmark — transport instability observed.</strong>
+    This run (20260904_192416) shows substantial <code>ServerDisconnectedError</code>
+    rates and is retained as provenance, not as a final performance ranking. It
+    motivated Benchmark v2, whose reliability gate must pass before any new
+    ranking is published. See <code>BACKLOG.md</code>.
+  </div>
 </header>
 <div class="wrap">
   <div class="controls">
