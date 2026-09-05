@@ -30,6 +30,9 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT))
+from bench.config import shape_profiles  # noqa: E402  (canonical config)
+
 RUNS = ROOT / "results" / "v2" / "runs"
 FINAL_RUNS = ROOT / "results" / "v2" / "final"
 DOCS = ROOT / "docs"
@@ -46,15 +49,9 @@ ARM_COLORS = {
     "qwen_vllm_gguf": "#2fa36b",
 }
 
-# Token-shape profiles are loaded from the canonical config (configs/benchmark.json)
+# Token-shape profiles come from the canonical config (configs/benchmark.json)
 # so the report cannot drift from scripts/benchmark.sh.
-def load_shape_profiles():
-    cfg = json.loads((ROOT / "configs" / "benchmark.json").read_text(encoding="utf-8"))
-    profiles = cfg.get("shape_profiles", {}).get("profiles", {})
-    return {name: (p["isl"], p["osl"]) for name, p in profiles.items()}
-
-
-SHAPE_PROFILES = load_shape_profiles()
+SHAPE_PROFILES = shape_profiles()
 
 
 def _num(s):

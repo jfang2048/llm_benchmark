@@ -1,15 +1,15 @@
 #!/usr/bin/env bash
 # One-command end-to-end reproduction.
 #
-#   ./scripts/reproduce.sh            # full reproduction (MODE=final)
-#   REPRODUCE_MODE=smoke ./scripts/reproduce.sh   # fast validation path
+#   ./scripts/reproduce.sh                       # current benchmark (capacity)
+#   REPRODUCE_MODE=smoke ./scripts/reproduce.sh  # fast validation path
 #
 # Idempotent: existing models and images are reused, not re-downloaded/rebuilt.
 # Fails early with actionable messages via the preflight checker.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-MODE="${REPRODUCE_MODE:-final}"
+MODE="${REPRODUCE_MODE:-capacity}"
 
 step(){ printf '\n===== %s =====\n' "$*"; }
 
@@ -32,11 +32,16 @@ step "6/7 benchmark (mode=$MODE)"
 MODE="$MODE" "$ROOT/scripts/benchmark.sh"
 
 step "7/7 generate report"
-"$ROOT/.venv/bin/python" "$ROOT/scripts/generate_report.py" 2>/dev/null \
-  || python3 "$ROOT/scripts/generate_report.py"
+if [ -x "$ROOT/.venv/bin/python" ]; then
+  "$ROOT/.venv/bin/python" "$ROOT/scripts/generate_v2_report.py"
+else
+  python3 "$ROOT/scripts/generate_v2_report.py"
+fi
 
 echo
 echo "Reproduction complete. Artifacts:"
-echo "  results/runs/            (new benchmark run)"
-echo "  results/final/           (curated public dataset, unchanged)"
-echo "  docs/index.html          (interactive dashboard)"
+echo "  results/v2/runs/          (new benchmark run)"
+echo "  results/v2/final/         (curated public dataset)"
+echo "  docs/v2/index.html        (current dashboard)"
+echo
+echo "To curate the new run into results/v2/final/: make curate-v2"

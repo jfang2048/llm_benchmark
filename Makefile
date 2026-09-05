@@ -1,46 +1,49 @@
-# Reproducible Local LLM Inference Benchmark
+# Local LLM Inference Benchmark
 #
-# Targets:
-#   make preflight        Validate the machine (GPU, Docker, ports, models)
+# Primary targets:
 #   make setup            Download models and build serving images
-#   make deploy           Create the benchmark serving containers
-#   make healthcheck      Verify every serving endpoint is API-ready
-#   make benchmark        Run the full validated benchmark matrix (mode=final)
-#   make benchmark-smoke  Run a fast smoke benchmark (mode=smoke)
-#   make report           Rebuild the interactive report + static charts from data
-#   make reproduce        One-command end-to-end reproduction (preflight->report)
-#   make security         Run the pre-push security/privacy checker
-#   make clean            Tear down benchmark containers (does not delete models)
+#   make smoke            Fast sanity benchmark
+#   make benchmark        Run the current primary benchmark (capacity sweep)
+#   make report           Rebuild the current dashboard
+#   make reproduce        One-command end-to-end reproduction
+#   make clean            Tear down benchmark containers
+#
+# Suites:
+#   make capacity         Closed-loop throughput/error sweep vs concurrency
+#   make shape            Token-controlled ISL/OSL workload sweep
+#   make open-loop        Poisson load + SLO/goodput sweep
+#   make startup          Process cold-start latency
+#   make soak             Sustained load + thermal degradation
+#   make sessions         Multi-turn latency by turn
+#   make backend          Engine A/B (llama.cpp vs vLLM+GGUF)
+#   make reliability      Transport-reliability gate
+#
+# Historical:
+#   make benchmark-v1     Run the historical v1 model comparison (diagnostic)
 
 SHELL := /bin/bash
 SCRIPTS := scripts
 
-.PHONY: help preflight setup deploy healthcheck benchmark benchmark-smoke benchmark-reliability benchmark-capacity benchmark-shape benchmark-openloop benchmark-startup benchmark-soak benchmark-sessions benchmark-backend report report-v2 curate-v2 reproduce security clean
+.PHONY: help setup smoke benchmark benchmark-v1 capacity shape open-loop startup \
+	soak sessions backend reliability report report-v1 reproduce security clean \
+	preflight deploy healthcheck
 
 help:
 	@printf '%s\n' \
-	  "Reproducible Local LLM Inference Benchmark" \
+	  "Local LLM Inference Benchmark" \
 	  "" \
-	  "  make preflight        Validate the machine (GPU, Docker, ports, models)" \
-	  "  make setup            Download models and build serving images" \
-	  "  make deploy           Create the benchmark serving containers" \
-	  "  make healthcheck      Verify every serving endpoint is API-ready" \
-	  "  make benchmark        Run the full validated benchmark matrix (final)" \
-	  "  make benchmark-smoke  Run a fast smoke benchmark" \
-	  "  make benchmark-reliability  Run the P0 transport-reliability gate" \
-	  "  make benchmark-capacity     Run the P2 capacity discovery sweep" \
-	  "  make benchmark-shape        Run the P3 ISL/OSL token-shape benchmark" \
-	  "  make benchmark-openloop     Run the P4 open-loop + goodput benchmark" \
-	  "  make benchmark-startup      Run the P5 process cold-start measurement" \
-	  "  make benchmark-soak         Run the P5 sustained-load soak benchmark" \
-	  "  make benchmark-sessions     Run the P7 multi-turn sessions benchmark" \
-	  "  make benchmark-backend      Run the P8 llama.cpp vs vLLM+GGUF comparison" \
-	  "  make report           Rebuild the interactive report from committed data" \
-	  "  make report-v2        Rebuild the Benchmark v2 dashboard from v2 run data" \
-	  "  make curate-v2        Curate latest v2 runs into results/v2/final/" \
-	  "  make reproduce        One-command end-to-end reproduction" \
-	  "  make security         Run the pre-push security/privacy checker" \
-	  "  make clean            Tear down benchmark containers"
+	  "  make setup        Download models and build serving images" \
+	  "  make smoke        Fast sanity benchmark" \
+	  "  make benchmark    Current primary benchmark (capacity sweep)" \
+	  "  make report       Rebuild the current dashboard" \
+	  "  make reproduce    One-command end-to-end reproduction" \
+	  "  make clean        Tear down benchmark containers" \
+	  "" \
+	  "Suites:" \
+	  "  make capacity / shape / open-loop / startup / soak / sessions / backend" \
+	  "  make reliability  Transport-reliability gate" \
+	  "" \
+	  "Historical: make benchmark-v1"
 
 preflight:
 	./$(SCRIPTS)/preflight.sh
@@ -55,52 +58,53 @@ deploy:
 healthcheck:
 	./$(SCRIPTS)/healthcheck.sh
 
-benchmark:
-	MODE=final ./$(SCRIPTS)/benchmark.sh
-
-benchmark-smoke:
+smoke:
 	MODE=smoke ./$(SCRIPTS)/benchmark.sh
 
-benchmark-reliability:
-	MODE=reliability ./$(SCRIPTS)/benchmark.sh
-
-benchmark-capacity:
+benchmark:
 	MODE=capacity ./$(SCRIPTS)/benchmark.sh
 
-benchmark-shape:
+benchmark-v1:
+	MODE=final ./$(SCRIPTS)/benchmark.sh
+
+capacity:
+	MODE=capacity ./$(SCRIPTS)/benchmark.sh
+
+shape:
 	MODE=shape ./$(SCRIPTS)/benchmark.sh
 
-benchmark-openloop:
+open-loop:
 	MODE=open-loop ./$(SCRIPTS)/benchmark.sh
 
-benchmark-startup:
+startup:
 	MODE=startup ./$(SCRIPTS)/benchmark.sh
 
-benchmark-soak:
+soak:
 	MODE=soak ./$(SCRIPTS)/benchmark.sh
 
-benchmark-sessions:
+sessions:
 	MODE=sessions ./$(SCRIPTS)/benchmark.sh
 
-benchmark-backend:
+backend:
 	MODE=backend ./$(SCRIPTS)/benchmark.sh
 
+reliability:
+	MODE=reliability ./$(SCRIPTS)/benchmark.sh
+
 report:
-	@if [ -x .venv/bin/python ]; then .venv/bin/python $(SCRIPTS)/generate_report.py; \
-	else python3 $(SCRIPTS)/generate_report.py; fi
 	@if [ -x .venv/bin/python ]; then .venv/bin/python $(SCRIPTS)/generate_v2_report.py; \
 	else python3 $(SCRIPTS)/generate_v2_report.py; fi
 
-report-v2:
-	@if [ -x .venv/bin/python ]; then .venv/bin/python $(SCRIPTS)/generate_v2_report.py; \
-	else python3 $(SCRIPTS)/generate_v2_report.py; fi
+report-v1:
+	@if [ -x .venv/bin/python ]; then .venv/bin/python $(SCRIPTS)/generate_report.py; \
+	else python3 $(SCRIPTS)/generate_report.py; fi
+
+reproduce:
+	./$(SCRIPTS)/reproduce.sh
 
 curate-v2:
 	@if [ -x .venv/bin/python ]; then .venv/bin/python $(SCRIPTS)/curate_v2_final.py; \
 	else python3 $(SCRIPTS)/curate_v2_final.py; fi
-
-reproduce:
-	./$(SCRIPTS)/reproduce.sh
 
 security:
 	./$(SCRIPTS)/security_check.sh
