@@ -46,31 +46,24 @@ Qwen3-4B under identical serving flags. Later versions added:
 
 `v11_diag` is the published methodology, reproduced by `scripts/benchmark.sh`.
 
-### 4. Benchmark v2 (reliability-gated)
+### 4. Reliability-gated benchmark
 
 The historical run's `ServerDisconnectedError` rates showed the v1 methodology
-was not trustworthy enough to rank models. Benchmark v2 rebuilt the measurement
-in stages (`BACKLOG.md` tracks P0–P11):
+was not trustworthy enough to rank models. The measurement was rebuilt in
+stages (see `docs/methodology.md` for the current design):
 
-- **P0** — root-caused the transport failures (client-side aiohttp pooled
-  connection reuse vs the llama.cpp server closing keep-alive connections),
-  fixed with `--connection-reuse-strategy never`, and added a hard gate
-  (&ge; 99.5% transport success, `FORCE_UNSTABLE=1` marks `INVALID_FOR_RANKING`).
-- **P1** — result schema and terminology (`pass/unstable/failed/parsed` runs,
+- Root-caused the transport failures (client-side aiohttp pooled connection
+  reuse vs the llama.cpp server closing keep-alive connections), fixed with
+  `--connection-reuse-strategy never`, and added a hard gate
+  (≥ 99.5% transport success, `FORCE_UNSTABLE=1` marks `INVALID_FOR_RANKING`).
+- Added the result schema and terminology (`pass/unstable/failed/parsed` runs,
   successful-request-only latency).
-- **P2** — capacity suite (closed-loop concurrency sweep).
-- **P3** — shape suite (token-controlled ISL/OSL workload).
-- **P4** — open-loop suite (Poisson load, SLO/goodput).
-- **P5** — startup + soak suites (cold start, sustained load + thermal).
-- **P6** — GPU-side energy estimate.
-- **P7** — sessions suite (multi-turn latency by turn) + optional prefix-cache A/B.
-- **P8** — backend suite (same Qwen GGUF on llama.cpp vs vLLM+GGUF).
-- **P9** — v2 dashboard (`docs/v2/index.html`).
-- **P10/P11** — documentation, final validation and publish.
+- Added suites: capacity, shape, open-loop, startup, soak, sessions, backend,
+  plus a GPU-side energy estimate and a v2 dashboard.
 
-Each suite is a `make benchmark-*` target; results land under `results/v2/`
-(git-ignored raw runs plus committed curated data). The v1 final run is kept
-only as historical diagnostic provenance.
+Each suite is a `make benchmark-<name>` target; results land under
+`results/v2/` (git-ignored raw runs plus committed curated data). The v1 final
+run is kept only as historical diagnostic provenance.
 
 ## Why the historical directories are not published
 

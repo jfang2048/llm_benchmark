@@ -66,13 +66,12 @@ score**:
 The two views answer different questions and are reported in separate result
 files; cross-model tokens/s remains secondary because the tokenizers differ.
 
-## Benchmark v2: reliability-gated methodology
+## Reliability-gated methodology
 
-Benchmark v2 (see `results/v2/README.md` and `BACKLOG.md`) makes the
-measurement scientifically trustworthy before any performance claim. The
-historical run is retained as a diagnostic, not a ranking.
+The benchmark requires transport success ≥ 99.5% before any performance claim.
+The historical run is retained as a diagnostic, not a ranking.
 
-### Reliability gate (P0)
+### Reliability gate
 
 Transport success must reach **&ge; 99.5%** before a performance run is
 accepted. The historical failure mode was a client-side `aiohttp` transport
