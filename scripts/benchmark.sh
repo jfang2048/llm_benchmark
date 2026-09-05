@@ -104,7 +104,19 @@ case "$MODE" in
     WARMUP="${WARMUP:-10}"
     OUTPUT_TOKENS="${OUTPUT_TOKENS:-128}"
     ;;
-  startup|soak|sessions)
+  startup)
+    # P5 process cold-start measurement (container start -> API ready -> first token).
+    REQUESTS="${REQUESTS:-1}"
+    WARMUP="${WARMUP:-0}"
+    OUTPUT_TOKENS="${OUTPUT_TOKENS:-16}"
+    ;;
+  soak)
+    # P5 sustained-load soak at ~75% of stable capacity for a fixed duration.
+    REQUESTS="${REQUESTS:-1}"
+    WARMUP="${WARMUP:-10}"
+    OUTPUT_TOKENS="${OUTPUT_TOKENS:-128}"
+    ;;
+  sessions)
     echo "ERROR: mode '$MODE' is part of Benchmark v2 and is not implemented yet." >&2
     echo "       See BACKLOG.md '## Benchmark v2' for the staged plan." >&2
     exit 0
@@ -119,6 +131,7 @@ case "$MODE" in
 esac
 
 SEED="${SEED:-42}"
+REPEATS="${REPEATS:-1}"
 MAX_ERROR_RATE="${MAX_ERROR_RATE:-1.0}"
 STARTUP_TIMEOUT="${STARTUP_TIMEOUT:-180}"
 COOLDOWN_SECONDS="${COOLDOWN_SECONDS:-5}"
@@ -1011,6 +1024,200 @@ if [[ "$MODE" == "open-loop" ]]; then
   log "aggregate=$OUT/aggregate.tsv"
   log "resource_summary=$OUT/resource_summary.tsv"
   log "slo_summary=$OUT/slo_summary.tsv"
+  log "manifest=$OUT/manifest.json"
+  exit 0
+fi
+
+# ===== P5 startup + soak =====
+STARTUP_REPEATS="${STARTUP_REPEATS:-3}"
+SOAK_DURATION="${SOAK_DURATION:-600}"
+SOAK_LOAD_FRACTION="${SOAK_LOAD_FRACTION:-0.75}"
+SOAK_BASE_RPS="${SOAK_BASE_RPS:-}"
+SOAK_SLICE="${SOAK_SLICE:-30}"
+
+run_startup() {
+  local arm c url t0 t1 ttft rep api_ready_ms first_token_ms deadline
+  printf 'arm\trep\tprocess_to_api_ready_ms\tapi_ready_to_first_token_ms\n' > "$OUT/startup.tsv"
+  for arm in "${ALL_ARMS[@]}"; do
+    c="${CONTAINER[$arm]}"; url="${URL[$arm]}"
+    for rep in $(seq 1 "$STARTUP_REPEATS"); do
+      docker stop "$c" >/dev/null 2>&1 || true
+      sleep 2
+      t0=$(date +%s%3N)
+      docker start "$c" >/dev/null 2>&1
+      deadline=$(( $(date +%s) + STARTUP_TIMEOUT ))
+      api_ready_ms=""
+      while :; do
+        if curl -fsS --max-time 2 "$url/v1/models" >/dev/null 2>&1; then
+          t1=$(date +%s%3N)
+          api_ready_ms=$((t1-t0))
+          break
+        fi
+        [[ $(date +%s) -ge $deadline ]] && break
+        sleep 0.5
+      done
+      first_token_ms=""
+      if [[ -n "$api_ready_ms" ]]; then
+        ttft=$(curl -sN --max-time 120 -w '%{time_starttransfer}' -o /dev/null \
+          "$url/v1/chat/completions" \
+          -H 'Content-Type: application/json' \
+          -d "{\"model\":\"${MODEL[$arm]}\",\"messages\":[{\"role\":\"user\",\"content\":\"Say hello.\"}],\"stream\":true,\"max_tokens\":16,\"temperature\":0}" 2>/dev/null)
+        first_token_ms=$(awk "BEGIN{printf \"%.1f\", $ttft*1000}" 2>/dev/null || echo "")
+      fi
+      printf '%s\t%d\t%s\t%s\n' "$arm" "$rep" "${api_ready_ms:-}" "$first_token_ms" >> "$OUT/startup.tsv"
+      log "startup arm=$arm rep=$rep api_ready=${api_ready_ms:-FAIL}ms first_token=${first_token_ms:-}ms"
+      docker stop "$c" >/dev/null 2>&1 || true
+    done
+  done
+}
+
+run_soak_cell() {
+  local arm="$1" rate="$2" conc="$3" duration="$4"
+  local dir="$OUT/soak/$arm"
+  local artifact="$dir/artifacts"
+  local gpu="$dir/gpu.csv"
+  local console="$dir/aiperf.log"
+  mkdir -p "$artifact"
+  local events="$dir/docker-events.jsonl"
+  log "soak arm=$arm rate=$rate cap=$conc duration=${duration}s"
+  if ! start_arm "$arm" "$events"; then
+    log "FATAL: startup failed during soak: $arm"
+    return 20
+  fi
+  telemetry_start "$gpu"
+  cmd=(aiperf profile
+    --model "${MODEL[$arm]}"
+    --url "${URL[$arm]}"
+    --endpoint-type chat
+    --streaming
+    --connection-reuse-strategy "$CONNECTION_REUSE"
+    --use-legacy-max-tokens
+    --use-server-token-count
+    --request-timeout-seconds "${REQUEST_TIMEOUT:-180}"
+    --wait-for-model-timeout 10
+    --wait-for-model-mode both
+    --request-rate "$rate"
+    --arrival-pattern poisson
+    --concurrency "$conc"
+    --benchmark-duration "$duration"
+    --slice-duration "$SOAK_SLICE"
+    --warmup-request-count "$WARMUP"
+    --random-seed "$SEED"
+    --osl "$OUTPUT_TOKENS"
+    --extra-inputs '{"temperature":0,"ignore_eos":true,"cache_prompt":false}'
+    --artifact-dir "$artifact"
+    --profile-export-level records
+    --no-auto-plot
+    --tokenizer builtin
+    --input-file "$WORKLOAD" --custom-dataset-type single_turn --dataset-sampling-strategy sequential)
+  local rc row
+  timeout --signal=TERM --kill-after=15s "$((duration + 120))s" "${cmd[@]}" > "$console" 2>&1
+  rc=$?
+  telemetry_stop
+  docker logs --timestamps --since "${CURRENT_START_EPOCH:-0}" "${CONTAINER[$arm]}" > "$dir/server.log" 2>&1 || true
+  stop_event_capture
+  row=$(parse_run "$artifact" "$arm" "soak" "raw" "$conc" "1" "$rc" "$gpu")
+  extract_error_details "$artifact" "$arm" "soak" "$conc" "1"
+  printf '%s\n' "$row" >> "$ROWS"
+  ROW_LAST="$row"
+  printf '%s\t%s\t%s\t%s\t%s\n' "$arm" "$rate" "$duration" "$dir" "$artifact" >> "$OUT/soak_cells.tsv"
+  docker stop "${CONTAINER[$arm]}" >/dev/null 2>&1 || true
+  sleep "$COOLDOWN_SECONDS"
+  return 0
+}
+
+write_soak_summary() {
+  python3 - "$OUT/soak_cells.tsv" "$OUT/soak_summary.tsv" <<'PY'
+import csv, re, sys
+cells, dst = sys.argv[1:]
+def num(s):
+    m = re.search(r'-?\d+(?:\.\d+)?', s)
+    return float(m.group()) if m else None
+with open(dst, 'w', newline='', encoding='utf-8') as f:
+    w = csv.writer(f, delimiter='\t')
+    w.writerow(['arm', 'duration_s', 'temp_min_c', 'temp_mean_c', 'temp_max_c',
+                'power_mean_w', 'power_max_w', 'util_mean_pct', 'util_max_pct',
+                'sm_clock_min_mhz', 'sm_clock_max_mhz', 'sm_clock_drop_pct', 'throttled'])
+    for line in open(cells, encoding='utf-8'):
+        parts = line.rstrip('\n').split('\t')
+        if len(parts) < 5:
+            continue
+        arm, rate, duration, d, artifact = parts[:5]
+        gpu = f'{d}/gpu.csv'
+        temps, powers, utils, smclocks = [], [], [], []
+        try:
+            rd = csv.reader(open(gpu, encoding='utf-8', errors='replace')); next(rd, None)
+            for row in rd:
+                # columns: timestamp, name, temp, gpu_util, mem_util, mem_used, power, sm_clock, mem_clock
+                vals = [num(x) for x in row]
+                if len(vals) >= 8:
+                    if vals[2] is not None: temps.append(vals[2])     # temperature.gpu
+                    if vals[3] is not None: utils.append(vals[3])     # utilization.gpu
+                    if vals[6] is not None: powers.append(vals[6])    # power.draw
+                    if vals[7] is not None: smclocks.append(vals[7])  # clocks.current.sm
+        except Exception:
+            pass
+        def stat(xs):
+            if not xs: return ('', '', '')
+            return (f'{min(xs):.1f}', f'{sum(xs)/len(xs):.1f}', f'{max(xs):.1f}')
+        tmin, tmean, tmax = stat(temps)
+        _, pmean, pmax = stat(powers)
+        _, umean, umax = stat(utils)
+        smin, _, smax = stat(smclocks)
+        drop = 0.0
+        if smclocks:
+            mn, mx = min(smclocks), max(smclocks)
+            drop = 0.0 if mx == 0 else (mx - mn) / mx * 100.0
+        throttled = (drop > 10.0 and temps and max(temps) >= 85.0)
+        w.writerow([arm, duration, tmin, tmean, tmax, pmean, pmax, umean, umax, smin, smax, f'{drop:.1f}', 'yes' if throttled else 'no'])
+print('soak_summary written')
+PY
+}
+
+run_soak() {
+  local base conc rate
+  conc="$MAX_OPEN_CONC"
+  if [[ -z "$SOAK_BASE_RPS" ]]; then
+    log "SOAK_BASE_RPS unset; running capacity discovery to derive R"
+    run_capacity
+    base=$(python3 - "$OUT/aggregate.tsv" <<'PY'
+import csv, sys
+rows = list(csv.DictReader(open(sys.argv[1], encoding='utf-8'), delimiter='\t'))
+vals = [float(r['request_tps_mean']) for r in rows if r.get('request_tps_mean') not in ('', 'NA') and r['suite'] == 'capacity']
+print(max(vals) if vals else '0')
+PY
+)
+  else
+    base="$SOAK_BASE_RPS"
+  fi
+  rate=$(python3 -c "print(f'{float('$base') * float('$SOAK_LOAD_FRACTION'):.4f}')")
+  log "soak base rate R=${base} req/s, load=${SOAK_LOAD_FRACTION} -> rate=${rate} req/s, duration=${SOAK_DURATION}s"
+  for arm in "${ALL_ARMS[@]}"; do
+    run_soak_cell "$arm" "$rate" "$conc" "$SOAK_DURATION" || true
+  done
+}
+
+if [[ "$MODE" == "startup" ]]; then
+  log "===== STARTUP benchmark (process cold start) ====="
+  run_startup
+  write_v2_manifest
+  log "===== startup complete ====="
+  log "startup=$OUT/startup.tsv"
+  log "manifest=$OUT/manifest.json"
+  exit 0
+fi
+
+if [[ "$MODE" == "soak" ]]; then
+  log "===== SOAK benchmark (sustained load + thermal degradation) ====="
+  run_soak
+  write_resource_summary
+  write_aggregate
+  write_soak_summary
+  write_v2_manifest
+  log "===== soak complete ====="
+  log "repeats=$ROWS"
+  log "aggregate=$OUT/aggregate.tsv"
+  log "soak_summary=$OUT/soak_summary.tsv"
   log "manifest=$OUT/manifest.json"
   exit 0
 fi

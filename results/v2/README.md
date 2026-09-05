@@ -62,6 +62,20 @@ Per-cell GPU resource aggregates: average/p95 utilization, peak VRAM, average/pe
 power, peak temperature, and (when sampled) a GPU-side energy estimate
 (`gpu_energy_j` = integral of sampled power over time).
 
+### startup.tsv
+Process cold-start measurements (`startup` suite): per (model, repetition) the
+`process_to_api_ready_ms` (container start -> `/v1/models` ready) and
+`api_ready_to_first_token_ms`. Labeled **process cold start**, not disk-cold:
+filesystem/page caches are not controlled.
+
+### soak_summary.tsv
+Sustained-load soak aggregates (`soak` suite): per model, over the whole
+telemetry window, GPU `temp` / `power` / `utilization` / SM-clock
+min-mean-max, plus a heuristic `throttled` flag (SM clock drop > 10% while
+max temp >= 85 C). Note `sm_clock_drop_pct` includes the idle downclock at the
+start/end of the window, not just thermal throttling; rely on the `throttled`
+flag for the throttle conclusion.
+
 ### slo_summary.tsv
 Per (model, load fraction, SLO profile): `attempted`, `slo_compliant`,
 `good_request_fraction`, and `goodput_req_s` (SLO-compliant requests per second).
