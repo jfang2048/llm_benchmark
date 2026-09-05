@@ -15,7 +15,7 @@
 SHELL := /bin/bash
 SCRIPTS := scripts
 
-.PHONY: help preflight setup deploy healthcheck benchmark benchmark-smoke report reproduce security clean
+.PHONY: help preflight setup deploy healthcheck benchmark benchmark-smoke benchmark-reliability report reproduce security clean
 
 help:
 	@printf '%s\n' \
@@ -27,6 +27,7 @@ help:
 	  "  make healthcheck      Verify every serving endpoint is API-ready" \
 	  "  make benchmark        Run the full validated benchmark matrix (final)" \
 	  "  make benchmark-smoke  Run a fast smoke benchmark" \
+	  "  make benchmark-reliability  Run the P0 transport-reliability gate" \
 	  "  make report           Rebuild the interactive report from committed data" \
 	  "  make reproduce        One-command end-to-end reproduction" \
 	  "  make security         Run the pre-push security/privacy checker" \
@@ -50,6 +51,9 @@ benchmark:
 
 benchmark-smoke:
 	MODE=smoke ./$(SCRIPTS)/benchmark.sh
+
+benchmark-reliability:
+	MODE=reliability ./$(SCRIPTS)/benchmark.sh
 
 report:
 	@if [ -x .venv/bin/python ]; then .venv/bin/python $(SCRIPTS)/generate_report.py; \

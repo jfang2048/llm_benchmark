@@ -28,13 +28,19 @@ if [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then
 Controlled MODEL benchmark (Spark-X2.5-4B vs Qwen3-4B, llama.cpp)
 
 Usage:
-  MODE=smoke ./scripts/benchmark.sh    fast pipeline validation (default params: 8 req, 1 warmup, 1 repeat, 32 tok)
-  MODE=final ./scripts/benchmark.sh    full validated matrix (80 req, 5 warmup, 4 repeats, 128 tok)
+  ./scripts/benchmark.sh --help
+  MODE=smoke        ./scripts/benchmark.sh   fast pipeline validation
+  MODE=final        ./scripts/benchmark.sh   full validated matrix (80 req, 5 warmup, 4 repeats, 128 tok)
+  MODE=reliability  ./scripts/benchmark.sh   P0 transport-reliability gate (2 models x {1,4} x 200 req)
 
 Environment overrides (all optional):
   MODE, REQUESTS, WARMUP, REPEATS, CONCURRENCIES, OUTPUT_TOKENS, SEED,
   MAX_ERROR_RATE, STARTUP_TIMEOUT, COOLDOWN_SECONDS, REQUEST_TIMEOUT,
-  CELL_TIMEOUT, MODEL_DIR
+  CELL_TIMEOUT, MODEL_DIR, CONNECTION_REUSE, RELIABILITY_MIN_SUCCESS, FORCE_UNSTABLE
+
+Transport note: CONNECTION_REUSE defaults to 'never' (fresh connection per
+request) to avoid aiohttp pooled-connection reuse racing with the llama.cpp
+HTTP server closing keep-alive connections (root cause of ServerDisconnectedError).
 EOF
   exit 0
 fi
@@ -49,20 +55,37 @@ ERRORS="$OUT/error_details.tsv"
 CONFIG_REPORT="$OUT/runtime_config.txt"
 MODE="${MODE:-final}"
 
-# Model-focused benchmark: final = 2 models x 4 concurrency x 4 repeats = 32 cells.
-if [[ "$MODE" == "final" ]]; then
-  REQUESTS="${REQUESTS:-80}"
-  WARMUP="${WARMUP:-5}"
-  REPEATS="${REPEATS:-4}"
-  read -r -a CONCURRENCIES <<< "${CONCURRENCIES:-1 2 3 4}"
-  OUTPUT_TOKENS="${OUTPUT_TOKENS:-128}"
-else
-  REQUESTS="${REQUESTS:-8}"
-  WARMUP="${WARMUP:-1}"
-  REPEATS="${REPEATS:-1}"
-  read -r -a CONCURRENCIES <<< "${CONCURRENCIES:-1}"
-  OUTPUT_TOKENS="${OUTPUT_TOKENS:-32}"
-fi
+# Recognized modes. final/smoke preserve the historical methodology; reliability
+# is the Benchmark v2 P0 gate. Other v2 suites are staged (see BACKLOG.md).
+case "$MODE" in
+  final)
+    REQUESTS="${REQUESTS:-80}"
+    WARMUP="${WARMUP:-5}"
+    REPEATS="${REPEATS:-4}"
+    read -r -a CONCURRENCIES <<< "${CONCURRENCIES:-1 2 3 4}"
+    OUTPUT_TOKENS="${OUTPUT_TOKENS:-128}"
+    ;;
+  reliability)
+    # P0 transport-reliability gate: 2 models x {c1, c4} x >=200 requests.
+    REQUESTS="${REQUESTS:-200}"
+    WARMUP="${WARMUP:-10}"
+    REPEATS="${REPEATS:-1}"
+    read -r -a CONCURRENCIES <<< "${CONCURRENCIES:-1 4}"
+    OUTPUT_TOKENS="${OUTPUT_TOKENS:-128}"
+    ;;
+  capacity|shape|open-loop|startup|soak|sessions)
+    echo "ERROR: mode '$MODE' is part of Benchmark v2 and is not implemented yet." >&2
+    echo "       See BACKLOG.md '## Benchmark v2' for the staged plan." >&2
+    exit 0
+    ;;
+  smoke|*)
+    REQUESTS="${REQUESTS:-8}"
+    WARMUP="${WARMUP:-1}"
+    REPEATS="${REPEATS:-1}"
+    read -r -a CONCURRENCIES <<< "${CONCURRENCIES:-1}"
+    OUTPUT_TOKENS="${OUTPUT_TOKENS:-32}"
+    ;;
+esac
 
 SEED="${SEED:-42}"
 MAX_ERROR_RATE="${MAX_ERROR_RATE:-1.0}"
@@ -70,6 +93,15 @@ STARTUP_TIMEOUT="${STARTUP_TIMEOUT:-180}"
 COOLDOWN_SECONDS="${COOLDOWN_SECONDS:-5}"
 MAX_START_TEMP_C="${MAX_START_TEMP_C:-70}"
 TEMP_WAIT_TIMEOUT="${TEMP_WAIT_TIMEOUT:-120}"
+
+# Transport reliability controls.
+# 'never' avoids aiohttp pooled-connection reuse racing with the llama.cpp HTTP
+# server closing keep-alive connections (root cause of ServerDisconnectedError).
+CONNECTION_REUSE="${CONNECTION_REUSE:-never}"
+# Minimum transport success rate (%) for a publication-grade final run.
+RELIABILITY_MIN_SUCCESS="${RELIABILITY_MIN_SUCCESS:-99.5}"
+# When set, an unreliable final run proceeds but is marked INVALID_FOR_RANKING.
+FORCE_UNSTABLE="${FORCE_UNSTABLE:-0}"
 
 # Isolated ports (everyday deployments use 8000/8001).
 declare -A URL=(
@@ -384,6 +416,8 @@ if os.path.exists(records):
         if r.get('error') is not None:
             errors += 1
 err = (100.0 * errors / total) if total else None
+successful = (total - errors) if total else None
+success_rate = (100.0 * successful / total) if total else None
 
 parse_ok = bool(d) and total > 0
 status = 'TIMEOUT' if int(rc) in (124, 137) else ('FAIL_AIPERF' if int(rc) != 0 else ('FAIL_PARSE' if not parse_ok else ('UNSTABLE' if err > float(maxerr) else 'PASS')))
@@ -407,7 +441,7 @@ except Exception:
 def f(x):
     return '' if x is None else f'{x:.4f}'
 vals = [
-    arm, suite, isl, conc, rep, status, f(err), str(total), str(errors),
+    arm, suite, isl, conc, rep, status, f(err), str(total), str(successful), str(errors), f(success_rate),
     f(m('input_sequence_length')), f(m('output_sequence_length') or m('output_token_count')),
     f(m('time_to_first_token')), f(m('time_to_first_token', 'p50')), f(m('time_to_first_token', 'p95')), f(m('time_to_first_token', 'p99')),
     f(m('inter_token_latency')), f(m('inter_token_latency', 'p50')), f(m('inter_token_latency', 'p95')), f(m('inter_token_latency', 'p99')),
@@ -502,6 +536,7 @@ run_cell(){
     --url "${URL[$arm]}"
     --endpoint-type chat
     --streaming
+    --connection-reuse-strategy "$CONNECTION_REUSE"
     --use-legacy-max-tokens
     --use-server-token-count
     --request-timeout-seconds "${REQUEST_TIMEOUT:-180}"
@@ -578,7 +613,7 @@ Primary report:
 $REPORT
 EOF2
 
-printf 'arm\tsuite\tisl\tconcurrency\trepeat\tstatus\terror_rate_pct\trecords\terrors\tinput_tokens_avg\toutput_tokens_avg\tttft_avg_ms\tttft_p50_ms\tttft_p95_ms\tttft_p99_ms\titl_avg_ms\titl_p50_ms\titl_p95_ms\titl_p99_ms\tlatency_avg_ms\tlatency_p50_ms\tlatency_p95_ms\tlatency_p99_ms\trequest_tps\toutput_tps\tpeak_vram_mib\tpeak_power_w\tavg_gpu_util_pct\tpeak_temp_c\n' > "$ROWS"
+printf 'arm\tsuite\tisl\tconcurrency\trepeat\tstatus\terror_rate_pct\tattempted_requests\tsuccessful_requests\tfailed_requests\tsuccess_rate_pct\tinput_tokens_avg\toutput_tokens_avg\tttft_avg_ms\tttft_p50_ms\tttft_p95_ms\tttft_p99_ms\titl_avg_ms\titl_p50_ms\titl_p95_ms\titl_p99_ms\tlatency_avg_ms\tlatency_p50_ms\tlatency_p95_ms\tlatency_p99_ms\trequest_tps\toutput_tps\tpeak_vram_mib\tpeak_power_w\tavg_gpu_util_pct\tpeak_temp_c\n' > "$ROWS"
 printf 'arm\tsuite\tconcurrency\trepeat\terror_type\tcount\tsample\n' > "$ERRORS"
 
 for arm in "${ALL_ARMS[@]}"; do
@@ -609,7 +644,7 @@ WARMUP="$SANITY_WARMUP"
 OUTPUT_TOKENS="$SANITY_OSL"
 log "AIPerf sanity gate PASS for both models"
 
-if [[ "$MODE" != "final" ]]; then
+if [[ "$MODE" == "smoke" ]]; then
   log "===== smoke: model comparison pipeline ====="
   for arm in "${ALL_ARMS[@]}"; do
     run_cell "$arm" smoke raw 1 1 || exit $?
@@ -619,8 +654,16 @@ if [[ "$MODE" != "final" ]]; then
   exit 0
 fi
 
+# final -> model comparison matrix; reliability -> P0 transport-reliability gate.
+if [[ "$MODE" == "reliability" ]]; then
+  SUITE="reliability"
+  log "===== RELIABILITY benchmark (P0 gate) ====="
+else
+  SUITE="model"
+  log "===== MODEL benchmark ====="
+fi
+
 # Crossover ordering alternates A/B by repeat to reduce temporal/thermal order bias.
-log "===== MODEL benchmark ====="
 for conc in "${CONCURRENCIES[@]}"; do
   for rep in $(seq 1 "$REPEATS"); do
     if (( rep % 2 )); then
@@ -628,8 +671,8 @@ for conc in "${CONCURRENCIES[@]}"; do
     else
       A=qwen_llama; B=spark_llama
     fi
-    run_cell "$A" model raw "$conc" "$rep" || exit $?
-    run_cell "$B" model raw "$conc" "$rep" || exit $?
+    run_cell "$A" "$SUITE" raw "$conc" "$rep" || exit $?
+    run_cell "$B" "$SUITE" raw "$conc" "$rep" || exit $?
   done
 done
 
@@ -642,13 +685,16 @@ keys = sorted({(r['suite'], r['arm'], r['isl'], r['concurrency']) for r in rows}
 metrics = ['error_rate_pct','ttft_p50_ms','ttft_p95_ms','itl_p50_ms','itl_p95_ms','latency_p50_ms','latency_p95_ms','request_tps','output_tps','peak_vram_mib','peak_power_w']
 with open(dst, 'w', newline='', encoding='utf-8') as f:
     w = csv.writer(f, delimiter='\t')
-    w.writerow(['suite','arm','isl','concurrency','valid_runs','invalid_runs'] + [z for m in metrics for z in (m+'_mean', m+'_ci95')])
+    w.writerow(['suite','arm','isl','concurrency','pass_runs','unstable_runs','failed_runs','parsed_runs'] + [z for m in metrics for z in (m+'_mean', m+'_ci95')])
     for k in keys:
         rr = [r for r in rows if (r['suite'], r['arm'], r['isl'], r['concurrency']) == k]
-        good = [r for r in rr if r['status'] in ('PASS','UNSTABLE')]
-        out = [*k, len(good), len(rr)-len(good)]
+        pass_r = [r for r in rr if r['status'] == 'PASS']
+        unstable_r = [r for r in rr if r['status'] == 'UNSTABLE']
+        parsed = pass_r + unstable_r   # successfully parsed repeats
+        failed_r = [r for r in rr if r['status'] not in ('PASS','UNSTABLE')]
+        out = [*k, len(pass_r), len(unstable_r), len(failed_r), len(parsed)]
         for m in metrics:
-            xs = [float(r[m]) for r in good if r.get(m,'') not in ('','NA')]
+            xs = [float(r[m]) for r in parsed if r.get(m,'') not in ('','NA')]
             if not xs:
                 out += ['', '']; continue
             mean = statistics.mean(xs)
@@ -660,6 +706,56 @@ with open(dst, 'w', newline='', encoding='utf-8') as f:
             out += [f'{mean:.4f}', f'{ci:.4f}']
         w.writerow(out)
 PY
+
+# Reliability hard gate (P0). A publication-grade final/reliability run must
+# meet the transport success threshold; otherwise it is refused unless
+# FORCE_UNSTABLE=1, in which case it is explicitly marked INVALID_FOR_RANKING.
+if [[ "$MODE" == "final" || "$MODE" == "reliability" ]]; then
+  GATE=$(python3 - "$ROWS" "$RELIABILITY_MIN_SUCCESS" <<'PY'
+import csv, sys
+rows = list(csv.DictReader(open(sys.argv[1], encoding='utf-8'), delimiter='\t'))
+rows = [r for r in rows if r['suite'] in ('model', 'reliability')]
+attempted = sum(int(r['attempted_requests']) for r in rows if r.get('attempted_requests','').isdigit())
+failed = sum(int(r['failed_requests']) for r in rows if r.get('failed_requests','').isdigit())
+rate = 100.0 * (attempted - failed) / attempted if attempted else 0.0
+print(f'{attempted} {failed} {rate:.4f}')
+PY
+)
+  read -r GATE_ATTEMPTED GATE_FAILED GATE_RATE <<< "$GATE"
+  log "Reliability gate: attempted=$GATE_ATTEMPTED failed=$GATE_FAILED success_rate=${GATE_RATE}% (threshold ${RELIABILITY_MIN_SUCCESS}%)"
+  if awk "BEGIN{exit !($GATE_RATE < $RELIABILITY_MIN_SUCCESS)}"; then
+    if [[ "$FORCE_UNSTABLE" == "1" ]]; then
+      echo "INVALID_FOR_RANKING" > "$OUT/validity.txt"
+      log "WARN: success rate below gate but FORCE_UNSTABLE=1 — run marked INVALID_FOR_RANKING."
+    else
+      echo "RELIABILITY_FAILED" > "$OUT/validity.txt"
+      log "FATAL: transport success rate ${GATE_RATE}% is below the ${RELIABILITY_MIN_SUCCESS}% reliability gate."
+      log "       Refusing to produce a final ranking. CONNECTION_REUSE defaults to 'never'."
+      log "       To force anyway: FORCE_UNSTABLE=1 MODE=$MODE ./scripts/benchmark.sh"
+      exit 7
+    fi
+  else
+    echo "RELIABILITY_PASS" > "$OUT/validity.txt"
+    log "Reliability gate PASS."
+  fi
+fi
+
+if [[ "$MODE" == "reliability" ]]; then
+  cat > "$OUT/summary.txt.reliability" <<EOF
+Transport reliability gate result
+Run=$RUN_ID Mode=$MODE
+attempted_requests=$GATE_ATTEMPTED
+failed_requests=$GATE_FAILED
+success_rate_pct=$GATE_RATE
+threshold_pct=$RELIABILITY_MIN_SUCCESS
+validity=$(cat "$OUT/validity.txt")
+connection_reuse=$CONNECTION_REUSE
+EOF
+  log "===== reliability complete ====="
+  log "raw=$ROWS"
+  log "aggregate=$OUT/aggregate.tsv"
+  exit 0
+fi
 
 # Generate the primary human-readable side-by-side report.
 SPARK_GGUF="$MODEL_DIR/Spark-X2.5-4B-Q4_K_M.gguf"
