@@ -7,7 +7,9 @@ from a single pinned Docker image (`docker/llama-cpp/Dockerfile`).
 
 The binary is built from the [XHToken/llama.cpp](https://github.com/XHToken/llama.cpp)
 fork, which adds Spark-X2.5 architecture support that upstream llama.cpp does
-not yet provide.
+not yet provide. The pinned fork's `src/models/models.h` registers all
+primary-cohort architectures — `qwen3`, `spark2_5`, `gemma3`, `phi3`
+(Phi-4), `minicpm3`, `nemotron` — so a single binary serves every candidate.
 
 ### Fork state (pinned)
 
