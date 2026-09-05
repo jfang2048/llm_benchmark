@@ -122,6 +122,14 @@ case "$MODE" in
     WARMUP="${WARMUP:-5}"
     OUTPUT_TOKENS="${OUTPUT_TOKENS:-64}"
     ;;
+  backend)
+    # P8 engine comparison: same Qwen3-4B GGUF on llama.cpp vs vLLM+GGUF.
+    REQUESTS="${REQUESTS:-80}"
+    WARMUP="${WARMUP:-5}"
+    REPEATS="${REPEATS:-4}"
+    read -r -a CONCURRENCIES <<< "${CONCURRENCIES:-1 2 4}"
+    OUTPUT_TOKENS="${OUTPUT_TOKENS:-128}"
+    ;;
   smoke|*)
     REQUESTS="${REQUESTS:-8}"
     WARMUP="${WARMUP:-1}"
@@ -167,7 +175,13 @@ declare -A MODEL=(
   [qwen_vllm_gguf]="Qwen3-4B-Q4_K_M"
   [qwen_vllm_awq]="Qwen3-4B-AWQ"
 )
-ALL_ARMS=(spark_llama qwen_llama)
+# Backend comparison uses the same Qwen GGUF on two engines; every other suite
+# compares the two models on llama.cpp.
+if [[ "$MODE" == "backend" ]]; then
+  ALL_ARMS=(qwen_llama qwen_vllm_gguf)
+else
+  ALL_ARMS=(spark_llama qwen_llama)
+fi
 
 mkdir -p "$OUT"
 need(){ command -v "$1" >/dev/null 2>&1 || { echo "ERROR: missing $1" >&2; exit 1; }; }
@@ -680,7 +694,11 @@ done
 
 stop_all_models
 preflight_config || exit 3
-verify_runtime_controls || exit 5
+if [[ "$MODE" == "backend" ]]; then
+  log "backend mode: same-engine runtime-control equivalence skipped (engines differ by design)"
+else
+  verify_runtime_controls || exit 5
+fi
 
 # AIPerf sanity gate: one actual request per model.
 log "===== AIPerf sanity gate ====="
@@ -1353,6 +1371,32 @@ if [[ "$MODE" == "sessions" ]]; then
   log "repeats=$ROWS"
   log "aggregate=$OUT/aggregate.tsv"
   log "sessions=$OUT/sessions.tsv"
+  log "manifest=$OUT/manifest.json"
+  exit 0
+fi
+
+# ===== P8 backend comparison (same Qwen GGUF on llama.cpp vs vLLM+GGUF) =====
+run_backend() {
+  local conc rep A B
+  for conc in "${CONCURRENCIES[@]}"; do
+    for rep in $(seq 1 "$REPEATS"); do
+      if (( rep % 2 )); then A=qwen_llama; B=qwen_vllm_gguf; else A=qwen_vllm_gguf; B=qwen_llama; fi
+      run_cell "$A" backend raw "$conc" "$rep" || exit $?
+      run_cell "$B" backend raw "$conc" "$rep" || exit $?
+    done
+  done
+}
+
+if [[ "$MODE" == "backend" ]]; then
+  log "===== BACKEND benchmark (llama.cpp vs vLLM+GGUF, same Qwen GGUF) ====="
+  run_backend
+  write_resource_summary
+  write_aggregate
+  write_v2_manifest
+  log "===== backend complete ====="
+  log "repeats=$ROWS"
+  log "aggregate=$OUT/aggregate.tsv"
+  log "resource_summary=$OUT/resource_summary.tsv"
   log "manifest=$OUT/manifest.json"
   exit 0
 fi

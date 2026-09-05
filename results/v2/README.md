@@ -99,6 +99,15 @@ benchmark). With `SESSIONS_CACHE=1`, a second `cache_prompt=true` pass is
 recorded for a prefix-cache comparison; cache-enabled results are never mixed
 into the no-cache model comparison.
 
+### backend suite (`make benchmark-backend`)
+Engine comparison: the same `Qwen3-4B-Q4_K_M` GGUF served by llama.cpp
+(`qwen_llama`) vs vLLM+GGUF (`qwen_vllm_gguf`), identical prompts, ISL/OSL,
+and generation controls. Results land in the standard `repeats.tsv` /
+`aggregate.tsv` / `resource_summary.tsv` under the `backend` suite. This is an
+engine A/B only; it is **not** part of the Spark-vs-Qwen model ranking, and the
+Qwen-AWQ arm is treated as a quantization/deployment comparison, not a pure
+engine comparison.
+
 ### workload_manifest.json
 Describes the workload used (prompt count, hash, ISL/OSL profile, sampling).
 

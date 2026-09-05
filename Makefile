@@ -34,6 +34,7 @@ help:
 	  "  make benchmark-startup      Run the P5 process cold-start measurement" \
 	  "  make benchmark-soak         Run the P5 sustained-load soak benchmark" \
 	  "  make benchmark-sessions     Run the P7 multi-turn sessions benchmark" \
+	  "  make benchmark-backend      Run the P8 llama.cpp vs vLLM+GGUF comparison" \
 	  "  make report           Rebuild the interactive report from committed data" \
 	  "  make reproduce        One-command end-to-end reproduction" \
 	  "  make security         Run the pre-push security/privacy checker" \
@@ -78,6 +79,9 @@ benchmark-soak:
 
 benchmark-sessions:
 	MODE=sessions ./$(SCRIPTS)/benchmark.sh
+
+benchmark-backend:
+	MODE=backend ./$(SCRIPTS)/benchmark.sh
 
 report:
 	@if [ -x .venv/bin/python ]; then .venv/bin/python $(SCRIPTS)/generate_report.py; \
