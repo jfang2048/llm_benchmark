@@ -104,7 +104,7 @@ Goal: make the benchmark scientifically trustworthy. The historical run
 `20260904_192416` (v1) has substantial `ServerDisconnectedError` rates and is
 relabeled as a historical diagnostic, not a final ranking.
 
-- [ ] P0 Reliability diagnosis  (root cause + hard gate)
+- [x] P0 Reliability diagnosis  (root cause + hard gate)
 - [ ] P1 Benchmark semantics and schema
 - [ ] P2 Capacity benchmark (closed-loop adaptive sweep 1 2 3 4 6 8)
 - [ ] P3 ISL/OSL workload benchmark (short_chat/balanced/summarization/rag_medium/generation)
@@ -132,13 +132,17 @@ Fix (implemented in `scripts/benchmark.sh`): default `CONNECTION_REUSE=never`
 (`RELIABILITY_MIN_SUCCESS=99.5`); a failed final run is refused unless
 `FORCE_UNSTABLE=1`, which marks it `INVALID_FOR_RANKING`.
 
-### P0 diagnostic (confirmation in progress)
+### P0 diagnostic (confirmed)
 
-- c1 80-request pooled vs never: both returned 0 errors (historical c1 rate is
-  ~4%, too low to reproduce reliably with n=80).
-- c4 200-request pooled vs never: running; c4 had ~5-28% historical error, so
-  it is the intended reproduction cell.
+c4, 200 requests, same server/seed/workload, only the connection strategy varied:
+
+- pooled (historical default): 8/200 errors = 4.00%
+- never (fix):                 0/200 errors = 0.00%
+
+Median latency unaffected (3940 ms pooled vs 3905 ms never). Root cause and fix
+confirmed: aiohttp pooled connection reuse racing with the llama.cpp HTTP server
+closing keep-alive connections.
 
 ## Next Action
-Confirm the reliability fix at c4 (200 requests), then relabel v1 (done in
-README + dashboard) and continue P1.
+P0 complete. Continue P1 (Benchmark v2 semantics and result schema under
+results/v2/), then P2 capacity sweep.
