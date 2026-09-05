@@ -52,7 +52,8 @@ benchmark-smoke:
 	MODE=smoke ./$(SCRIPTS)/benchmark.sh
 
 report:
-	python3 $(SCRIPTS)/generate_report.py
+	@if [ -x .venv/bin/python ]; then .venv/bin/python $(SCRIPTS)/generate_report.py; \
+	else python3 $(SCRIPTS)/generate_report.py; fi
 
 reproduce:
 	./$(SCRIPTS)/reproduce.sh

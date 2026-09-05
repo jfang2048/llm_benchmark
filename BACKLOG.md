@@ -81,6 +81,8 @@ https://github.com/jfang2048/llm_benchmark
 - `bash -n` passes on all `scripts/*.sh`.
 - `python3 -m py_compile scripts/generate_report.py` passes.
 - All committed JSON files parse.
+- `make report` uses `.venv/bin/python` when present (so the Plotly dashboard
+  always regenerates), falling back to `python3` otherwise.
 - `docker compose config` valid for `configs/llama-cpp.compose.yaml` and
   `configs/observability.compose.yaml` (`vllm.compose.yaml` requires `.env`).
 - `./scripts/security_check.sh` passes over the tracked allowlist.
