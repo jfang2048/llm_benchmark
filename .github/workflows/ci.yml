@@ -1,0 +1,55 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Shell syntax check
+        run: |
+          for f in scripts/*.sh; do
+            bash -n "$f" || { echo "syntax error in $f"; exit 1; }
+          done
+          echo "All shell scripts pass bash -n"
+
+      - name: Python syntax check
+        run: python3 -m py_compile scripts/generate_report.py
+
+      - name: JSON validity check
+        run: |
+          python3 - <<'PY'
+          import json, glob, sys
+          files = glob.glob("docs/data/*.json") + glob.glob("results/final/*.json") \
+                + glob.glob("monitoring/grafana/dashboards/*.json")
+          for f in files:
+              json.load(open(f, encoding="utf-8"))
+          print(f"Validated {len(files)} JSON files")
+          PY
+
+      - name: Security / privacy gate
+        run: ./scripts/security_check.sh
+
+      - name: Reproducible report generation
+        run: |
+          python3 -m pip install --quiet -r requirements-report.txt
+          python3 scripts/generate_report.py
+          test -s docs/index.html
+          test -s docs/data/benchmark.json
+          echo "Report regenerated successfully"
+
+      - name: Forbidden large files (GitHub 100 MiB guard)
+        run: |
+          big=$(find . -type f -not -path './.git/*' -size +5M -print)
+          if [ -n "$big" ]; then echo "Oversized files: $big"; exit 1; fi
+          echo "No tracked candidate exceeds 5 MiB"
