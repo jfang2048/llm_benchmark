@@ -3,8 +3,10 @@
   "runs": {
     "backend": "backend",
     "capacity": "capacity",
+    "open-loop": "open-loop",
     "sessions": "sessions",
     "shape": "shape",
+    "soak": "soak",
     "startup": "startup"
   },
   "arm_labels": {
@@ -316,6 +318,224 @@
       "itl_p95_ms": 39.3465
     }
   ],
+  "openloop": [
+    {
+      "arm": "qwen_llama",
+      "load_fraction": 0.25,
+      "target_rate_rps": 0.1469,
+      "slo_profile": "interactive",
+      "attempted": 200,
+      "slo_compliant": 199,
+      "good_request_fraction": 0.995
+    },
+    {
+      "arm": "qwen_llama",
+      "load_fraction": 0.25,
+      "target_rate_rps": 0.1469,
+      "slo_profile": "server",
+      "attempted": 200,
+      "slo_compliant": 200,
+      "good_request_fraction": 1.0
+    },
+    {
+      "arm": "qwen_llama",
+      "load_fraction": 0.5,
+      "target_rate_rps": 0.2937,
+      "slo_profile": "interactive",
+      "attempted": 200,
+      "slo_compliant": 196,
+      "good_request_fraction": 0.98
+    },
+    {
+      "arm": "qwen_llama",
+      "load_fraction": 0.5,
+      "target_rate_rps": 0.2937,
+      "slo_profile": "server",
+      "attempted": 200,
+      "slo_compliant": 200,
+      "good_request_fraction": 1.0
+    },
+    {
+      "arm": "qwen_llama",
+      "load_fraction": 0.75,
+      "target_rate_rps": 0.4405,
+      "slo_profile": "interactive",
+      "attempted": 200,
+      "slo_compliant": 193,
+      "good_request_fraction": 0.965
+    },
+    {
+      "arm": "qwen_llama",
+      "load_fraction": 0.75,
+      "target_rate_rps": 0.4405,
+      "slo_profile": "server",
+      "attempted": 200,
+      "slo_compliant": 200,
+      "good_request_fraction": 1.0
+    },
+    {
+      "arm": "qwen_llama",
+      "load_fraction": 0.9,
+      "target_rate_rps": 0.5287,
+      "slo_profile": "interactive",
+      "attempted": 200,
+      "slo_compliant": 186,
+      "good_request_fraction": 0.93
+    },
+    {
+      "arm": "qwen_llama",
+      "load_fraction": 0.9,
+      "target_rate_rps": 0.5287,
+      "slo_profile": "server",
+      "attempted": 200,
+      "slo_compliant": 200,
+      "good_request_fraction": 1.0
+    },
+    {
+      "arm": "qwen_llama",
+      "load_fraction": 1.0,
+      "target_rate_rps": 0.5874,
+      "slo_profile": "interactive",
+      "attempted": 200,
+      "slo_compliant": 189,
+      "good_request_fraction": 0.945
+    },
+    {
+      "arm": "qwen_llama",
+      "load_fraction": 1.0,
+      "target_rate_rps": 0.5874,
+      "slo_profile": "server",
+      "attempted": 200,
+      "slo_compliant": 200,
+      "good_request_fraction": 1.0
+    },
+    {
+      "arm": "qwen_llama",
+      "load_fraction": 1.1,
+      "target_rate_rps": 0.6461,
+      "slo_profile": "interactive",
+      "attempted": 200,
+      "slo_compliant": 183,
+      "good_request_fraction": 0.915
+    },
+    {
+      "arm": "qwen_llama",
+      "load_fraction": 1.1,
+      "target_rate_rps": 0.6461,
+      "slo_profile": "server",
+      "attempted": 200,
+      "slo_compliant": 200,
+      "good_request_fraction": 1.0
+    },
+    {
+      "arm": "spark_llama",
+      "load_fraction": 0.25,
+      "target_rate_rps": 0.1469,
+      "slo_profile": "interactive",
+      "attempted": 200,
+      "slo_compliant": 200,
+      "good_request_fraction": 1.0
+    },
+    {
+      "arm": "spark_llama",
+      "load_fraction": 0.25,
+      "target_rate_rps": 0.1469,
+      "slo_profile": "server",
+      "attempted": 200,
+      "slo_compliant": 200,
+      "good_request_fraction": 1.0
+    },
+    {
+      "arm": "spark_llama",
+      "load_fraction": 0.5,
+      "target_rate_rps": 0.2937,
+      "slo_profile": "interactive",
+      "attempted": 200,
+      "slo_compliant": 186,
+      "good_request_fraction": 0.93
+    },
+    {
+      "arm": "spark_llama",
+      "load_fraction": 0.5,
+      "target_rate_rps": 0.2937,
+      "slo_profile": "server",
+      "attempted": 200,
+      "slo_compliant": 200,
+      "good_request_fraction": 1.0
+    },
+    {
+      "arm": "spark_llama",
+      "load_fraction": 0.75,
+      "target_rate_rps": 0.4405,
+      "slo_profile": "interactive",
+      "attempted": 200,
+      "slo_compliant": 169,
+      "good_request_fraction": 0.845
+    },
+    {
+      "arm": "spark_llama",
+      "load_fraction": 0.75,
+      "target_rate_rps": 0.4405,
+      "slo_profile": "server",
+      "attempted": 200,
+      "slo_compliant": 200,
+      "good_request_fraction": 1.0
+    },
+    {
+      "arm": "spark_llama",
+      "load_fraction": 0.9,
+      "target_rate_rps": 0.5287,
+      "slo_profile": "interactive",
+      "attempted": 200,
+      "slo_compliant": 101,
+      "good_request_fraction": 0.505
+    },
+    {
+      "arm": "spark_llama",
+      "load_fraction": 0.9,
+      "target_rate_rps": 0.5287,
+      "slo_profile": "server",
+      "attempted": 200,
+      "slo_compliant": 181,
+      "good_request_fraction": 0.905
+    },
+    {
+      "arm": "spark_llama",
+      "load_fraction": 1.0,
+      "target_rate_rps": 0.5874,
+      "slo_profile": "interactive",
+      "attempted": 200,
+      "slo_compliant": 100,
+      "good_request_fraction": 0.5
+    },
+    {
+      "arm": "spark_llama",
+      "load_fraction": 1.0,
+      "target_rate_rps": 0.5874,
+      "slo_profile": "server",
+      "attempted": 200,
+      "slo_compliant": 187,
+      "good_request_fraction": 0.935
+    },
+    {
+      "arm": "spark_llama",
+      "load_fraction": 1.1,
+      "target_rate_rps": 0.6461,
+      "slo_profile": "interactive",
+      "attempted": 200,
+      "slo_compliant": 102,
+      "good_request_fraction": 0.51
+    },
+    {
+      "arm": "spark_llama",
+      "load_fraction": 1.1,
+      "target_rate_rps": 0.6461,
+      "slo_profile": "server",
+      "attempted": 200,
+      "slo_compliant": 189,
+      "good_request_fraction": 0.945
+    }
+  ],
   "sessions": [
     {
       "arm": "qwen_llama",
@@ -554,6 +774,22 @@
       "request_tps": 1.0438,
       "error_rate_pct": 0.0,
       "ttft_p50_ms": 3811.5138
+    }
+  ],
+  "soak": [
+    {
+      "arm": "spark_llama",
+      "temp_max_c": 73.0,
+      "power_max_w": 84.1,
+      "util_max_pct": 97.0,
+      "throttled": "no"
+    },
+    {
+      "arm": "qwen_llama",
+      "temp_max_c": 75.0,
+      "power_max_w": 72.9,
+      "util_max_pct": 100.0,
+      "throttled": "no"
     }
   ],
   "startup": [
