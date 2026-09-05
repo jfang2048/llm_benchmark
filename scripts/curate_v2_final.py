@@ -20,11 +20,12 @@ FINAL = ROOT / "results" / "v2" / "final"
 MODES = ["capacity", "shape", "open-loop", "sessions", "startup", "soak", "backend"]
 
 # Machine-readable summary files that are safe and meaningful to publish.
+# (summary.txt and workload.sha256 embed the absolute run path and are excluded;
+# the workload hash is already recorded in manifest.json.)
 SUMMARY_FILES = [
     "manifest.json", "repeats.tsv", "aggregate.tsv", "resource_summary.tsv",
     "slo_summary.tsv", "sessions.tsv", "soak_summary.tsv", "startup.tsv",
-    "error_details.tsv", "workload.sha256", "model_workload.jsonl",
-    "workload_manifest.json", "summary.txt",
+    "error_details.tsv", "model_workload.jsonl", "workload_manifest.json",
 ]
 
 
