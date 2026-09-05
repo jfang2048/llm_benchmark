@@ -106,3 +106,4 @@ vllm-qwen3/
 .idea/
 *.swp
 *.swo
+.agent/
