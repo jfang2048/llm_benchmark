@@ -1,0 +1,5 @@
+arm	suite	isl	concurrency	repeat	peak_vram_mib	peak_power_w	avg_gpu_util_pct	peak_temp_c	gpu_energy_j	gpu_j_per_request	gpu_j_per_output_token
+spark_llama	sanity	raw	1	0	3439.0000	50.4900	8.0769	59.0000	184.8100	184.8100	11.5506
+qwen_llama	sanity	raw	1	0	3881.0000	44.7400	10.0769	58.0000	168.1100	168.1100	10.5069
+spark_llama	sessions	raw	1	1	3445.0000	104.5400	72.0044	75.0000	7734.4650	128.9077	2.0142
+qwen_llama	sessions	raw	1	1	3889.0000	85.6200	81.2199	77.0000	6719.5000	111.9917	1.7499

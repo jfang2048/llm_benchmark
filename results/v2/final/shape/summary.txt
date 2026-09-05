@@ -1,0 +1,151 @@
+Controlled MODEL diagnostic benchmark
+Run=20260905_180318 Mode=shape
+AIPerf=0.12.0
+GPU=NVIDIA GeForce RTX 3060 Laptop GPU, 610.74, 6144 MiB
+Requests=60 Warmup=5 Repeats=1 OSL=128 Seed=42
+Concurrency=1 4
+
+Primary comparison:
+Spark-X2.5-4B-Q4_K_M vs Qwen3-4B-Q4_K_M
+
+Controlled:
+engine=llama.cpp
+quantization=Q4_K_M
+same GPU
+same raw prompt bytes and order
+same sampling parameters
+same concurrency
+same output-token cap
+
+Independent variable:
+model (checkpoint/architecture/tokenizer as one model package)
+
+Primary report:
+/home/jfang/llm/results/v2/runs/20260905_180318/model_comparison.md
+[2026-09-05 18:03:20] ===== configuration preflight =====
+[2026-09-05 18:03:20] OK config spark_llama -> bench-spark-llama http://127.0.0.1:8100
+[2026-09-05 18:03:20] OK config qwen_llama -> bench-qwen-llama http://127.0.0.1:8101
+[2026-09-05 18:03:20] ===== runtime-control equivalence =====
+container_A=bench-spark-llama
+container_B=bench-qwen-llama
+image_A=sha256:28f81be4ba34412125fc6ca33a3629e65cb31741496f29f306d03c5a3ac80c52
+image_B=sha256:28f81be4ba34412125fc6ca33a3629e65cb31741496f29f306d03c5a3ac80c52
+
+control	spark	qwen
+ctx_size	9216	9216
+parallel	4	4
+gpu_layers	999	999
+batch_size		
+ubatch_size		
+threads		
+threads_batch		
+cache_k		
+cache_v		
+cache_ram		
+flash_attn		
+kv_unified		
+
+CMD spark:
+--model /bench-models/Spark-X2.5-4B-Q4_K_M.gguf --alias Spark-X2.5-4B-Q4_K_M --host 0.0.0.0 --port 8000 --ctx-size 9216 --parallel 4 --cont-batching --metrics --n-gpu-layers 999
+
+CMD qwen:
+--model /bench-models/Qwen3-4B-Q4_K_M.gguf --alias Qwen3-4B-Q4_K_M --host 0.0.0.0 --port 8000 --ctx-size 9216 --parallel 4 --cont-batching --metrics --n-gpu-layers 999
+[2026-09-05 18:03:20] ===== AIPerf sanity gate =====
+[2026-09-05 18:03:20] sanity arm=spark_llama
+[2026-09-05 18:03:20] sanity arm=spark_llama isl=raw c=1 rep=0
+[2026-09-05 18:03:21] START arm=spark_llama container=bench-spark-llama url=http://127.0.0.1:8100
+[2026-09-05 18:03:32] DONE suite=sanity arm=spark_llama isl=raw c=1 rep=0 status=PASS elapsed=6s rc=0
+[2026-09-05 18:03:38] sanity arm=qwen_llama
+[2026-09-05 18:03:38] sanity arm=qwen_llama isl=raw c=1 rep=0
+[2026-09-05 18:03:40] START arm=qwen_llama container=bench-qwen-llama url=http://127.0.0.1:8101
+[2026-09-05 18:03:51] DONE suite=sanity arm=qwen_llama isl=raw c=1 rep=0 status=PASS elapsed=6s rc=0
+[2026-09-05 18:03:56] AIPerf sanity gate PASS for both models
+[2026-09-05 18:03:56] ===== SHAPE benchmark (token ISL/OSL profiles) =====
+[2026-09-05 18:03:56] shape_short_chat arm=spark_llama isl=128 c=1 rep=1
+[2026-09-05 18:03:57] START arm=spark_llama container=bench-spark-llama url=http://127.0.0.1:8100
+[2026-09-05 18:06:29] DONE suite=shape_short_chat arm=spark_llama isl=128 c=1 rep=1 status=PASS elapsed=146s rc=0
+[2026-09-05 18:06:36] shape profile=short_chat isl=128 osl=128 arm=spark_llama c=1
+[2026-09-05 18:06:36] shape_short_chat arm=qwen_llama isl=128 c=1 rep=1
+[2026-09-05 18:06:36] START arm=qwen_llama container=bench-qwen-llama url=http://127.0.0.1:8101
+[2026-09-05 18:08:48] DONE suite=shape_short_chat arm=qwen_llama isl=128 c=1 rep=1 status=PASS elapsed=126s rc=0
+[2026-09-05 18:08:54] shape profile=short_chat isl=128 osl=128 arm=qwen_llama c=1
+[2026-09-05 18:08:54] shape_short_chat arm=spark_llama isl=128 c=4 rep=1
+[2026-09-05 18:08:55] START arm=spark_llama container=bench-spark-llama url=http://127.0.0.1:8100
+[2026-09-05 18:10:15] DONE suite=shape_short_chat arm=spark_llama isl=128 c=4 rep=1 status=PASS elapsed=75s rc=0
+[2026-09-05 18:10:22] shape profile=short_chat isl=128 osl=128 arm=spark_llama c=4
+[2026-09-05 18:10:22] shape_short_chat arm=qwen_llama isl=128 c=4 rep=1
+[2026-09-05 18:10:23] START arm=qwen_llama container=bench-qwen-llama url=http://127.0.0.1:8101
+[2026-09-05 18:11:31] DONE suite=shape_short_chat arm=qwen_llama isl=128 c=4 rep=1 status=PASS elapsed=63s rc=0
+[2026-09-05 18:11:37] shape profile=short_chat isl=128 osl=128 arm=qwen_llama c=4
+[2026-09-05 18:11:37] shape_balanced arm=spark_llama isl=256 c=1 rep=1
+[2026-09-05 18:11:38] START arm=spark_llama container=bench-spark-llama url=http://127.0.0.1:8100
+[2026-09-05 18:26:56] DONE suite=shape_balanced arm=spark_llama isl=256 c=1 rep=1 status=TIMEOUT elapsed=911s rc=124
+[2026-09-05 18:26:56] AIPERF FAILED. Last 120 lines from /home/jfang/llm/results/v2/runs/20260905_180318/shape_balanced/spark_llama/isl_256/c_1/rep_1/aiperf.log:
+[2026-09-05 18:26:58] shape profile=balanced isl=256 osl=256 arm=spark_llama c=1
+[2026-09-05 18:26:58] shape_balanced arm=qwen_llama isl=256 c=1 rep=1
+[2026-09-05 18:26:59] START arm=qwen_llama container=bench-qwen-llama url=http://127.0.0.1:8101
+[2026-09-05 18:31:10] DONE suite=shape_balanced arm=qwen_llama isl=256 c=1 rep=1 status=PASS elapsed=245s rc=0
+[2026-09-05 18:31:17] shape profile=balanced isl=256 osl=256 arm=qwen_llama c=1
+[2026-09-05 18:31:17] shape_balanced arm=spark_llama isl=256 c=4 rep=1
+[2026-09-05 18:31:17] START arm=spark_llama container=bench-spark-llama url=http://127.0.0.1:8100
+[2026-09-05 18:37:10] DONE suite=shape_balanced arm=spark_llama isl=256 c=4 rep=1 status=UNSTABLE elapsed=348s rc=0
+[2026-09-05 18:37:17] shape profile=balanced isl=256 osl=256 arm=spark_llama c=4
+[2026-09-05 18:37:17] shape_balanced arm=qwen_llama isl=256 c=4 rep=1
+[2026-09-05 18:37:18] START arm=qwen_llama container=bench-qwen-llama url=http://127.0.0.1:8101
+[2026-09-05 18:39:22] DONE suite=shape_balanced arm=qwen_llama isl=256 c=4 rep=1 status=PASS elapsed=119s rc=0
+[2026-09-05 18:39:29] shape profile=balanced isl=256 osl=256 arm=qwen_llama c=4
+[2026-09-05 18:39:29] shape_summarization arm=spark_llama isl=512 c=1 rep=1
+[2026-09-05 18:39:30] START arm=spark_llama container=bench-spark-llama url=http://127.0.0.1:8100
+[2026-09-05 18:54:40] DONE suite=shape_summarization arm=spark_llama isl=512 c=1 rep=1 status=TIMEOUT elapsed=901s rc=124
+[2026-09-05 18:54:40] AIPERF FAILED. Last 120 lines from /home/jfang/llm/results/v2/runs/20260905_180318/shape_summarization/spark_llama/isl_512/c_1/rep_1/aiperf.log:
+[2026-09-05 18:54:42] shape profile=summarization isl=512 osl=128 arm=spark_llama c=1
+[2026-09-05 18:54:42] shape_summarization arm=qwen_llama isl=512 c=1 rep=1
+[2026-09-05 18:54:43] START arm=qwen_llama container=bench-qwen-llama url=http://127.0.0.1:8101
+[2026-09-05 18:57:10] DONE suite=shape_summarization arm=qwen_llama isl=512 c=1 rep=1 status=PASS elapsed=142s rc=0
+[2026-09-05 18:57:17] shape profile=summarization isl=512 osl=128 arm=qwen_llama c=1
+[2026-09-05 18:57:17] shape_summarization arm=spark_llama isl=512 c=4 rep=1
+[2026-09-05 18:57:18] START arm=spark_llama container=bench-spark-llama url=http://127.0.0.1:8100
+[2026-09-05 18:59:13] DONE suite=shape_summarization arm=spark_llama isl=512 c=4 rep=1 status=UNSTABLE elapsed=109s rc=0
+[2026-09-05 18:59:18] shape profile=summarization isl=512 osl=128 arm=spark_llama c=4
+[2026-09-05 18:59:18] shape_summarization arm=qwen_llama isl=512 c=4 rep=1
+[2026-09-05 18:59:19] START arm=qwen_llama container=bench-qwen-llama url=http://127.0.0.1:8101
+[2026-09-05 19:00:43] DONE suite=shape_summarization arm=qwen_llama isl=512 c=4 rep=1 status=PASS elapsed=79s rc=0
+[2026-09-05 19:00:50] shape profile=summarization isl=512 osl=128 arm=qwen_llama c=4
+[2026-09-05 19:00:50] shape_rag_medium arm=spark_llama isl=1024 c=1 rep=1
+[2026-09-05 19:00:51] START arm=spark_llama container=bench-spark-llama url=http://127.0.0.1:8100
+[2026-09-05 19:06:17] DONE suite=shape_rag_medium arm=spark_llama isl=1024 c=1 rep=1 status=UNSTABLE elapsed=320s rc=0
+[2026-09-05 19:06:22] shape profile=rag_medium isl=1024 osl=128 arm=spark_llama c=1
+[2026-09-05 19:06:22] shape_rag_medium arm=qwen_llama isl=1024 c=1 rep=1
+[2026-09-05 19:06:22] START arm=qwen_llama container=bench-qwen-llama url=http://127.0.0.1:8101
+[2026-09-05 19:19:58] DONE suite=shape_rag_medium arm=qwen_llama isl=1024 c=1 rep=1 status=UNSTABLE elapsed=810s rc=0
+[2026-09-05 19:20:03] shape profile=rag_medium isl=1024 osl=128 arm=qwen_llama c=1
+[2026-09-05 19:20:03] shape_rag_medium arm=spark_llama isl=1024 c=4 rep=1
+[2026-09-05 19:20:04] START arm=spark_llama container=bench-spark-llama url=http://127.0.0.1:8100
+[2026-09-05 19:29:25] DONE suite=shape_rag_medium arm=spark_llama isl=1024 c=4 rep=1 status=UNSTABLE elapsed=555s rc=0
+[2026-09-05 19:29:30] shape profile=rag_medium isl=1024 osl=128 arm=spark_llama c=4
+[2026-09-05 19:29:30] shape_rag_medium arm=qwen_llama isl=1024 c=4 rep=1
+[2026-09-05 19:29:31] START arm=qwen_llama container=bench-qwen-llama url=http://127.0.0.1:8101
+[2026-09-05 19:40:18] DONE suite=shape_rag_medium arm=qwen_llama isl=1024 c=4 rep=1 status=UNSTABLE elapsed=642s rc=0
+[2026-09-05 19:40:23] shape profile=rag_medium isl=1024 osl=128 arm=qwen_llama c=4
+[2026-09-05 19:40:23] shape_generation arm=spark_llama isl=128 c=1 rep=1
+[2026-09-05 19:40:24] START arm=spark_llama container=bench-spark-llama url=http://127.0.0.1:8100
+[2026-09-05 19:49:24] DONE suite=shape_generation arm=spark_llama isl=128 c=1 rep=1 status=PASS elapsed=534s rc=0
+[2026-09-05 19:49:31] shape profile=generation isl=128 osl=512 arm=spark_llama c=1
+[2026-09-05 19:49:31] shape_generation arm=qwen_llama isl=128 c=1 rep=1
+[2026-09-05 19:49:31] START arm=qwen_llama container=bench-qwen-llama url=http://127.0.0.1:8101
+[2026-09-05 19:57:25] DONE suite=shape_generation arm=qwen_llama isl=128 c=1 rep=1 status=PASS elapsed=468s rc=0
+[2026-09-05 19:57:32] shape profile=generation isl=128 osl=512 arm=qwen_llama c=1
+[2026-09-05 19:57:32] shape_generation arm=spark_llama isl=128 c=4 rep=1
+[2026-09-05 19:57:33] START arm=spark_llama container=bench-spark-llama url=http://127.0.0.1:8100
+[2026-09-05 20:01:56] DONE suite=shape_generation arm=spark_llama isl=128 c=4 rep=1 status=PASS elapsed=257s rc=0
+[2026-09-05 20:02:03] shape profile=generation isl=128 osl=512 arm=spark_llama c=4
+[2026-09-05 20:02:03] shape_generation arm=qwen_llama isl=128 c=4 rep=1
+[2026-09-05 20:02:03] START arm=qwen_llama container=bench-qwen-llama url=http://127.0.0.1:8101
+[2026-09-05 20:05:42] DONE suite=shape_generation arm=qwen_llama isl=128 c=4 rep=1 status=PASS elapsed=213s rc=0
+[2026-09-05 20:05:49] shape profile=generation isl=128 osl=512 arm=qwen_llama c=4
+[2026-09-05 20:05:49] manifest=/home/jfang/llm/results/v2/runs/20260905_180318/manifest.json
+[2026-09-05 20:05:49] ===== shape complete =====
+[2026-09-05 20:05:49] repeats=/home/jfang/llm/results/v2/runs/20260905_180318/repeats.tsv
+[2026-09-05 20:05:49] aggregate=/home/jfang/llm/results/v2/runs/20260905_180318/aggregate.tsv
+[2026-09-05 20:05:49] resource_summary=/home/jfang/llm/results/v2/runs/20260905_180318/resource_summary.tsv
+[2026-09-05 20:05:49] manifest=/home/jfang/llm/results/v2/runs/20260905_180318/manifest.json

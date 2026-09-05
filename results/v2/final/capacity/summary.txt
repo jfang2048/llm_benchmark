@@ -1,0 +1,118 @@
+Controlled MODEL diagnostic benchmark
+Run=20260905_151020 Mode=capacity
+AIPerf=0.12.0
+GPU=NVIDIA GeForce RTX 3060 Laptop GPU, 610.74, 6144 MiB
+Requests=60 Warmup=5 Repeats=1 OSL=128 Seed=42
+Concurrency=1 2 3 4 6 8
+
+Primary comparison:
+Spark-X2.5-4B-Q4_K_M vs Qwen3-4B-Q4_K_M
+
+Controlled:
+engine=llama.cpp
+quantization=Q4_K_M
+same GPU
+same raw prompt bytes and order
+same sampling parameters
+same concurrency
+same output-token cap
+
+Independent variable:
+model (checkpoint/architecture/tokenizer as one model package)
+
+Primary report:
+/home/jfang/llm/results/v2/runs/20260905_151020/model_comparison.md
+[2026-09-05 15:10:22] ===== configuration preflight =====
+[2026-09-05 15:10:22] OK config spark_llama -> bench-spark-llama http://127.0.0.1:8100
+[2026-09-05 15:10:22] OK config qwen_llama -> bench-qwen-llama http://127.0.0.1:8101
+[2026-09-05 15:10:22] ===== runtime-control equivalence =====
+container_A=bench-spark-llama
+container_B=bench-qwen-llama
+image_A=sha256:28f81be4ba34412125fc6ca33a3629e65cb31741496f29f306d03c5a3ac80c52
+image_B=sha256:28f81be4ba34412125fc6ca33a3629e65cb31741496f29f306d03c5a3ac80c52
+
+control	spark	qwen
+ctx_size	9216	9216
+parallel	4	4
+gpu_layers	999	999
+batch_size		
+ubatch_size		
+threads		
+threads_batch		
+cache_k		
+cache_v		
+cache_ram		
+flash_attn		
+kv_unified		
+
+CMD spark:
+--model /bench-models/Spark-X2.5-4B-Q4_K_M.gguf --alias Spark-X2.5-4B-Q4_K_M --host 0.0.0.0 --port 8000 --ctx-size 9216 --parallel 4 --cont-batching --metrics --n-gpu-layers 999
+
+CMD qwen:
+--model /bench-models/Qwen3-4B-Q4_K_M.gguf --alias Qwen3-4B-Q4_K_M --host 0.0.0.0 --port 8000 --ctx-size 9216 --parallel 4 --cont-batching --metrics --n-gpu-layers 999
+[2026-09-05 15:10:22] ===== AIPerf sanity gate =====
+[2026-09-05 15:10:22] sanity arm=spark_llama
+[2026-09-05 15:10:22] sanity arm=spark_llama isl=raw c=1 rep=0
+[2026-09-05 15:10:22] START arm=spark_llama container=bench-spark-llama url=http://127.0.0.1:8100
+[2026-09-05 15:10:37] DONE suite=sanity arm=spark_llama isl=raw c=1 rep=0 status=PASS elapsed=7s rc=0
+[2026-09-05 15:10:42] sanity arm=qwen_llama
+[2026-09-05 15:10:43] sanity arm=qwen_llama isl=raw c=1 rep=0
+[2026-09-05 15:10:43] START arm=qwen_llama container=bench-qwen-llama url=http://127.0.0.1:8101
+[2026-09-05 15:10:54] DONE suite=sanity arm=qwen_llama isl=raw c=1 rep=0 status=PASS elapsed=6s rc=0
+[2026-09-05 15:11:03] AIPerf sanity gate PASS for both models
+[2026-09-05 15:11:03] ===== CAPACITY benchmark (closed-loop adaptive sweep) =====
+[2026-09-05 15:11:03] capacity arm=spark_llama isl=raw c=1 rep=1
+[2026-09-05 15:11:03] START arm=spark_llama container=bench-spark-llama url=http://127.0.0.1:8100
+[2026-09-05 15:13:26] DONE suite=capacity arm=spark_llama isl=raw c=1 rep=1 status=PASS elapsed=138s rc=0
+[2026-09-05 15:13:32] capacity arm=spark_llama c=1 success_rate=100.0000% vram=3439.0000MiB temp=73.0000C
+[2026-09-05 15:13:32] capacity arm=qwen_llama isl=raw c=1 rep=1
+[2026-09-05 15:13:33] START arm=qwen_llama container=bench-qwen-llama url=http://127.0.0.1:8101
+[2026-09-05 15:15:38] DONE suite=capacity arm=qwen_llama isl=raw c=1 rep=1 status=PASS elapsed=121s rc=0
+[2026-09-05 15:15:44] capacity arm=qwen_llama c=1 success_rate=100.0000% vram=3881.0000MiB temp=77.0000C
+[2026-09-05 15:15:44] capacity arm=spark_llama isl=raw c=2 rep=1
+[2026-09-05 15:15:45] START arm=spark_llama container=bench-spark-llama url=http://127.0.0.1:8100
+[2026-09-05 15:17:16] DONE suite=capacity arm=spark_llama isl=raw c=2 rep=1 status=PASS elapsed=85s rc=0
+[2026-09-05 15:17:24] capacity arm=spark_llama c=2 success_rate=100.0000% vram=3441.0000MiB temp=77.0000C
+[2026-09-05 15:17:24] capacity arm=qwen_llama isl=raw c=2 rep=1
+[2026-09-05 15:17:25] START arm=qwen_llama container=bench-qwen-llama url=http://127.0.0.1:8101
+[2026-09-05 15:19:59] DONE suite=capacity arm=qwen_llama isl=raw c=2 rep=1 status=PASS elapsed=148s rc=0
+[2026-09-05 15:20:05] capacity arm=qwen_llama c=2 success_rate=100.0000% vram=3885.0000MiB temp=79.0000C
+[2026-09-05 15:20:05] capacity arm=spark_llama isl=raw c=3 rep=1
+[2026-09-05 15:20:05] START arm=spark_llama container=bench-spark-llama url=http://127.0.0.1:8100
+[2026-09-05 15:21:27] DONE suite=capacity arm=spark_llama isl=raw c=3 rep=1 status=PASS elapsed=77s rc=0
+[2026-09-05 15:21:34] capacity arm=spark_llama c=3 success_rate=100.0000% vram=3441.0000MiB temp=78.0000C
+[2026-09-05 15:21:34] capacity arm=qwen_llama isl=raw c=3 rep=1
+[2026-09-05 15:21:34] START arm=qwen_llama container=bench-qwen-llama url=http://127.0.0.1:8101
+[2026-09-05 15:23:34] DONE suite=capacity arm=qwen_llama isl=raw c=3 rep=1 status=PASS elapsed=115s rc=0
+[2026-09-05 15:23:40] capacity arm=qwen_llama c=3 success_rate=100.0000% vram=3885.0000MiB temp=78.0000C
+[2026-09-05 15:23:40] capacity arm=spark_llama isl=raw c=4 rep=1
+[2026-09-05 15:23:41] START arm=spark_llama container=bench-spark-llama url=http://127.0.0.1:8100
+[2026-09-05 15:24:56] DONE suite=capacity arm=spark_llama isl=raw c=4 rep=1 status=PASS elapsed=68s rc=0
+[2026-09-05 15:25:02] capacity arm=spark_llama c=4 success_rate=100.0000% vram=3441.0000MiB temp=78.0000C
+[2026-09-05 15:25:02] capacity arm=qwen_llama isl=raw c=4 rep=1
+[2026-09-05 15:25:03] START arm=qwen_llama container=bench-qwen-llama url=http://127.0.0.1:8101
+[2026-09-05 15:26:06] DONE suite=capacity arm=qwen_llama isl=raw c=4 rep=1 status=PASS elapsed=58s rc=0
+[2026-09-05 15:26:12] capacity arm=qwen_llama c=4 success_rate=100.0000% vram=3885.0000MiB temp=77.0000C
+[2026-09-05 15:26:12] capacity arm=spark_llama isl=raw c=6 rep=1
+[2026-09-05 15:26:13] START arm=spark_llama container=bench-spark-llama url=http://127.0.0.1:8100
+[2026-09-05 15:27:26] DONE suite=capacity arm=spark_llama isl=raw c=6 rep=1 status=PASS elapsed=69s rc=0
+[2026-09-05 15:27:32] capacity arm=spark_llama c=6 success_rate=100.0000% vram=3441.0000MiB temp=77.0000C
+[2026-09-05 15:27:32] capacity arm=qwen_llama isl=raw c=6 rep=1
+[2026-09-05 15:27:32] START arm=qwen_llama container=bench-qwen-llama url=http://127.0.0.1:8101
+[2026-09-05 15:28:35] DONE suite=capacity arm=qwen_llama isl=raw c=6 rep=1 status=PASS elapsed=58s rc=0
+[2026-09-05 15:28:41] capacity arm=qwen_llama c=6 success_rate=100.0000% vram=3885.0000MiB temp=77.0000C
+[2026-09-05 15:28:41] capacity arm=spark_llama isl=raw c=8 rep=1
+[2026-09-05 15:28:42] START arm=spark_llama container=bench-spark-llama url=http://127.0.0.1:8100
+[2026-09-05 15:29:55] DONE suite=capacity arm=spark_llama isl=raw c=8 rep=1 status=PASS elapsed=69s rc=0
+[2026-09-05 15:30:01] capacity arm=spark_llama c=8 success_rate=100.0000% vram=3441.0000MiB temp=77.0000C
+[2026-09-05 15:30:01] capacity arm=qwen_llama isl=raw c=8 rep=1
+[2026-09-05 15:30:02] START arm=qwen_llama container=bench-qwen-llama url=http://127.0.0.1:8101
+[2026-09-05 15:31:05] DONE suite=capacity arm=qwen_llama isl=raw c=8 rep=1 status=PASS elapsed=55s rc=0
+[2026-09-05 15:31:11] capacity arm=qwen_llama c=8 success_rate=100.0000% vram=3885.0000MiB temp=77.0000C
+[2026-09-05 15:31:11] capacity sweep completed without a stop condition.
+[2026-09-05 15:31:11] manifest=/home/jfang/llm/results/v2/runs/20260905_151020/manifest.json
+[2026-09-05 15:31:11] ===== capacity complete =====
+[2026-09-05 15:31:11] repeats=/home/jfang/llm/results/v2/runs/20260905_151020/repeats.tsv
+[2026-09-05 15:31:11] aggregate=/home/jfang/llm/results/v2/runs/20260905_151020/aggregate.tsv
+[2026-09-05 15:31:11] resource_summary=/home/jfang/llm/results/v2/runs/20260905_151020/resource_summary.tsv
+[2026-09-05 15:31:11] manifest=/home/jfang/llm/results/v2/runs/20260905_151020/manifest.json

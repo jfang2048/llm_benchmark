@@ -1,0 +1,7 @@
+arm	rep	process_to_api_ready_ms	api_ready_to_first_token_ms
+spark_llama	1	3242	9.9
+spark_llama	2	2631	10.1
+spark_llama	3	2459	10.3
+qwen_llama	1	2962	6.3
+qwen_llama	2	2441	6.3
+qwen_llama	3	2396	5.7

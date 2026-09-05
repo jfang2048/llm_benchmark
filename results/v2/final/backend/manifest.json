@@ -1,0 +1,36 @@
+{
+  "run_id": "20260905_144103",
+  "mode": "backend",
+  "git_commit": "45f8d4902ac12bfe86111d256faee85f1d02a38f",
+  "models": [
+    "Spark-X2.5-4B-Q4_K_M",
+    "Qwen3-4B-Q4_K_M"
+  ],
+  "model_sha256": {
+    "Spark-X2.5-4B-Q4_K_M.gguf": "7934660bfc5b9bf04be0a0ac6179a1d16e1d4331b448857c86b8b2801b3ef72c",
+    "Qwen3-4B-Q4_K_M.gguf": "7485fe6f11af29433bc51cab58009521f205840f5b4ae3a32fa7f92e8534fdf5"
+  },
+  "aiperf_version": "0.12.0",
+  "gpu": "NVIDIA GeForce RTX 3060 Laptop GPU, 610.74, 6144",
+  "serving_flags": [
+    "--ctx-size",
+    "9216",
+    "--parallel",
+    "4",
+    "--cont-batching",
+    "--metrics",
+    "--n-gpu-layers",
+    "999"
+  ],
+  "workload_sha256": "294866ca6a5c118b52f34d0e97a7facc625d2e1b5cfb859fa7a8e348bae91263",
+  "config": {
+    "connection_reuse": "never",
+    "temperature": 0,
+    "ignore_eos": true,
+    "cache_prompt": false,
+    "requests_per_cell": "4",
+    "output_tokens": "128",
+    "seed": "42"
+  },
+  "generated_at": "2026-09-05T12:47:38.142291+00:00"
+}

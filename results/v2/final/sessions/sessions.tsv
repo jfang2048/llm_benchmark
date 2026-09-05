@@ -1,0 +1,7 @@
+arm	cache_prompt	turn	requests	ttft_mean_ms	ttft_p50_ms
+qwen_llama	false	0	20	484.52	493.99
+qwen_llama	false	1	20	481.30	478.89
+qwen_llama	false	2	20	712.83	713.63
+spark_llama	false	0	20	538.88	517.07
+spark_llama	false	1	20	615.54	583.08
+spark_llama	false	2	20	904.56	855.71

@@ -1,0 +1,5 @@
+arm	suite	isl	concurrency	repeat	peak_vram_mib	peak_power_w	avg_gpu_util_pct	peak_temp_c	gpu_energy_j	gpu_j_per_request	gpu_j_per_output_token
+qwen_llama	sanity	raw	1	0	3881.0000	35.3700	7.5000	50.0000	155.7850	155.7850	9.7366
+qwen_vllm_gguf	sanity	raw	1	0	5101.0000	62.4700	35.1667	57.0000	285.4650	285.4650	17.8416
+qwen_llama	backend	raw	1	1	3881.0000	82.0100	65.6750	64.0000	1191.2100	297.8025	2.3266
+qwen_vllm_gguf	backend	raw	1	1	5099.0000	76.3400	93.8060	69.0000	6197.4050	1549.3512	12.1043

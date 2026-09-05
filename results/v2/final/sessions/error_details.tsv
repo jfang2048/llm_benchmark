@@ -1,0 +1,3 @@
+arm	suite	concurrency	repeat	error_type	count	sample
+spark_llama	sessions	1	1	OtherError	20	{"code": 400, "message": "{\"error\":{\"code\":400,\"message\":\"request (2551 tokens) exceeds the available context size (2304 tokens), try increasing it\",\"type\":\"exceed_context_size_error\",\"n_prompt_tokens\":2551,\"n_ctx\":2304}}", "type": "Bad Request"}
+qwen_llama	sessions	1	1	OtherError	20	{"code": 400, "message": "{\"error\":{\"code\":400,\"message\":\"request (2458 tokens) exceeds the available context size (2304 tokens), try increasing it\",\"type\":\"exceed_context_size_error\",\"n_prompt_tokens\":2458,\"n_ctx\":2304}}", "type": "Bad Request"}

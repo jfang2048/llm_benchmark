@@ -1,0 +1,51 @@
+Controlled MODEL diagnostic benchmark
+Run=20260905_144103 Mode=backend
+AIPerf=0.12.0
+GPU=NVIDIA GeForce RTX 3060 Laptop GPU, 610.74, 6144 MiB
+Requests=4 Warmup=5 Repeats=1 OSL=128 Seed=42
+Concurrency=1
+
+Primary comparison:
+Spark-X2.5-4B-Q4_K_M vs Qwen3-4B-Q4_K_M
+
+Controlled:
+engine=llama.cpp
+quantization=Q4_K_M
+same GPU
+same raw prompt bytes and order
+same sampling parameters
+same concurrency
+same output-token cap
+
+Independent variable:
+model (checkpoint/architecture/tokenizer as one model package)
+
+Primary report:
+/home/jfang/llm/results/v2/runs/20260905_144103/model_comparison.md
+[2026-09-05 14:41:04] ===== configuration preflight =====
+[2026-09-05 14:41:04] OK config qwen_llama -> bench-qwen-llama http://127.0.0.1:8101
+[2026-09-05 14:41:04] OK config qwen_vllm_gguf -> bench-qwen-vllm-gguf http://127.0.0.1:8102
+[2026-09-05 14:41:04] backend mode: same-engine runtime-control equivalence skipped (engines differ by design)
+[2026-09-05 14:41:04] ===== AIPerf sanity gate =====
+[2026-09-05 14:41:04] sanity arm=qwen_llama
+[2026-09-05 14:41:04] sanity arm=qwen_llama isl=raw c=1 rep=0
+[2026-09-05 14:41:05] START arm=qwen_llama container=bench-qwen-llama url=http://127.0.0.1:8101
+[2026-09-05 14:41:19] DONE suite=sanity arm=qwen_llama isl=raw c=1 rep=0 status=PASS elapsed=6s rc=0
+[2026-09-05 14:41:21] sanity arm=qwen_vllm_gguf
+[2026-09-05 14:41:21] sanity arm=qwen_vllm_gguf isl=raw c=1 rep=0
+[2026-09-05 14:41:22] START arm=qwen_vllm_gguf container=bench-qwen-vllm-gguf url=http://127.0.0.1:8102
+[2026-09-05 14:43:14] DONE suite=sanity arm=qwen_vllm_gguf isl=raw c=1 rep=0 status=PASS elapsed=9s rc=0
+[2026-09-05 14:43:20] AIPerf sanity gate PASS for both models
+[2026-09-05 14:43:20] ===== BACKEND benchmark (llama.cpp vs vLLM+GGUF, same Qwen GGUF) =====
+[2026-09-05 14:43:20] backend arm=qwen_llama isl=raw c=1 rep=1
+[2026-09-05 14:43:20] START arm=qwen_llama container=bench-qwen-llama url=http://127.0.0.1:8101
+[2026-09-05 14:43:48] DONE suite=backend arm=qwen_llama isl=raw c=1 rep=1 status=PASS elapsed=23s rc=0
+[2026-09-05 14:43:51] backend arm=qwen_vllm_gguf isl=raw c=1 rep=1
+[2026-09-05 14:43:52] START arm=qwen_vllm_gguf container=bench-qwen-vllm-gguf url=http://127.0.0.1:8102
+[2026-09-05 14:47:27] DONE suite=backend arm=qwen_vllm_gguf isl=raw c=1 rep=1 status=PASS elapsed=109s rc=0
+[2026-09-05 14:47:38] manifest=/home/jfang/llm/results/v2/runs/20260905_144103/manifest.json
+[2026-09-05 14:47:38] ===== backend complete =====
+[2026-09-05 14:47:38] repeats=/home/jfang/llm/results/v2/runs/20260905_144103/repeats.tsv
+[2026-09-05 14:47:38] aggregate=/home/jfang/llm/results/v2/runs/20260905_144103/aggregate.tsv
+[2026-09-05 14:47:38] resource_summary=/home/jfang/llm/results/v2/runs/20260905_144103/resource_summary.tsv
+[2026-09-05 14:47:38] manifest=/home/jfang/llm/results/v2/runs/20260905_144103/manifest.json
