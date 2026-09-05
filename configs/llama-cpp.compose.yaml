@@ -1,0 +1,39 @@
+# Everyday llama.cpp deployment (Spark-X2.5-4B). This is the primary
+# comparison arm's reference deployment; the benchmark itself uses the
+# isolated containers created by scripts/deploy.sh on ports 8100-8103.
+name: spark-llamacpp
+
+services:
+  spark-x25:
+    build:
+      context: ../docker/llama-cpp
+    image: spark-x25-llama:cuda13
+    container_name: spark-x25
+    restart: unless-stopped
+
+    gpus: all
+
+    ports:
+      - "127.0.0.1:8000:8000"
+
+    volumes:
+      - ../models:/models:ro
+
+    command:
+      - --model
+      - /models/Spark-X2.5-4B-Q4_K_M.gguf
+      - --alias
+      - Spark-X2.5-4B
+      - --host
+      - 0.0.0.0
+      - --port
+      - "8000"
+      - --ctx-size
+      - "8192"
+      - --parallel
+      - "4"
+      - --cont-batching
+      - --metrics
+      - --n-gpu-layers
+      - "999"
+      - --flash-attn

@@ -1,0 +1,54 @@
+groups:
+  - name: vllm
+    interval: 5s
+    rules:
+
+      - alert: VLLMDown
+        expr: up{job="vllm"} == 0
+        for: 30s
+        labels:
+          severity: critical
+        annotations:
+          summary: "vLLM inference service is down"
+          description: "Prometheus cannot scrape the vLLM metrics endpoint for 30 seconds."
+
+      - alert: VLLMRequestsWaiting
+        expr: vllm:num_requests_waiting > 0
+        for: 30s
+        labels:
+          severity: warning
+        annotations:
+          summary: "Requests are queueing in vLLM"
+          description: "vLLM has requests waiting for scheduler capacity."
+
+      - alert: VLLMHighTTFT
+        expr: |
+          histogram_quantile(
+            0.99,
+            sum by (le) (
+              rate(vllm:time_to_first_token_seconds_bucket[30s])
+            )
+          ) > 0.5
+        for: 30s
+        labels:
+          severity: warning
+        annotations:
+          summary: "vLLM P99 TTFT is high"
+          description: "P99 time-to-first-token has exceeded 500 ms."
+
+      - alert: VLLMHighKVCacheUsage
+        expr: vllm:kv_cache_usage_perc > 0.85
+        for: 30s
+        labels:
+          severity: warning
+        annotations:
+          summary: "vLLM KV cache usage is high"
+          description: "KV cache utilization has remained above 85%."
+
+      - alert: VLLMPreemption
+        expr: increase(vllm:num_preemptions[5m]) > 0
+        labels:
+          severity: warning
+        annotations:
+          summary: "vLLM request preemption detected"
+          description: "At least one vLLM preemption occurred during the last five minutes."

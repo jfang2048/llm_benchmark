@@ -1,0 +1,105 @@
+# Observability stack for the vLLM deployment (Prometheus + Alertmanager +
+# Grafana + node_exporter + cAdvisor). Secondary infrastructure: the core
+# benchmark does not require it.
+name: llm-observability
+
+services:
+  prometheus:
+    image: prom/prometheus:v3.13.1
+    container_name: prometheus
+    restart: unless-stopped
+
+    depends_on:
+      - alertmanager
+
+    ports:
+      - "127.0.0.1:9090:9090"
+
+    volumes:
+      - ../monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ../monitoring/alerts:/etc/prometheus/rules:ro
+      - prometheus-data:/prometheus
+
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=7d
+      - --web.enable-lifecycle
+
+  alertmanager:
+    image: prom/alertmanager:v0.32.1
+    container_name: alertmanager
+    restart: unless-stopped
+
+    ports:
+      - "127.0.0.1:9093:9093"
+
+    volumes:
+      - ../monitoring/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+      - alertmanager-data:/alertmanager
+
+    command:
+      - --config.file=/etc/alertmanager/alertmanager.yml
+      - --storage.path=/alertmanager
+
+  grafana:
+    image: grafana/grafana:13.1.0
+    container_name: grafana
+    restart: unless-stopped
+
+    depends_on:
+      - prometheus
+
+    ports:
+      - "127.0.0.1:3000:3000"
+
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ../monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ../monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+
+  node-exporter:
+    image: quay.io/prometheus/node-exporter:v1.11.1
+    container_name: node-exporter
+    restart: unless-stopped
+
+    network_mode: host
+    pid: host
+
+    volumes:
+      - /:/host:ro
+      - /var/lib/node_exporter/textfile_collector:/textfile:ro
+
+    command:
+      - --path.rootfs=/host
+      - --collector.textfile.directory=/textfile
+      - --collector.filesystem.mount-points-exclude=^/(dev|proc|sys|run|var/lib/docker/.+|mnt/[a-z])($$|/)
+
+  cadvisor:
+    image: ghcr.io/google/cadvisor:v0.60.5
+    container_name: cadvisor
+    restart: unless-stopped
+    privileged: true
+
+    ports:
+      - "127.0.0.1:8080:8080"
+
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker:/var/lib/docker:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+
+volumes:
+  prometheus-data:
+  alertmanager-data:
+  grafana-data:

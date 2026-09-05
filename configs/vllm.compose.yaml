@@ -1,0 +1,50 @@
+# Everyday vLLM deployment (Qwen3 family). Secondary backend used for the
+# engine-comparison context of the benchmark.
+name: llm-inference
+
+services:
+  vllm:
+    image: vllm/vllm-openai:v0.26.0
+    container_name: vllm
+    restart: unless-stopped
+
+    gpus: all
+    ipc: host
+
+    ports:
+      - "127.0.0.1:${VLLM_HOST_PORT:-8001}:8000"
+
+    volumes:
+      - ../.cache/huggingface:/root/.cache/huggingface
+      - ../.cache/vllm:/root/.cache/vllm
+
+    env_file:
+      - ../.env
+
+    command:
+      - ${MODEL_ID}
+      - --max-model-len
+      - "4096"
+      - --gpu-memory-utilization
+      - "0.80"
+      - --max-num-seqs
+      - "4"
+      - --generation-config
+      - vllm
+      - --reasoning-parser
+      - qwen3
+      - --default-chat-template-kwargs
+      - '{"enable_thinking": false}'
+      - --api-key
+      - ${VLLM_API_KEY}
+
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "python3 -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=2)\""
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 180s
