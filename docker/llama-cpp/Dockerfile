@@ -4,9 +4,10 @@
 # support (upstream llama.cpp does not yet support it). CUDA arch 86 targets
 # the Ampere RTX 3060 Laptop GPU used in this benchmark.
 #
-# Pin note: the fork is pulled from its default branch at build time. For
-# bit-exact reproduction, record the resulting image digest (see
-# benchmark/cross_bench_provenance.txt) after building.
+# The fork is PINNED to a specific commit for reproducible builds. Divergence
+# from upstream ggml-org/llama.cpp at this commit: 15 commits ahead (Spark2_5
+# arch + tokenizer + chat template + function-calling parser, ~18 files),
+# 321 commits behind. See docs/engine.md.
 FROM nvidia/cuda:13.3.1-devel-ubuntu24.04
 
 ENV DEBIAN_FRONTEND=noninteractive
@@ -21,9 +22,10 @@ RUN apt-get update && apt-get install -y \
 
 WORKDIR /src
 
-# XHToken/llama.cpp: includes Spark-X2.5 architecture support.
+# XHToken/llama.cpp pinned commit (2026-09-04): includes Spark-X2.5 arch.
+ARG LLAMA_CPP_COMMIT=4a3635c32fc9f044c2bde9ebeabf50c7e1ec5991
 RUN curl -L \
-    https://github.com/XHToken/llama.cpp/archive/refs/heads/master.tar.gz \
+    "https://github.com/XHToken/llama.cpp/archive/${LLAMA_CPP_COMMIT}.tar.gz" \
     -o llama.tar.gz \
     && tar -xzf llama.tar.gz --strip-components=1 \
     && rm llama.tar.gz
