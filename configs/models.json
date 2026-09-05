@@ -61,6 +61,26 @@
       "enabled": false,
       "primary_cohort": true,
       "notes": "Onboarding GGUF from bartowski (community) for smoke test; final ranking re-quantizes from the official checkpoint. Not yet smoke-tested (GPU busy)."
+    },
+    {
+      "id": "gemma3_4b",
+      "display_name": "Gemma 3 4B (text-only)",
+      "arm": "gemma3_4b",
+      "upstream_repo": "ggml-org/gemma-3-4b-it-GGUF",
+      "family": "Gemma 3",
+      "parameter_count": 3880099328,
+      "parameter_count_note": "3.88B text-only, counted from GGUF tensors (vision encoder not loaded)",
+      "architecture": "dense GQA, 5:1 local/global attention (gemma3)",
+      "dense_or_moe": "dense",
+      "context_length": 131072,
+      "license": "Gemma Terms of Use",
+      "gguf_filename": "gemma-3-4b-it-Q4_K_M.gguf",
+      "quantization": "Q4_K_M",
+      "sha256": "882e8d2db44dc554fb0ea5077cb7e4bc49e7342a1f0da57901c0802ea21a0863",
+      "chat_template_strategy": "chat",
+      "enabled": false,
+      "primary_cohort": true,
+      "notes": "Official ggml-org GGUF, text generation only (no vision projector). Not yet smoke-tested (GPU busy)."
     }
   ],
   "engine_comparison_arms": [
