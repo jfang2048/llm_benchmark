@@ -22,6 +22,8 @@ VLLM_BASE_IMAGE="${VLLM_BASE_IMAGE:-vllm/vllm-openai:v0.26.0}"
 VLLM_GGUF_IMAGE="${VLLM_GGUF_IMAGE:-vllm-openai-gguf:v0.26.0}"
 QWEN_GGUF="${QWEN_GGUF_FILE:-Qwen3-4B-Q4_K_M.gguf}"
 SPARK_GGUF="${SPARK_GGUF_FILE:-Spark-X2.5-4B-Q4_K_M.gguf}"
+PHI4_GGUF="${PHI4_GGUF_FILE:-microsoft_Phi-4-mini-instruct-Q4_K_M.gguf}"
+GEMMA_GGUF="${GEMMA_GGUF_FILE:-gemma-3-4b-it-Q4_K_M.gguf}"
 
 PER_REQUEST_CTX="${PER_REQUEST_CTX:-2304}"
 MAX_CONCURRENCY="${MAX_CONCURRENCY:-4}"
@@ -35,7 +37,8 @@ need docker
 [[ -s "$MODEL_DIR/$SPARK_GGUF" ]] || { echo "ERROR: $MODEL_DIR/$SPARK_GGUF missing — see models/README.md" >&2; exit 2; }
 
 # Remove any previous instances so `docker create` cannot fail on name clash.
-for c in bench-spark-llama bench-qwen-llama bench-qwen-vllm-gguf bench-qwen-vllm-awq; do
+for c in bench-spark-llama bench-qwen-llama bench-qwen-vllm-gguf bench-qwen-vllm-awq \
+         bench-phi4-mini bench-gemma3-4b; do
   docker rm -f "$c" >/dev/null 2>&1 || true
 done
 
@@ -69,6 +72,34 @@ docker create \
   --model "/bench-models/$QWEN_GGUF" \
   --alias Qwen3-4B-Q4_K_M \
   "${common_llama[@]}" >/dev/null
+
+# Onboarding arms (Phi-4-mini, Gemma 3 4B): created only when their GGUF is
+# present. These are the candidate models under smoke test, not yet enabled in
+# the primary ranking.
+if [[ -s "$MODEL_DIR/$PHI4_GGUF" ]]; then
+  docker create \
+    --name bench-phi4-mini \
+    --gpus all --ipc host \
+    -p 127.0.0.1:8104:8000 \
+    -v "$MODEL_DIR:/bench-models:ro" \
+    --entrypoint /src/build/bin/llama-server \
+    "$LLAMA_IMAGE" \
+    --model "/bench-models/$PHI4_GGUF" \
+    --alias microsoft_Phi-4-mini-instruct-Q4_K_M \
+    "${common_llama[@]}" >/dev/null
+fi
+if [[ -s "$MODEL_DIR/$GEMMA_GGUF" ]]; then
+  docker create \
+    --name bench-gemma3-4b \
+    --gpus all --ipc host \
+    -p 127.0.0.1:8105:8000 \
+    -v "$MODEL_DIR:/bench-models:ro" \
+    --entrypoint /src/build/bin/llama-server \
+    "$LLAMA_IMAGE" \
+    --model "/bench-models/$GEMMA_GGUF" \
+    --alias gemma-3-4b-it-Q4_K_M \
+    "${common_llama[@]}" >/dev/null
+fi
 
 common_vllm=(
   --max-model-len "$PER_REQUEST_CTX"
@@ -104,8 +135,10 @@ docker create \
   "${common_vllm[@]}" >/dev/null
 
 echo "Created benchmark containers (all stopped):"
-for c in bench-spark-llama bench-qwen-llama bench-qwen-vllm-gguf bench-qwen-vllm-awq; do
-  printf '  %-22s -> %s\n' "$c" "$(docker inspect -f '{{json .Config.Cmd}}' "$c" 2>/dev/null | head -c 110)"
+for c in bench-spark-llama bench-qwen-llama bench-qwen-vllm-gguf bench-qwen-vllm-awq \
+         bench-phi4-mini bench-gemma3-4b; do
+  docker inspect "$c" >/dev/null 2>&1 && \
+    printf '  %-22s -> %s\n' "$c" "$(docker inspect -f '{{json .Config.Cmd}}' "$c" 2>/dev/null | head -c 110)"
 done
 echo
 echo "Next: ./scripts/healthcheck.sh   (prove every arm starts)"

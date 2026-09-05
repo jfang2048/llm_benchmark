@@ -163,25 +163,38 @@ declare -A URL=(
   [qwen_llama]="http://127.0.0.1:8101"
   [qwen_vllm_gguf]="http://127.0.0.1:8102"
   [qwen_vllm_awq]="http://127.0.0.1:8103"
+  [phi4_mini]="http://127.0.0.1:8104"
+  [gemma3_4b]="http://127.0.0.1:8105"
 )
 declare -A CONTAINER=(
   [spark_llama]="bench-spark-llama"
   [qwen_llama]="bench-qwen-llama"
   [qwen_vllm_gguf]="bench-qwen-vllm-gguf"
   [qwen_vllm_awq]="bench-qwen-vllm-awq"
+  [phi4_mini]="bench-phi4-mini"
+  [gemma3_4b]="bench-gemma3-4b"
 )
 declare -A MODEL=(
   [spark_llama]="Spark-X2.5-4B-Q4_K_M"
   [qwen_llama]="Qwen3-4B-Q4_K_M"
   [qwen_vllm_gguf]="Qwen3-4B-Q4_K_M"
   [qwen_vllm_awq]="Qwen3-4B-AWQ"
+  [phi4_mini]="microsoft_Phi-4-mini-instruct-Q4_K_M"
+  [gemma3_4b]="gemma-3-4b-it-Q4_K_M"
 )
 # Backend comparison uses the same Qwen GGUF on two engines; every other suite
-# compares the two models on llama.cpp.
+# compares the two enabled models on llama.cpp. Onboarding arms (phi4_mini,
+# gemma3_4b) are defined above but enter ALL_ARMS only after they pass smoke
+# (flip enabled=true in configs/models.json and add them here).
 if [[ "$MODE" == "backend" ]]; then
   ALL_ARMS=(qwen_llama qwen_vllm_gguf)
 else
   ALL_ARMS=(spark_llama qwen_llama)
+fi
+# Optional override (e.g. smoke-testing onboarding arms before enabling them):
+#   ALL_ARMS_OVERRIDE="phi4_mini gemma3_4b" MODE=smoke ./scripts/benchmark.sh
+if [[ -n "${ALL_ARMS_OVERRIDE:-}" ]]; then
+  read -r -a ALL_ARMS <<< "$ALL_ARMS_OVERRIDE"
 fi
 
 mkdir -p "$OUT"
