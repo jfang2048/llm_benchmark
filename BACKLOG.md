@@ -1,98 +1,95 @@
 # Project Backlog
 
+Persistent record of this project's conversion into a reproducible, public
+GitHub repository. Kept in-repo as a project log and decision record.
+
 ## Goal
-Convert /home/jfang/llm (local LLM inference benchmark workspace) into a clean,
-reproducible, public GitHub repo at https://github.com/jfang2048/llm_benchmark
-(branch main). English-only, no secrets, no model weights, no caches, one-command
-reproducibility, interactive GitHub Pages report.
+
+Convert the local LLM inference benchmark workspace into a clean, reproducible,
+public repository (https://github.com/jfang2048/llm_benchmark): English-only,
+no secrets, no model weights, no caches, one-command reproduction, interactive
+GitHub Pages report.
 
 ## Current State
-- Source: /home/jfang/llm — already `git init`-ed, branch `master`, NO commits, NO remote.
-- gh CLI authenticated as jfang2048 (installed at ~/.local/bin/gh).
-- Target repo jfang2048/llm_benchmark is public, empty, default branch `main`.
+
+- Repository published on `main` with a clean, meaningful commit history.
+- Validated final experiment (historical run `20260904_192416`) curated under
+  `results/final/`.
+- Interactive dashboard deployed via GitHub Pages.
 
 ## Source Workspace
-/home/jfang/llm
+
+`$HOME/llm` (generic path; the concrete absolute path is intentionally not
+recorded in the public repo).
 
 ## Target Repository
+
 https://github.com/jfang2048/llm_benchmark
 
 ## Safety Constraints
-- PUBLIC repo. Never commit: .env, tokens, API keys, /home/jfang paths, model weights
-  (*.gguf), caches (hf-cache, vllm-cache, torch_compile_cache), raw docker inspect
-  dumps, *.bak, *.log with secrets, machine identifiers.
-- Model weights stay local & ignored. Reproduce via download + SHA256.
-- Do not change benchmark methodology silently. `final` mode must reproduce run 20260904_192416.
 
-## Phase 1 - Inventory
-- [x] Enumerate tree, sizes, git state (branch master, no commits, no remote)
-- [x] Read existing README.md, .gitignore
-- [x] Identify final benchmark: results-model/20260904_192416 (model benchmark v11)
-- [x] Identify engine cross-benchmark history: results-cross/*, results/*, bench-results/*
-- [x] Capture environment (nvidia-smi, docker, lscpu, python)
+- PUBLIC repo. Never commit: `.env`, tokens, API keys, private home paths,
+  model weights (`*.gguf`), caches (`hf-cache`, `vllm-cache`,
+  `torch_compile_cache`), raw Docker inspect dumps, backup files, or logs
+  containing secrets.
+- Model weights stay local and are git-ignored; they are reproduced via
+  `scripts/download_models.sh` with pinned SHA256 verification.
+- Benchmark methodology was not silently changed; `scripts/benchmark.sh`
+  `final` mode reproduces the historical final experiment.
 
-## Phase 2 - Security Audit
-- [x] .env has real secrets: VLLM_API_KEY (64 chars), GRAFANA_ADMIN_PASSWORD (32) -> excluded
-- [x] docker inspect JSONs contain "Env" arrays (may hold API key) -> excluded
-- [x] /home/jfang appears in result artifacts -> sanitize curated copies
-- [ ] Build scripts/security_check.sh and run it as final gate
+## Phases (all complete)
 
-## Phase 3 - Repository Design
-- [x] Design allowlist (see Files Explicitly Excluded)
-- [x] Canonical script set decided (scripts/*.sh + generate_report.py)
-
-## Phase 4 - Reproducible Deployment
-- [ ] docker/llama-cpp/Dockerfile (from spark-x25/Dockerfile)
-- [ ] docker/vllm-gguf/Dockerfile (from benchmark/Dockerfile.vllm-gguf)
-- [ ] configs/ compose files (llama + vllm + observability)
-- [ ] scripts/preflight.sh, build.sh, deploy.sh, healthcheck.sh, download_models.sh
-
-## Phase 5 - Benchmark Reproduction
-- [ ] scripts/benchmark.sh (from model_benchmark_v11_diag.sh; MODE=final|smoke)
-- [ ] scripts/reproduce.sh (one-command)
-- [ ] scripts/cleanup.sh
-
-## Phase 6 - Results Curation
-- [x] Confirm clean data: results.tsv, aggregate.tsv, error_details.tsv, workload.jsonl (100 prompts), runtime_config.txt
-- [ ] results/final/ curated copy (sanitized), provenance.json, README
-
-## Phase 7 - Interactive Report
-- [ ] scripts/generate_report.py (regenerate model_comparison.md + summary.md + provenance.json + docs/index.html + docs/assets SVGs)
-
-## Phase 8 - Documentation
-- [ ] README.md, docs/methodology.md, environment.md, architecture.md, troubleshooting.md, experiment-history.md, models/README.md, benchmark/README.md, results/README.md
-
-## Phase 9 - CI / GitHub Pages
-- [ ] .github/workflows/ci.yml, pages.yml
-- [ ] requirements-report.txt
-
-## Phase 10 - Final Security Review
-- [ ] ./scripts/security_check.sh, CJK scan, git ls-files allowlist, size audit
-
-## Phase 11 - Publish
-- [ ] git init -b main (rename from master), add remote, commit history, push
-- [ ] Verify remote tree, enable Pages, verify URL
+- [x] Phase 1  — Inventory
+- [x] Phase 2  — Security audit (real secrets found in `.env` and raw
+                 Docker inspect files; both excluded and never committed)
+- [x] Phase 3  — Repository design / allowlist
+- [x] Phase 4  — Reproducible deployment (Docker, compose, scripts)
+- [x] Phase 5  — Canonical benchmark runner (`scripts/benchmark.sh`)
+- [x] Phase 6  — Results curation (`results/final/` + provenance)
+- [x] Phase 7  — Interactive report (`scripts/generate_report.py`, `docs/`)
+- [x] Phase 8  — Documentation (README + `docs/*.md`)
+- [x] Phase 9  — CI + GitHub Pages workflows
+- [x] Phase 10 — Final security review
+- [x] Phase 11 — Publish
 
 ## Decisions Made
-- Curated public dataset = model comparison run 20260904_192416 (final, most controlled).
-- Engine cross-benchmark (llama.cpp vs vLLM GGUF/AWQ) kept as historical documentation only.
-- Primary deliverable model comparison: Spark-X2.5-4B-Q4_K_M vs Qwen3-4B-Q4_K_M, both llama.cpp.
-- vLLM/Qwen3 deployment + observability stack preserved as reproducible secondary config.
-- Report regenerated from committed TSV data by scripts/generate_report.py (no hand-edited numbers).
+
+- Curated public dataset = model comparison run `20260904_192416` (final, most
+  controlled): Spark-X2.5-4B-Q4_K_M vs Qwen3-4B-Q4_K_M, both llama.cpp.
+- Engine cross-benchmark (llama.cpp vs vLLM GGUF/AWQ) kept as documented
+  history, not as published data.
+- vLLM/Qwen3 deployment + observability stack preserved as reproducible
+  secondary configuration.
+- Report is regenerated from committed TSV/JSONL data by
+  `scripts/generate_report.py`; no displayed number is hand-edited.
+- Historical versioned scripts (`cross_benchmark_v*.sh`, `model_benchmark_v*.sh`,
+  `prepare_cross_bench*.sh`, `bench_llm.sh`) are excluded and summarized in
+  `docs/experiment-history.md`; canonical versions live under `scripts/`.
 
 ## Files Explicitly Excluded (never committed, stay local)
-- *.gguf (both models), hf-cache/, vllm-cache/, torch_compile_cache/
-- .env (real secrets), all *.bak, compose.*.bak, .before-host-metrics
-- benchmark/inventory/ (raw docker inspect + logs)
-- benchmark/results*/** raw historical run dirs (curated subset copied to results/final/)
-- vllm-qwen3/bench-results/** raw AIPerf JSON
-- *.log, .cross_benchmark.lock, .cross_benchmark.pid
+
+- Model weights: `*.gguf` (both 4B models)
+- Caches: `hf-cache/`, `vllm-cache/`, `torch_compile_cache/`, `.cache/`
+- Secrets: `.env` (real `VLLM_API_KEY`, `GRAFANA_ADMIN_PASSWORD`)
+- Raw inventory: `benchmark/inventory/` (Docker inspect dumps + logs)
+- Raw historical runs: `benchmark/results*/`, `vllm-qwen3/bench-results/`
+- Superseded layout: `spark-x25/`, `vllm-qwen3/`, historical scripts
+- Backups: `*.bak`, `*.before-*`
 
 ## Current Validation Results
-- (none yet)
+
+- `bash -n` passes on all `scripts/*.sh`.
+- `python3 -m py_compile scripts/generate_report.py` passes.
+- All committed JSON files parse.
+- `docker compose config` valid for `configs/llama-cpp.compose.yaml` and
+  `configs/observability.compose.yaml` (`vllm.compose.yaml` requires `.env`).
+- `./scripts/security_check.sh` passes over the tracked allowlist.
 
 ## Current Git State
-- branch master, no commits, no remote. Will rename to main + set origin.
+
+- Branch `main`, remote `origin` = https://github.com/jfang2048/llm_benchmark.
+- Clean history; working tree clean except intentionally ignored local assets.
 
 ## Next Action
-Write .gitignore/.gitattributes/.env.example/Makefile, then scripts/ and docker/.
+
+None — project complete. See README for usage.
