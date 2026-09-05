@@ -63,10 +63,15 @@ power, peak temperature, and (when sampled) a GPU-side energy estimate
 (`gpu_energy_j` = integral of sampled power over time).
 
 ### slo_summary.tsv
-Per load point: `throughput`, `goodput`, `good_request_fraction`,
-`max_slo_compliant_concurrency`, `max_slo_compliant_rps` for each reference SLO
-profile (`interactive-reference`: TTFT <= 500 ms, TPOT <= 30 ms;
-`server-reference`: TTFT <= 2000 ms, TPOT <= 100 ms).
+Per (model, load fraction, SLO profile): `attempted`, `slo_compliant`,
+`good_request_fraction`, and `goodput_req_s` (SLO-compliant requests per second).
+Goodput follows the DistServe definition: successful requests satisfying ALL
+configured SLOs; errored requests count as non-compliant. Two reference SLO
+profiles are reported — `interactive` (TTFT <= 500 ms, TPOT <= 30 ms) and
+`server` (TTFT <= 2000 ms, TPOT <= 100 ms) — inspired by contemporary MLPerf LLM
+serving scenarios, but this repository is **not** claiming MLPerf compliance.
+The max SLO-compliant request rate is derived as the highest load point whose
+`good_request_fraction` remains at or near 1.0.
 
 ### workload_manifest.json
 Describes the workload used (prompt count, hash, ISL/OSL profile, sampling).

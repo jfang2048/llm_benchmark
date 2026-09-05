@@ -108,7 +108,7 @@ relabeled as a historical diagnostic, not a final ranking.
 - [x] P1 Benchmark semantics and schema  (results/v2/README.md)
 - [x] P2 Capacity benchmark (closed-loop adaptive sweep 1 2 3 4 6 8)
 - [x] P3 ISL/OSL workload benchmark (short_chat/balanced/summarization/rag_medium/generation)
-- [ ] P4 Open-loop / goodput benchmark (25-110% of stable capacity)
+- [x] P4 Open-loop / goodput benchmark (25-110% of stable capacity, Poisson, SLO)
 - [ ] P5 Startup and sustained-load benchmark
 - [ ] P6 Resource / energy metrics (GPU-side energy estimate)
 - [ ] P7 Optional sessions / cache benchmark
@@ -144,4 +144,4 @@ confirmed: aiohttp pooled connection reuse racing with the llama.cpp HTTP server
 closing keep-alive connections.
 
 ## Next Action
-P0-P3 complete. Continue P4 (open-loop / goodput benchmark).
+P0-P4 complete. Continue P5 (startup + sustained-load/soak benchmark).

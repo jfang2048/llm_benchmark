@@ -15,7 +15,7 @@
 SHELL := /bin/bash
 SCRIPTS := scripts
 
-.PHONY: help preflight setup deploy healthcheck benchmark benchmark-smoke benchmark-reliability benchmark-capacity benchmark-shape report reproduce security clean
+.PHONY: help preflight setup deploy healthcheck benchmark benchmark-smoke benchmark-reliability benchmark-capacity benchmark-shape benchmark-openloop report reproduce security clean
 
 help:
 	@printf '%s\n' \
@@ -30,6 +30,7 @@ help:
 	  "  make benchmark-reliability  Run the P0 transport-reliability gate" \
 	  "  make benchmark-capacity     Run the P2 capacity discovery sweep" \
 	  "  make benchmark-shape        Run the P3 ISL/OSL token-shape benchmark" \
+	  "  make benchmark-openloop     Run the P4 open-loop + goodput benchmark" \
 	  "  make report           Rebuild the interactive report from committed data" \
 	  "  make reproduce        One-command end-to-end reproduction" \
 	  "  make security         Run the pre-push security/privacy checker" \
@@ -62,6 +63,9 @@ benchmark-capacity:
 
 benchmark-shape:
 	MODE=shape ./$(SCRIPTS)/benchmark.sh
+
+benchmark-openloop:
+	MODE=open-loop ./$(SCRIPTS)/benchmark.sh
 
 report:
 	@if [ -x .venv/bin/python ]; then .venv/bin/python $(SCRIPTS)/generate_report.py; \

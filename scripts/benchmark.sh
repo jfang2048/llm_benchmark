@@ -98,7 +98,13 @@ case "$MODE" in
     read -r -a CONCURRENCIES <<< "${CONCURRENCIES:-1 4}"
     OUTPUT_TOKENS="${OUTPUT_TOKENS:-128}"
     ;;
-  open-loop|startup|soak|sessions)
+  open-loop)
+    # P4 open-loop load at fractions of stable capacity (Poisson arrival).
+    REQUESTS="${REQUESTS:-1}"   # sanity gate only; cells use OPEN_LOOP_REQUESTS
+    WARMUP="${WARMUP:-10}"
+    OUTPUT_TOKENS="${OUTPUT_TOKENS:-128}"
+    ;;
+  startup|soak|sessions)
     echo "ERROR: mode '$MODE' is part of Benchmark v2 and is not implemented yet." >&2
     echo "       See BACKLOG.md '## Benchmark v2' for the staged plan." >&2
     exit 0
@@ -816,6 +822,155 @@ run_shape() {
   done
 }
 
+# ===== P4 open-loop + goodput =====
+# Reference SLO profiles (DistServe-style goodput; NOT MLPerf compliance):
+#   interactive-reference: TTFT<=500ms, TPOT<=30ms
+#   server-reference:      TTFT<=2000ms, TPOT<=100ms
+SLO_TTFT_INTERACTIVE="${SLO_TTFT_INTERACTIVE:-500}"
+SLO_TPOT_INTERACTIVE="${SLO_TPOT_INTERACTIVE:-30}"
+SLO_TTFT_SERVER="${SLO_TTFT_SERVER:-2000}"
+SLO_TPOT_SERVER="${SLO_TPOT_SERVER:-100}"
+OPEN_LOOP_FRACTIONS="${OPEN_LOOP_FRACTIONS:-0.25 0.5 0.75 0.9 1.0 1.1}"
+OPEN_LOOP_BASE_RPS="${OPEN_LOOP_BASE_RPS:-}"
+OPEN_LOOP_REQUESTS="${OPEN_LOOP_REQUESTS:-200}"
+MAX_OPEN_CONC="${MAX_OPEN_CONC:-16}"
+
+run_openloop_cell() {
+  local arm="$1" rate="$2" conc="$3" label="$4"
+  local dir="$OUT/openloop/$arm/$label"
+  local artifact="$dir/artifacts"
+  local gpu="$dir/gpu.csv"
+  local console="$dir/aiperf.log"
+  mkdir -p "$artifact"
+  local events="$dir/docker-events.jsonl"
+  log "openloop arm=$arm rate=$rate cap=$conc label=$label"
+  if ! start_arm "$arm" "$events"; then
+    log "FATAL: startup failed during run: $arm"
+    return 20
+  fi
+  telemetry_start "$gpu"
+  cmd=(aiperf profile
+    --model "${MODEL[$arm]}"
+    --url "${URL[$arm]}"
+    --endpoint-type chat
+    --streaming
+    --connection-reuse-strategy "$CONNECTION_REUSE"
+    --use-legacy-max-tokens
+    --use-server-token-count
+    --request-timeout-seconds "${REQUEST_TIMEOUT:-180}"
+    --wait-for-model-timeout 10
+    --wait-for-model-mode both
+    --request-rate "$rate"
+    --arrival-pattern poisson
+    --concurrency "$conc"
+    --request-count "$OPEN_LOOP_REQUESTS"
+    --warmup-request-count "$WARMUP"
+    --random-seed "$SEED"
+    --osl "$OUTPUT_TOKENS"
+    --extra-inputs '{"temperature":0,"ignore_eos":true,"cache_prompt":false}'
+    --artifact-dir "$artifact"
+    --profile-export-level records
+    --no-auto-plot
+    --tokenizer builtin
+    --input-file "$WORKLOAD" --custom-dataset-type single_turn --dataset-sampling-strategy sequential)
+  local rc row
+  timeout --signal=TERM --kill-after=15s "${CELL_TIMEOUT:-900}s" "${cmd[@]}" > "$console" 2>&1
+  rc=$?
+  telemetry_stop
+  docker logs --timestamps --since "${CURRENT_START_EPOCH:-0}" "${CONTAINER[$arm]}" > "$dir/server.log" 2>&1 || true
+  stop_event_capture
+  row=$(parse_run "$artifact" "$arm" "openloop" "raw" "$conc" "1" "$rc" "$gpu")
+  extract_error_details "$artifact" "$arm" "openloop" "$conc" "1"
+  printf '%s\n' "$row" >> "$ROWS"
+  ROW_LAST="$row"
+  printf '%s\t%s\t%s\t%s\t%s\n' "$arm" "$label" "$rate" "$conc" "$artifact" >> "$OUT/openloop_cells.tsv"
+  docker stop "${CONTAINER[$arm]}" >/dev/null 2>&1 || true
+  sleep "$COOLDOWN_SECONDS"
+  return 0
+}
+
+write_slo_summary() {
+  python3 - "$OUT/openloop_cells.tsv" "$OUT/slo_summary.tsv" \
+    "$SLO_TTFT_INTERACTIVE" "$SLO_TPOT_INTERACTIVE" "$SLO_TTFT_SERVER" "$SLO_TPOT_SERVER" <<'PY'
+import csv, json, os, sys
+cells, dst, ittft, itpot, sttft, stpot = sys.argv[1:7]
+slo_profiles = [
+    ("interactive", float(ittft), float(itpot)),
+    ("server", float(sttft), float(stpot)),
+]
+agg = {}   # (arm, label, rate, profile) -> [compliant, attempted]
+dur = {}   # (arm, label, rate) -> benchmark duration in seconds
+for line in open(cells, encoding='utf-8'):
+    parts = line.rstrip('\n').split('\t')
+    if len(parts) < 5:
+        continue
+    arm, label, rate, conc, artifact = parts[:5]
+    rec = os.path.join(artifact, 'profile_export.jsonl')
+    starts = []
+    ends = []
+    for l in open(rec, encoding='utf-8', errors='replace'):
+        try:
+            r = json.loads(l)
+        except Exception:
+            continue
+        md = r.get('metadata') or {}
+        if md.get('benchmark_phase') not in (None, 'profiling'):
+            continue
+        if md.get('request_start_ns'):
+            starts.append(md['request_start_ns'])
+        if md.get('request_end_ns'):
+            ends.append(md['request_end_ns'])
+        e = r.get('error')
+        m = r.get('metrics') or {}
+        ttft = (m.get('time_to_first_token') or {}).get('value')
+        itl = (m.get('inter_token_latency') or {}).get('value')
+        for name, t, p in slo_profiles:
+            key = (arm, label, rate, name)
+            a = agg.setdefault(key, [0, 0])
+            a[1] += 1   # attempted
+            if e is None and ttft is not None and itl is not None and ttft <= t and itl <= p:
+                a[0] += 1   # compliant
+    if starts and ends:
+        dur[(arm, label, rate)] = (max(ends) - min(starts)) / 1e9
+with open(dst, 'w', newline='', encoding='utf-8') as f:
+    w = csv.writer(f, delimiter='\t')
+    w.writerow(['arm', 'load_fraction', 'target_rate_rps', 'slo_profile', 'attempted', 'slo_compliant', 'good_request_fraction', 'goodput_req_s'])
+    for (arm, label, rate, prof), (ok, tot) in sorted(agg.items()):
+        frac = 0.0 if tot == 0 else ok / tot
+        d = dur.get((arm, label, rate), 0.0)
+        goodput = (ok / d) if d > 0 else 0.0
+        w.writerow([arm, label, rate, prof, tot, ok, f'{frac:.4f}', f'{goodput:.4f}'])
+print(f'slo_summary written: {len(agg)} rows')
+PY
+}
+
+run_openloop() {
+  local base conc frac rate arm
+  conc="$MAX_OPEN_CONC"
+  if [[ -z "$OPEN_LOOP_BASE_RPS" ]]; then
+    # Derive R from a quick capacity discovery run (max stable request_tps).
+    log "OPEN_LOOP_BASE_RPS unset; running capacity discovery to derive R"
+    run_capacity
+    base=$(python3 - "$OUT/aggregate.tsv" <<'PY'
+import csv, sys
+rows = list(csv.DictReader(open(sys.argv[1], encoding='utf-8'), delimiter='\t'))
+vals = [float(r['request_tps_mean']) for r in rows if r.get('request_tps_mean') not in ('', 'NA') and r['suite'] == 'capacity']
+print(max(vals) if vals else '0')
+PY
+)
+  else
+    base="$OPEN_LOOP_BASE_RPS"
+  fi
+  log "open-loop base rate R=${base} req/s, fractions: ${OPEN_LOOP_FRACTIONS}"
+  for frac in $OPEN_LOOP_FRACTIONS; do
+    rate=$(python3 -c "print(f'{float('$base') * float('$frac'):.4f}')")
+    label="f${frac}"
+    for arm in "${ALL_ARMS[@]}"; do
+      run_openloop_cell "$arm" "$rate" "$conc" "$label" || true
+    done
+  done
+}
+
 if [[ "$MODE" == "capacity" ]]; then
   log "===== CAPACITY benchmark (closed-loop adaptive sweep) ====="
   run_capacity
@@ -840,6 +995,22 @@ if [[ "$MODE" == "shape" ]]; then
   log "repeats=$ROWS"
   log "aggregate=$OUT/aggregate.tsv"
   log "resource_summary=$OUT/resource_summary.tsv"
+  log "manifest=$OUT/manifest.json"
+  exit 0
+fi
+
+if [[ "$MODE" == "open-loop" ]]; then
+  log "===== OPEN-LOOP benchmark (Poisson arrival + goodput/SLO) ====="
+  run_openloop
+  write_resource_summary
+  write_aggregate
+  write_slo_summary
+  write_v2_manifest
+  log "===== open-loop complete ====="
+  log "repeats=$ROWS"
+  log "aggregate=$OUT/aggregate.tsv"
+  log "resource_summary=$OUT/resource_summary.tsv"
+  log "slo_summary=$OUT/slo_summary.tsv"
   log "manifest=$OUT/manifest.json"
   exit 0
 fi
