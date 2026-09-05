@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="560" height="320" viewBox="0 0 560 320" font-family="Helvetica,Arial,sans-serif">
+<rect x="0" y="0" width="560" height="320" fill="white"/>
+<text x="280.0" y="18" font-size="14" font-weight="bold" text-anchor="middle">Request throughput vs concurrency</text>
+<line x1="60" y1="30" x2="60" y2="274" stroke="#333" stroke-width="1"/>
+<line x1="60" y1="274" x2="540" y2="274" stroke="#333" stroke-width="1"/>
+<line x1="56" y1="274.0" x2="60" y2="274.0" stroke="#333"/>
+<text x="52" y="277.0" font-size="10" text-anchor="end">0.3224</text>
+<line x1="56" y1="213.0" x2="60" y2="213.0" stroke="#333"/>
+<text x="52" y="216.0" font-size="10" text-anchor="end">0.5903</text>
+<line x1="56" y1="152.0" x2="60" y2="152.0" stroke="#333"/>
+<text x="52" y="155.0" font-size="10" text-anchor="end">0.8582</text>
+<line x1="56" y1="91.0" x2="60" y2="91.0" stroke="#333"/>
+<text x="52" y="94.0" font-size="10" text-anchor="end">1.126</text>
+<line x1="56" y1="30.0" x2="60" y2="30.0" stroke="#333"/>
+<text x="52" y="33.0" font-size="10" text-anchor="end">1.394</text>
+<line x1="60.0" y1="274" x2="60.0" y2="278" stroke="#333"/>
+<text x="60.0" y="290" font-size="10" text-anchor="middle">1</text>
+<line x1="220.0" y1="274" x2="220.0" y2="278" stroke="#333"/>
+<text x="220.0" y="290" font-size="10" text-anchor="middle">2</text>
+<line x1="380.0" y1="274" x2="380.0" y2="278" stroke="#333"/>
+<text x="380.0" y="290" font-size="10" text-anchor="middle">3</text>
+<line x1="540.0" y1="274" x2="540.0" y2="278" stroke="#333"/>
+<text x="540.0" y="290" font-size="10" text-anchor="middle">4</text>
+<text x="18" y="152.0" font-size="11" text-anchor="middle" transform="rotate(-90 18 152.0)">req/s</text>
+<text x="300.0" y="312" font-size="11" text-anchor="middle">Concurrency</text>
+<polyline points="60.0,235.4 220.0,169.6 380.0,135.3 540.0,114.2" fill="none" stroke="#e07b39" stroke-width="2"/>
+<circle cx="60.0" cy="235.4" r="3.5" fill="#e07b39"/>
+<circle cx="220.0" cy="169.6" r="3.5" fill="#e07b39"/>
+<circle cx="380.0" cy="135.3" r="3.5" fill="#e07b39"/>
+<circle cx="540.0" cy="114.2" r="3.5" fill="#e07b39"/>
+<polyline points="60.0,216.3 220.0,250.4 380.0,213.3 540.0,53.6" fill="none" stroke="#3a7bd5" stroke-width="2"/>
+<circle cx="60.0" cy="216.3" r="3.5" fill="#3a7bd5"/>
+<circle cx="220.0" cy="250.4" r="3.5" fill="#3a7bd5"/>
+<circle cx="380.0" cy="213.3" r="3.5" fill="#3a7bd5"/>
+<circle cx="540.0" cy="53.6" r="3.5" fill="#3a7bd5"/>
+<circle cx="528" cy="22" r="4" fill="#e07b39"/>
+<text x="536" y="26" font-size="10" text-anchor="end">Spark-X2.5-4B</text>
+<circle cx="426" cy="22" r="4" fill="#3a7bd5"/>
+<text x="434" y="26" font-size="10" text-anchor="end">Qwen3-4B</text>
+</svg>
