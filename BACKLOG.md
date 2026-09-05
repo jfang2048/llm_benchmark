@@ -110,7 +110,7 @@ relabeled as a historical diagnostic, not a final ranking.
 - [x] P3 ISL/OSL workload benchmark (short_chat/balanced/summarization/rag_medium/generation)
 - [x] P4 Open-loop / goodput benchmark (25-110% of stable capacity, Poisson, SLO)
 - [x] P5 Startup and sustained-load benchmark (process cold start + soak)
-- [ ] P6 Resource / energy metrics (GPU-side energy estimate)
+- [x] P6 Resource / energy metrics (GPU-side energy estimate)
 - [ ] P7 Optional sessions / cache benchmark
 - [ ] P8 Optional backend comparison (qwen_llama vs qwen_vllm_gguf)
 - [ ] P9 Dashboard v2 (normalized records, SLO/Pareto/heatmap views)
@@ -144,4 +144,4 @@ confirmed: aiohttp pooled connection reuse racing with the llama.cpp HTTP server
 closing keep-alive connections.
 
 ## Next Action
-P0-P5 complete. Continue P6 (resource / energy metrics — GPU-side energy estimate).
+P0-P6 complete. Continue P7 (optional sessions/cache benchmark), then P8 backend comparison, P9 dashboard v2, P10 docs, P11 validation+publish.

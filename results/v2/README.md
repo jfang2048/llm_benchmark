@@ -58,9 +58,13 @@ proportions use a Wilson binomial interval, not a t-interval over percentages.
 Classified request errors per cell (type, count, sample message).
 
 ### resource_summary.tsv
-Per-cell GPU resource aggregates: average/p95 utilization, peak VRAM, average/peak
-power, peak temperature, and (when sampled) a GPU-side energy estimate
-(`gpu_energy_j` = integral of sampled power over time).
+Per-cell GPU resource aggregates: `peak_vram_mib`, `peak_power_w`,
+`avg_gpu_util_pct`, `peak_temp_c`, and the GPU-side energy estimate
+`gpu_energy_j` (= integral of sampled power over time, 500 ms sampling), plus
+`gpu_j_per_request` and `gpu_j_per_output_token`. The energy estimate is
+**approximate** (includes warmup/cooldown and idle within the telemetry
+window), is **GPU-side only** (not full-system energy), and is **not** MLPerf
+Power compliant.
 
 ### startup.tsv
 Process cold-start measurements (`startup` suite): per (model, repetition) the

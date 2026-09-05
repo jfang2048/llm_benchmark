@@ -482,6 +482,16 @@ try:
 except Exception:
     pass
 
+# GPU-side energy estimate: integrate sampled power over time.
+# nvidia-smi samples at 500 ms (-lms 500). Approximate (includes warmup/cooldown
+# and idle within the telemetry window); NOT full-system energy, NOT MLPerf Power.
+SAMPLING_INTERVAL_S = 0.5
+energy_j = (sum(power) * SAMPLING_INTERVAL_S) if power else None
+j_per_req = (energy_j / successful) if (energy_j is not None and successful) else None
+avg_out = m('output_sequence_length') or m('output_token_count')
+total_out = (avg_out * successful) if (avg_out is not None and successful) else None
+j_per_tok = (energy_j / total_out) if (energy_j is not None and total_out) else None
+
 def f(x):
     return '' if x is None else f'{x:.4f}'
 vals = [
@@ -492,6 +502,7 @@ vals = [
     f(m('request_latency')), f(m('request_latency', 'p50')), f(m('request_latency', 'p95')), f(m('request_latency', 'p99')),
     f(m('request_throughput')), f(m('output_token_throughput')),
     f(max(mem) if mem else None), f(max(power) if power else None), f(sum(util)/len(util) if util else None), f(max(temp) if temp else None),
+    f(energy_j), f(j_per_req), f(j_per_tok),
 ]
 print('\t'.join(vals))
 PY
@@ -659,7 +670,7 @@ Primary report:
 $REPORT
 EOF2
 
-printf 'arm\tsuite\tisl\tconcurrency\trepeat\tstatus\terror_rate_pct\tattempted_requests\tsuccessful_requests\tfailed_requests\tsuccess_rate_pct\tinput_tokens_avg\toutput_tokens_avg\tttft_avg_ms\tttft_p50_ms\tttft_p95_ms\tttft_p99_ms\titl_avg_ms\titl_p50_ms\titl_p95_ms\titl_p99_ms\tlatency_avg_ms\tlatency_p50_ms\tlatency_p95_ms\tlatency_p99_ms\trequest_tps\toutput_tps\tpeak_vram_mib\tpeak_power_w\tavg_gpu_util_pct\tpeak_temp_c\n' > "$ROWS"
+printf 'arm\tsuite\tisl\tconcurrency\trepeat\tstatus\terror_rate_pct\tattempted_requests\tsuccessful_requests\tfailed_requests\tsuccess_rate_pct\tinput_tokens_avg\toutput_tokens_avg\tttft_avg_ms\tttft_p50_ms\tttft_p95_ms\tttft_p99_ms\titl_avg_ms\titl_p50_ms\titl_p95_ms\titl_p99_ms\tlatency_avg_ms\tlatency_p50_ms\tlatency_p95_ms\tlatency_p99_ms\trequest_tps\toutput_tps\tpeak_vram_mib\tpeak_power_w\tavg_gpu_util_pct\tpeak_temp_c\tgpu_energy_j\tgpu_j_per_request\tgpu_j_per_output_token\n' > "$ROWS"
 printf 'arm\tsuite\tconcurrency\trepeat\terror_type\tcount\tsample\n' > "$ERRORS"
 
 for arm in "${ALL_ARMS[@]}"; do
@@ -746,10 +757,13 @@ rows = list(csv.DictReader(open(src, encoding="utf-8"), delimiter="\t"))
 with open(dst, "w", newline="", encoding="utf-8") as f:
     w = csv.writer(f, delimiter="\t")
     w.writerow(["arm", "suite", "isl", "concurrency", "repeat",
-                "peak_vram_mib", "peak_power_w", "avg_gpu_util_pct", "peak_temp_c"])
+                "peak_vram_mib", "peak_power_w", "avg_gpu_util_pct", "peak_temp_c",
+                "gpu_energy_j", "gpu_j_per_request", "gpu_j_per_output_token"])
     for r in rows:
         w.writerow([r["arm"], r["suite"], r["isl"], r["concurrency"], r["repeat"],
-                    r["peak_vram_mib"], r["peak_power_w"], r["avg_gpu_util_pct"], r["peak_temp_c"]])
+                    r["peak_vram_mib"], r["peak_power_w"], r["avg_gpu_util_pct"], r["peak_temp_c"],
+                    r.get("gpu_energy_j", ""), r.get("gpu_j_per_request", ""),
+                    r.get("gpu_j_per_output_token", "")])
 PY
 }
 
