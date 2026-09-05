@@ -1,0 +1,24 @@
+container_A=bench-spark-llama
+container_B=bench-qwen-llama
+image_A=sha256:28f81be4ba34412125fc6ca33a3629e65cb31741496f29f306d03c5a3ac80c52
+image_B=sha256:28f81be4ba34412125fc6ca33a3629e65cb31741496f29f306d03c5a3ac80c52
+
+control	spark	qwen
+ctx_size	9216	9216
+parallel	4	4
+gpu_layers	999	999
+batch_size		
+ubatch_size		
+threads		
+threads_batch		
+cache_k		
+cache_v		
+cache_ram		
+flash_attn		
+kv_unified		
+
+CMD spark:
+--model /bench-models/Spark-X2.5-4B-Q4_K_M.gguf --alias Spark-X2.5-4B-Q4_K_M --host 0.0.0.0 --port 8000 --ctx-size 9216 --parallel 4 --cont-batching --metrics --n-gpu-layers 999
+
+CMD qwen:
+--model /bench-models/Qwen3-4B-Q4_K_M.gguf --alias Qwen3-4B-Q4_K_M --host 0.0.0.0 --port 8000 --ctx-size 9216 --parallel 4 --cont-batching --metrics --n-gpu-layers 999
