@@ -1,0 +1,87 @@
+{
+  "schema_version": 1,
+  "shape_profiles": {
+    "order": ["short_chat", "balanced", "summarization", "rag_medium", "generation"],
+    "profiles": {
+      "short_chat": {"isl": 128, "osl": 128},
+      "balanced": {"isl": 256, "osl": 256},
+      "summarization": {"isl": 512, "osl": 128},
+      "rag_medium": {"isl": 768, "osl": 128},
+      "generation": {"isl": 128, "osl": 512}
+    }
+  },
+  "concurrency": {
+    "capacity": [1, 2, 3, 4, 6, 8],
+    "shape": [1, 4],
+    "reliability": [1, 4],
+    "backend": [1, 2, 4]
+  },
+  "repeats": {
+    "capacity": 1,
+    "shape": 1,
+    "reliability": 1,
+    "backend": 4,
+    "startup": 3
+  },
+  "requests": {
+    "capacity": 60,
+    "shape": 60,
+    "reliability": 200,
+    "backend": 80,
+    "sessions": 80,
+    "open_loop": 200,
+    "startup": 1,
+    "soak": 1
+  },
+  "warmup": {
+    "capacity": 5,
+    "shape": 5,
+    "reliability": 10,
+    "backend": 5,
+    "sessions": 5,
+    "open_loop": 10,
+    "startup": 0
+  },
+  "output_length": {
+    "default": 128,
+    "sessions": 64,
+    "startup": 16
+  },
+  "reliability": {
+    "min_success_pct": 99.5,
+    "connection_reuse": "never"
+  },
+  "thermal": {
+    "max_start_temp_c": 70,
+    "thermal_limit_c": 85,
+    "vram_limit_mib": 6000
+  },
+  "timeouts": {
+    "cell_seconds": 1800,
+    "startup_seconds": 180,
+    "request_seconds": 180,
+    "temp_wait_seconds": 120
+  },
+  "open_loop": {
+    "load_fractions": [0.25, 0.5, 0.75, 0.9, 1.0, 1.1],
+    "max_concurrency": 16,
+    "slo_profiles": {
+      "interactive": {"ttft_ms": 500, "tpot_ms": 30},
+      "server": {"ttft_ms": 2000, "tpot_ms": 100}
+    }
+  },
+  "soak": {
+    "duration_seconds": 600,
+    "load_fraction": 0.75
+  },
+  "sessions": {
+    "conversations": 20,
+    "turns": 4
+  },
+  "sampling": {
+    "temperature": 0,
+    "ignore_eos": true,
+    "cache_prompt": false,
+    "seed": 42
+  }
+}

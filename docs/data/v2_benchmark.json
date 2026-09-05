@@ -138,8 +138,8 @@
     {
       "arm": "qwen_llama",
       "profile": "balanced",
-      "isl": 512,
-      "osl": 512,
+      "isl": 256,
+      "osl": 256,
       "output_tps": 70.836,
       "ttft_p50_ms": 215.6729,
       "itl_p95_ms": 13.3878
@@ -147,8 +147,8 @@
     {
       "arm": "qwen_llama",
       "profile": "balanced",
-      "isl": 512,
-      "osl": 512,
+      "isl": 256,
+      "osl": 256,
       "output_tps": 156.6237,
       "ttft_p50_ms": 664.9882,
       "itl_p95_ms": 23.2181
@@ -156,8 +156,8 @@
     {
       "arm": "spark_llama",
       "profile": "balanced",
-      "isl": 512,
-      "osl": 512,
+      "isl": 256,
+      "osl": 256,
       "output_tps": null,
       "ttft_p50_ms": null,
       "itl_p95_ms": null
@@ -165,8 +165,8 @@
     {
       "arm": "spark_llama",
       "profile": "balanced",
-      "isl": 512,
-      "osl": 512,
+      "isl": 256,
+      "osl": 256,
       "output_tps": 48.9233,
       "ttft_p50_ms": 918.4373,
       "itl_p95_ms": 28.5369
@@ -210,7 +210,7 @@
     {
       "arm": "qwen_llama",
       "profile": "rag_medium",
-      "isl": 2048,
+      "isl": 1024,
       "osl": 128,
       "output_tps": 5.8468,
       "ttft_p50_ms": 569.2463,
@@ -219,7 +219,7 @@
     {
       "arm": "qwen_llama",
       "profile": "rag_medium",
-      "isl": 2048,
+      "isl": 1024,
       "osl": 128,
       "output_tps": 7.1827,
       "ttft_p50_ms": 2091.3906,
@@ -228,7 +228,7 @@
     {
       "arm": "spark_llama",
       "profile": "rag_medium",
-      "isl": 2048,
+      "isl": 1024,
       "osl": 128,
       "output_tps": 10.8009,
       "ttft_p50_ms": 694.7779,
@@ -237,7 +237,7 @@
     {
       "arm": "spark_llama",
       "profile": "rag_medium",
-      "isl": 2048,
+      "isl": 1024,
       "osl": 128,
       "output_tps": 6.4623,
       "ttft_p50_ms": 3481.5132,
@@ -282,7 +282,7 @@
     {
       "arm": "qwen_llama",
       "profile": "summarization",
-      "isl": 1024,
+      "isl": 512,
       "osl": 128,
       "output_tps": 63.1432,
       "ttft_p50_ms": 336.6881,
@@ -291,7 +291,7 @@
     {
       "arm": "qwen_llama",
       "profile": "summarization",
-      "isl": 1024,
+      "isl": 512,
       "osl": 128,
       "output_tps": 124.0051,
       "ttft_p50_ms": 1153.9853,
@@ -300,7 +300,7 @@
     {
       "arm": "spark_llama",
       "profile": "summarization",
-      "isl": 1024,
+      "isl": 512,
       "osl": 128,
       "output_tps": null,
       "ttft_p50_ms": null,
@@ -309,7 +309,7 @@
     {
       "arm": "spark_llama",
       "profile": "summarization",
-      "isl": 1024,
+      "isl": 512,
       "osl": 128,
       "output_tps": 61.7467,
       "ttft_p50_ms": 1510.0792,

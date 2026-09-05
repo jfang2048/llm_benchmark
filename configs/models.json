@@ -1,0 +1,62 @@
+{
+  "schema_version": 1,
+  "models": [
+    {
+      "id": "spark_x2_5_4b",
+      "display_name": "Spark-X2.5-4B",
+      "arm": "spark_llama",
+      "upstream_repo": "XHToken/Spark-X2.5-4B",
+      "family": "Spark",
+      "parameter_count": null,
+      "parameter_count_note": "name claims 4B; exact count to be verified from checkpoint metadata",
+      "architecture": null,
+      "dense_or_moe": null,
+      "context_length": 9216,
+      "license": null,
+      "license_note": "upstream license to be confirmed",
+      "gguf_filename": "Spark-X2.5-4B-Q4_K_M.gguf",
+      "quantization": "Q4_K_M",
+      "sha256": "7934660bfc5b9bf04be0a0ac6179a1d16e1d4331b448857c86b8b2801b3ef72c",
+      "chat_template_strategy": "none",
+      "enabled": true,
+      "primary_cohort": true,
+      "notes": "Served via the XHToken/llama.cpp fork (Spark architecture support). Transport-unreliable at input >= 256 tokens even with connection-reuse=never (see results/v2/README.md); the ranking rests on the short-prompt capacity suite."
+    },
+    {
+      "id": "qwen3_4b",
+      "display_name": "Qwen3-4B",
+      "arm": "qwen_llama",
+      "upstream_repo": "Qwen/Qwen3-4B",
+      "family": "Qwen3",
+      "parameter_count": null,
+      "parameter_count_note": "name claims 4B; exact count to be verified from checkpoint metadata",
+      "architecture": null,
+      "dense_or_moe": null,
+      "context_length": 9216,
+      "license": "Apache-2.0",
+      "gguf_filename": "Qwen3-4B-Q4_K_M.gguf",
+      "quantization": "Q4_K_M",
+      "sha256": "7485fe6f11af29433bc51cab58009521f205840f5b4ae3a32fa7f92e8534fdf5",
+      "chat_template_strategy": "none",
+      "enabled": true,
+      "primary_cohort": true,
+      "notes": "Official Qwen3-4B GGUF. Clean through ISL 512 on the shared llama.cpp image."
+    }
+  ],
+  "engine_comparison_arms": [
+    {
+      "id": "qwen_vllm_gguf",
+      "display_name": "Qwen3-4B on vLLM+GGUF",
+      "model_id": "qwen3_4b",
+      "enabled": false,
+      "notes": "Engine A/B only; never merged into the model ranking."
+    },
+    {
+      "id": "qwen_vllm_awq",
+      "display_name": "Qwen3-4B-AWQ on vLLM",
+      "model_id": "qwen3_4b",
+      "enabled": false,
+      "notes": "Quantization/deployment comparison, not a primary-cohort model."
+    }
+  ]
+}

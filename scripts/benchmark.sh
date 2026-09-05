@@ -849,21 +849,22 @@ with open(dst, 'w', newline='', encoding='utf-8') as f:
 PY
 }
 
-# P3 token-shape profiles: (ISL, OSL). ISL is controlled with the Qwen3-4B
-# reference tokenizer (approximate for Spark-X2.5-4B, whose tokenizer differs).
-# Max ISL is bounded by the serving config's PER-SLOT context: the server runs
-# --ctx-size 9216 --parallel 4 with a non-unified KV cache, i.e. 2304 tokens per
-# slot, and the Spark tokenizer inflates the Qwen-controlled ISL by ~2x. The
-# largest profile (rag_medium, ISL 1024 -> ~2048 Spark tokens + 128 output) is
-# kept just under the 2304-token per-slot limit.
-SHAPE_PROFILE_ORDER="short_chat balanced summarization rag_medium generation"
-declare -A SHAPE_PROFILES=(
-  [short_chat]="128 128"
-  [balanced]="256 256"
-  [summarization]="512 128"
-  [rag_medium]="768 128"
-  [generation]="128 512"
-)
+# Token-shape profiles are loaded from the canonical config (configs/benchmark.json)
+# so the runner cannot drift from the report generator. ISL is controlled with the
+# Qwen3-4B reference tokenizer (approximate for Spark-X2.5-4B, whose tokenizer
+# differs). Max ISL is bounded by the serving config's per-slot context: the server
+# runs --ctx-size 9216 --parallel 4 with a non-unified KV cache (2304 tokens per
+# slot), and the Spark tokenizer inflates the Qwen-controlled ISL by ~2x.
+eval "$(python3 - "$ROOT/configs/benchmark.json" <<'PY'
+import json, sys
+sp = json.load(open(sys.argv[1], encoding="utf-8"))["shape_profiles"]
+print('SHAPE_PROFILE_ORDER="' + " ".join(sp["order"]) + '"')
+print("declare -A SHAPE_PROFILES=(")
+for name, p in sp["profiles"].items():
+    print(f'  [{name}]="{p["isl"]} {p["osl"]}"')
+print(")")
+PY
+)"
 
 run_shape() {
   local profile isl osl conc arm spec

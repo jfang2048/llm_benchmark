@@ -37,6 +37,9 @@ jobs:
           print(f"Validated {len(files)} JSON files")
           PY
 
+      - name: Config / model-registry validation
+        run: python3 scripts/validate_config.py
+
       - name: Security / privacy gate
         run: ./scripts/security_check.sh
 

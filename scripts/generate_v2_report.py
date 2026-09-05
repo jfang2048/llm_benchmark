@@ -46,14 +46,15 @@ ARM_COLORS = {
     "qwen_vllm_gguf": "#2fa36b",
 }
 
-# Token-shape profiles (ISL -> OSL), mirroring scripts/benchmark.sh SHAPE_PROFILES.
-SHAPE_PROFILES = {
-    "short_chat": (128, 128),
-    "balanced": (512, 512),
-    "summarization": (1024, 128),
-    "rag_medium": (2048, 128),
-    "generation": (128, 512),
-}
+# Token-shape profiles are loaded from the canonical config (configs/benchmark.json)
+# so the report cannot drift from scripts/benchmark.sh.
+def load_shape_profiles():
+    cfg = json.loads((ROOT / "configs" / "benchmark.json").read_text(encoding="utf-8"))
+    profiles = cfg.get("shape_profiles", {}).get("profiles", {})
+    return {name: (p["isl"], p["osl"]) for name, p in profiles.items()}
+
+
+SHAPE_PROFILES = load_shape_profiles()
 
 
 def _num(s):
@@ -113,7 +114,10 @@ def load_shape(run_dir):
     out = []
     for r in agg:
         profile = r["suite"].replace("shape_", "")
-        isl, osl = SHAPE_PROFILES.get(profile, (_num(r["isl"]), None))
+        # ISL is taken from the data (what was actually run); OSL is not recorded
+        # per-cell in aggregate.tsv, so it comes from the canonical config.
+        isl = _num(r["isl"])
+        osl = SHAPE_PROFILES.get(profile, (None, None))[1]
         out.append({
             "arm": r["arm"],
             "profile": profile,
