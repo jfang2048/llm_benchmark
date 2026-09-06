@@ -327,7 +327,8 @@ def main():
                     row = run_cell(arm, model_name, url, container, conc,
                                    rep + 1, str(out_dir), str(workload_path),
                                    requests, warmup, osl, seed,
-                                   suite=suite, isl=isl)
+                                   suite=suite, isl=isl,
+                                   ref_tokenizer=m["upstream_repo"])
                     if row is None:
                         log(f"FAIL startup {arm} c={conc}")
                         continue

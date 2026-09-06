@@ -1,55 +1,48 @@
 # Model Weights
 
-Model weight files are **not** stored in this repository. They are downloaded
-(or provided) into this directory by `scripts/download_models.sh`, which verifies
-each file against a pinned SHA256.
+Model weight files are **not** stored in this repository. They are acquired
+into this directory (git-ignored) and verified against pinned SHA256 values
+recorded in `configs/models.json`.
 
-| Model | File | Source | SHA256 | Size (approx) |
+## Current cohort (mainstream 8-9B, IQ4_XS)
+
+All four GGUFs come from a single uniform source (bartowski) so no model is
+served from a different quantization pipeline.
+
+| Model | File | Source (HF repo) | SHA256 | Size (approx) |
 |---|---|---|---|---|
-| Qwen3-4B | `Qwen3-4B-Q4_K_M.gguf` | [Qwen/Qwen3-4B-GGUF](https://huggingface.co/Qwen/Qwen3-4B-GGUF) | `7485fe6f11af29433bc51cab58009521f205840f5b4ae3a32fa7f92e8534fdf5` | ~2.4 GiB |
-| Spark-X2.5-4B | `Spark-X2.5-4B-Q4_K_M.gguf` | see below | `7934660bfc5b9bf04be0a0ac6179a1d16e1d4331b448857c86b8b2801b3ef72c` | ~2.6 GiB |
+| Qwen3-8B | `Qwen3-8B-IQ4_XS.gguf` | `bartowski/Qwen_Qwen3-8B-GGUF` | `0f69fe02ca9764c93bcc12ac96509bee53488114d6a7fe47764f80990c28751a` | ~4.3 GiB |
+| DeepSeek-R1-Distill-Llama-8B | `DeepSeek-R1-Distill-Llama-8B-IQ4_XS.gguf` | `bartowski/DeepSeek-R1-Distill-Llama-8B-GGUF` | `a076a5f7e48a054067d420c32740e1e63b425e1318a9a4eba89024906d67adcd` | ~4.1 GiB |
+| GLM-4-9B-0414 | `GLM-4-9B-0414-IQ4_XS.gguf` | `bartowski/THUDM_GLM-4-9B-0414-GGUF` | `c85b661ed11c36f8b5a4f75da8bc1672b011febf8d71f098feab41186ad1767e` | ~4.9 GiB |
+| Yi-1.5-9B-Chat | `Yi-1.5-9B-Chat-IQ4_XS.gguf` | `bartowski/Yi-1.5-9B-Chat-GGUF` | `acf005319fa455ea91f6c8954d5beb1a08138114ea0cb88be718cdbfc8b1c5ba` | ~4.5 GiB |
 
-## Qwen3-4B
-
-Auto-downloaded from the official [Qwen GGUF repository](https://huggingface.co/Qwen/Qwen3-4B-GGUF):
+Acquire with `huggingface-cli` or `hf` (the exact filenames differ from the
+local names above; rename after download):
 
 ```bash
-make setup          # or: ./scripts/download_models.sh
+# example: Qwen3-8B
+huggingface-cli download bartowski/Qwen_Qwen3-8B-GGUF Qwen_Qwen3-8B-IQ4_XS.gguf --local-dir models/
+mv models/Qwen_Qwen3-8B-IQ4_XS.gguf models/Qwen3-8B-IQ4_XS.gguf
 ```
 
-## Spark-X2.5-4B
+A helper that downloads all four and verifies SHA256 is available in the
+onboarding tooling (`.agent/download_ggufs.py`).
 
-The Spark-X2.5-4B weights are released by XHToken (iFLYTEK's Ciyuan Xinghuo
-subsidiary): [XHToken/Spark-X2.5-4B](https://huggingface.co/XHToken/Spark-X2.5-4B).
+## Historical cohort (4B, Q4_K_M)
 
-There is **no single canonical public GGUF URL** for the exact Q4_K_M artifact
-used in this benchmark, so it is not auto-downloaded. Obtain the file by either:
+The legacy 4B cohort is preserved as historical data and is no longer the
+primary cohort. Its weights were Qwen3-4B (official Qwen GGUF) and
+Spark-X2.5-4B (XHToken fork, see below).
 
-1. **Copy an existing file** (e.g. from another machine) and let the script
-   verify it:
-   ```bash
-   cp /path/to/Spark-X2.5-4B-Q4_K_M.gguf models/
-   ./scripts/download_models.sh   # verifies SHA256
-   ```
-
-2. **Convert from the official weights** using the llama.cpp fork that this
-   repo builds in `docker/llama-cpp/Dockerfile` (the XHToken fork includes the
-   Spark-X2.5 architecture, which upstream llama.cpp does not yet support):
-   ```bash
-   huggingface-cli download XHToken/Spark-X2.5-4B --local-dir /tmp/spark-src
-   # run the convert + quantize scripts from the built spark-x25-llama:cuda13 image
-   ```
-
-The expected filename and SHA256 above are the ground truth; anything that
-verifies against that hash is the correct artifact.
+Spark-X2.5-4B has no single canonical public GGUF URL; obtain it by copying an
+existing `Spark-X2.5-4B-Q4_K_M.gguf` and verifying against
+`7934660bfc5b9bf04be0a0ac6179a1d16e1d4331b448857c86b8b2801b3ef72c`, or convert
+from the official XHToken/Spark-X2.5-4B weights using the fork in
+`docker/llama-cpp/`.
 
 ## License
 
-Model weights are governed by their own upstream licenses. This repository does
-not claim any rights over them and does not redistribute them. See the upstream
-model cards for terms:
-
-- Qwen3: https://huggingface.co/Qwen/Qwen3-4B-GGUF
-- Spark-X2.5: https://huggingface.co/XHToken/Spark-X2.5-4B
-
-`models/` and its contents are git-ignored (`*.gguf`).
+Model weights are governed by their own upstream licenses (Qwen3 and Yi:
+Apache-2.0; DeepSeek-R1-Distill-Llama-8B and GLM-4-9B: MIT). This repository
+does not claim rights over them and does not redistribute them. `models/` and
+its contents are git-ignored (`*.gguf`).
