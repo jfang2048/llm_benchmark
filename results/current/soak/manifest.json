@@ -1,6 +1,6 @@
 {
   "suite": "soak",
-  "git_commit": "f8e6d2045538c4feefd74b89053262ef508a8cc3",
+  "git_commit": "1e3160a88e9bfd87a60f14e24ed43ab4797f77b9",
   "aiperf_version": "0.12.0",
   "engine": "ggml-org/llama.cpp v0.4.0 (pinned)",
   "image": "llama-cpp-upstream:v0.4.0",
@@ -69,5 +69,5 @@
       "license": "Apache-2.0"
     }
   },
-  "generated_at": "2026-09-06T21:57:34.633299+00:00"
+  "generated_at": "2026-09-06T22:45:22.512795+00:00"
 }
