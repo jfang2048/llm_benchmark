@@ -26,7 +26,7 @@ SCRIPTS := scripts
 
 .PHONY: help setup smoke benchmark benchmark-8b9b reliability-8b9b shape-8b9b \
 	llama-bench benchmark-v1 capacity shape open-loop startup \
-	soak sessions backend reliability report report-v1 reproduce security clean \
+	soak sessions backend reliability report report-current report-v1 reproduce security clean \
 	preflight deploy healthcheck
 
 help:
@@ -108,6 +108,9 @@ reliability:
 report:
 	@if [ -x .venv/bin/python ]; then .venv/bin/python $(SCRIPTS)/generate_v2_report.py; \
 	else python3 $(SCRIPTS)/generate_v2_report.py; fi
+
+report-current:
+	python3 $(SCRIPTS)/generate_current_report.py
 
 report-v1:
 	@if [ -x .venv/bin/python ]; then .venv/bin/python $(SCRIPTS)/generate_report.py; \
