@@ -86,6 +86,13 @@ benchmark/models/
 results/runs/
 results/v2/runs/
 
+# Current 8-9B benchmark: commit only curated summary TSVs, not raw cell data
+# (AIPerf artifacts, GPU telemetry, per-request JSONL, server logs).
+results/current/*/rows.jsonl
+results/current/capacity/*/
+results/current/reliability/*/
+results/current/shape/*/
+
 # =====================================================================
 # Superseded workspace layout (historical scripts/configs kept local;
 # canonical versions live under scripts/, docker/, configs/, monitoring/)
