@@ -11,13 +11,13 @@
     }
   },
   "concurrency": {
-    "capacity": [1, 2, 3, 4, 6, 8],
+    "capacity": [1, 2, 4, 6, 8],
     "shape": [1, 4],
     "reliability": [1, 4],
     "backend": [1, 2, 4]
   },
   "repeats": {
-    "capacity": 1,
+    "capacity": 3,
     "shape": 1,
     "reliability": 1,
     "backend": 4,
