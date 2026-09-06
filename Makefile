@@ -24,7 +24,8 @@
 SHELL := /bin/bash
 SCRIPTS := scripts
 
-.PHONY: help setup smoke benchmark benchmark-8b9b benchmark-v1 capacity shape open-loop startup \
+.PHONY: help setup smoke benchmark benchmark-8b9b reliability-8b9b shape-8b9b \
+	llama-bench benchmark-v1 capacity shape open-loop startup \
 	soak sessions backend reliability report report-v1 reproduce security clean \
 	preflight deploy healthcheck
 
@@ -67,6 +68,15 @@ benchmark:
 # Mainstream 8-9B cohort (current primary): registry-driven runner.
 benchmark-8b9b:
 	python3 -m bench.runner
+
+reliability-8b9b:
+	python3 -m bench.runner --suite reliability
+
+shape-8b9b:
+	python3 -m bench.runner --suite shape
+
+llama-bench:
+	python3 -m bench.llama_bench
 
 benchmark-v1:
 	MODE=final ./$(SCRIPTS)/benchmark.sh

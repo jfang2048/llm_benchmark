@@ -221,3 +221,95 @@ def write_aggregate_tsv(agg_rows, path):
         w.writeheader()
         for r in agg_rows:
             w.writerow({k: r.get(k, "") for k in cols})
+
+
+_ERROR_CHECKS = [
+    ("ServerDisconnectedError", "serverdisconnectederror"),
+    ("ClientPayloadError", "clientpayloaderror"),
+    ("TransferEncodingError", "transferencodingerror"),
+    ("ConnectionReset", "connection reset by peer"),
+    ("ClientOSError", "clientoserror"),
+    ("TimeoutError", "timeouterror"),
+    ("HTTPError", "http"),
+    ("ConnectionError", "connection"),
+]
+
+
+def classify_error(msg):
+    low = (msg or "").lower()
+    for label, pat in _ERROR_CHECKS:
+        if pat in low:
+            return label
+    m = re.search(r"([A-Za-z_][A-Za-z0-9_]*(?:Error|Exception))", msg or "")
+    return m.group(1) if m else "OtherError"
+
+
+def extract_error_types(artifact_dir):
+    """Return a Counter of classified error types from profile_export.jsonl."""
+    import collections
+    path = os.path.join(artifact_dir, "profile_export.jsonl")
+    counts = collections.Counter()
+    if not os.path.exists(path):
+        return counts
+    for line in open(path, encoding="utf-8", errors="replace"):
+        try:
+            r = json.loads(line)
+        except Exception:
+            continue
+        md = r.get("metadata") or {}
+        if md.get("benchmark_phase") not in (None, "profiling"):
+            continue
+        e = r.get("error")
+        if e is None:
+            continue
+        if isinstance(e, str):
+            msg = e
+        else:
+            msg = json.dumps(e, ensure_ascii=False, sort_keys=True)
+        counts[classify_error(msg[:500])] += 1
+    return counts
+
+
+def reliability_summary(rows):
+    """Aggregate reliability cells into attempted/successful/failed + Wilson CI.
+
+    Groups repeats by (arm, concurrency). `rows` are cell-result dicts that carry
+    an `error_types` JSON string (a Counter serialized by the runner).
+    """
+    from .stats import wilson_interval
+    keys = sorted({(r["arm"], r["concurrency"]) for r in rows})
+    out = []
+    for arm, conc in keys:
+        rr = [r for r in rows if r["arm"] == arm and r["concurrency"] == conc]
+        attempted = sum(int(r.get("attempted_requests") or 0) for r in rr)
+        successful = sum(int(r.get("successful_requests") or 0) for r in rr)
+        failed = attempted - successful
+        rate = (successful / attempted) if attempted else None
+        low, high = wilson_interval(successful, attempted)
+        errors = {}
+        for r in rr:
+            try:
+                for typ, n in json.loads(r.get("error_types") or "{}").items():
+                    errors[typ] = errors.get(typ, 0) + n
+            except Exception:
+                pass
+        out.append({
+            "arm": arm, "concurrency": conc, "attempted": attempted,
+            "successful": successful, "failed": failed,
+            "success_rate_pct": "" if rate is None else f"{100 * rate:.4f}",
+            "wilson_low_pct": f"{100 * low:.4f}",
+            "wilson_high_pct": f"{100 * high:.4f}",
+            "error_types": json.dumps(errors, sort_keys=True),
+        })
+    return out
+
+
+def write_reliability_tsv(rows, path):
+    cols = ["arm", "concurrency", "attempted", "successful", "failed",
+            "success_rate_pct", "wilson_low_pct", "wilson_high_pct",
+            "error_types"]
+    with open(path, "w", newline="", encoding="utf-8") as f:
+        w = csv.DictWriter(f, fieldnames=cols, delimiter="\t")
+        w.writeheader()
+        for r in rows:
+            w.writerow({k: r.get(k, "") for k in cols})

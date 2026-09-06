@@ -147,7 +147,8 @@ class Telemetry:
 
 
 def run_cell(arm, model_name, url, container, conc, rep, out_dir, workload_path,
-             requests, warmup, osl, seed):
+             requests, warmup, osl, seed, suite="capacity", isl="raw",
+             ref_tokenizer=None):
     """Run one AIPerf cell and return a results dict (row)."""
     artifact = os.path.join(out_dir, "artifacts")
     os.makedirs(artifact, exist_ok=True)
@@ -186,11 +187,20 @@ def run_cell(arm, model_name, url, container, conc, rep, out_dir, workload_path,
         "--artifact-dir", artifact,
         "--profile-export-level", "records",
         "--no-auto-plot",
-        "--tokenizer", "builtin",
-        "--input-file", workload_path,
-        "--custom-dataset-type", "single_turn",
-        "--dataset-sampling-strategy", "sequential",
     ]
+    if isl == "raw":
+        cmd += [
+            "--tokenizer", "builtin",
+            "--input-file", workload_path,
+            "--custom-dataset-type", "single_turn",
+            "--dataset-sampling-strategy", "sequential",
+        ]
+    else:
+        # Numeric ISL: synthetic token-controlled inputs via a reference tokenizer.
+        cmd += [
+            "--tokenizer", ref_tokenizer or "Qwen/Qwen3-4B",
+            "--apply-chat-template", "--isl", str(isl),
+        ]
     t0 = time.time()
     out, err = "", ""
     try:
@@ -216,10 +226,12 @@ def run_cell(arm, model_name, url, container, conc, rep, out_dir, workload_path,
     sh("docker", "stop", container)
     sh("docker", "rm", "-f", container)
 
-    row = results.cell_result(arm, "capacity", "raw", conc, rep, rc, artifact,
+    row = results.cell_result(arm, suite, str(isl), conc, rep, rc, artifact,
                               gpu_csv, max_error_rate=0.5)
     row["_elapsed"] = f"{elapsed:.0f}"
     row["_oom"] = "yes" if oom else "no"
+    row["error_types"] = json.dumps(dict(results.extract_error_types(artifact)),
+                                    sort_keys=True)
     return row
 
 
@@ -238,7 +250,8 @@ def rotate(items, k):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--suite", default="capacity")
+    ap.add_argument("--suite", default="capacity",
+                    choices=["capacity", "reliability", "shape"])
     ap.add_argument("--dry-run", action="store_true")
     args = ap.parse_args()
 
@@ -252,76 +265,98 @@ def main():
         log("no enabled mainstream_8_9b models")
         return 1
 
-    concs = bench["concurrency"]["capacity"]
-    repeats = bench["repeats"]["capacity"]
-    requests = bench["requests"]["capacity"]
-    warmup = bench["warmup"]["capacity"]
-    osl = bench["output_length"]["default"]
     seed = bench["sampling"]["seed"]
 
-    suite_dir = RESULT_ROOT / args.suite
-    suite_dir.mkdir(parents=True, exist_ok=True)
-    workload_path = suite_dir / "model_workload.jsonl"
+    # Cell plan: (suite, isl, osl, concs, requests, repeats, warmup).
+    if args.suite == "capacity":
+        plan = [("capacity", "raw", bench["output_length"]["default"],
+                 bench["concurrency"]["capacity"], bench["requests"]["capacity"],
+                 bench["repeats"]["capacity"], bench["warmup"]["capacity"])]
+    elif args.suite == "reliability":
+        plan = [("reliability", "raw", bench["output_length"]["default"],
+                 bench["concurrency"]["reliability"],
+                 bench["requests"]["reliability"],
+                 bench["repeats"]["reliability"], bench["warmup"]["reliability"])]
+    else:  # shape
+        plan = []
+        for name in bench["shape_profiles"]["order"]:
+            p = bench["shape_profiles"]["profiles"][name]
+            plan.append((f"shape_{name}", p["isl"], p["osl"],
+                         bench["concurrency"]["shape"], bench["requests"]["shape"],
+                         bench["repeats"]["shape"], bench["warmup"]["shape"]))
+
+    suite_root = RESULT_ROOT / args.suite
+    suite_root.mkdir(parents=True, exist_ok=True)
+    workload_path = suite_root / "model_workload.jsonl"
     workload_sha = workload.write_workload_jsonl(str(workload_path))
 
-    rows_jsonl = suite_dir / "rows.jsonl"
+    rows_jsonl = suite_root / "rows.jsonl"
     completed = set()
-    rows = []
+    all_rows = []
     if rows_jsonl.exists():
         for line in open(rows_jsonl, encoding="utf-8"):
             try:
                 r = json.loads(line)
-                rows.append(r)
-                completed.add((r["arm"], r["concurrency"], r["repeat"]))
+                all_rows.append(r)
+                completed.add((r["suite"], r["arm"], r["isl"],
+                               r["concurrency"], r["repeat"]))
             except Exception:
                 continue
 
-    for rep in range(repeats):
-        ordered = rotate(arms, rep)
-        for m in ordered:
-            arm = m["arm"]
-            url = f"http://127.0.0.1:{m['port']}"
-            container = "bench-" + arm.replace("_", "-")
-            model_name = m["gguf_filename"].removesuffix(".gguf")
-            for conc in concs:
-                key = (arm, str(conc), str(rep + 1))
-                if key in completed:
-                    log(f"skip (done) arm={arm} c={conc} rep={rep + 1}/{repeats}")
-                    continue
-                log(f"cell arm={arm} c={conc} rep={rep + 1}/{repeats}")
-                if args.dry_run:
-                    continue
-                wait_thermal()
-                out_dir = suite_dir / arm / f"c_{conc}" / f"rep_{rep + 1}"
-                out_dir.mkdir(parents=True, exist_ok=True)
-                row = run_cell(arm, model_name, url, container, conc, rep + 1,
-                               str(out_dir), str(workload_path),
-                               requests, warmup, osl, seed)
-                if row is None:
-                    log(f"FAIL startup {arm} c={conc}")
-                    continue
-                rows.append(row)
-                with open(rows_jsonl, "a", encoding="utf-8") as f:
-                    f.write(json.dumps(row) + "\n")
-                log(f"  -> status={row['status']} ok={row['successful_requests']}/"
-                    f"{row['attempted_requests']} vram={row['peak_vram_mib']}MiB "
-                    f"oom={row['_oom']} ttft_p50={row['ttft_p50_ms']}ms")
-                time.sleep(COOLDOWN)
+    for suite, isl, osl, concs, requests, repeats, warmup in plan:
+        for rep in range(repeats):
+            for m in rotate(arms, rep):
+                arm = m["arm"]
+                url = f"http://127.0.0.1:{m['port']}"
+                container = "bench-" + arm.replace("_", "-")
+                model_name = m["gguf_filename"].removesuffix(".gguf")
+                for conc in concs:
+                    key = (suite, arm, str(isl), str(conc), str(rep + 1))
+                    if key in completed:
+                        log(f"skip (done) suite={suite} arm={arm} c={conc} "
+                            f"rep={rep + 1}/{repeats}")
+                        continue
+                    log(f"cell suite={suite} arm={arm} isl={isl} c={conc} "
+                        f"rep={rep + 1}/{repeats}")
+                    if args.dry_run:
+                        continue
+                    wait_thermal()
+                    out_dir = (suite_root / arm / f"isl_{isl}" /
+                               f"c_{conc}" / f"rep_{rep + 1}")
+                    out_dir.mkdir(parents=True, exist_ok=True)
+                    row = run_cell(arm, model_name, url, container, conc,
+                                   rep + 1, str(out_dir), str(workload_path),
+                                   requests, warmup, osl, seed,
+                                   suite=suite, isl=isl)
+                    if row is None:
+                        log(f"FAIL startup {arm} c={conc}")
+                        continue
+                    all_rows.append(row)
+                    with open(rows_jsonl, "a", encoding="utf-8") as f:
+                        f.write(json.dumps(row) + "\n")
+                    log(f"  -> status={row['status']} "
+                        f"ok={row['successful_requests']}/"
+                        f"{row['attempted_requests']} vram={row['peak_vram_mib']}MiB "
+                        f"oom={row['_oom']} ttft_p50={row['ttft_p50_ms']}ms")
+                    time.sleep(COOLDOWN)
 
     if args.dry_run:
         log("dry run: nothing executed")
         return 0
 
-    repeats_path = suite_dir / "repeats.tsv"
-    results.write_repeats_tsv(rows, str(repeats_path))
-    agg = results.aggregate(rows)
-    results.write_aggregate_tsv(agg, str(suite_dir / "aggregate.tsv"))
-    _write_manifest(suite_dir, bench, arms, quant, workload_sha, requests, osl, seed)
-    log(f"wrote {repeats_path} and aggregate.tsv ({len(rows)} rows)")
+    results.write_repeats_tsv(all_rows, str(suite_root / "repeats.tsv"))
+    results.write_aggregate_tsv(results.aggregate(all_rows),
+                                str(suite_root / "aggregate.tsv"))
+    if args.suite == "reliability":
+        results.write_reliability_tsv(results.reliability_summary(all_rows),
+                                      str(suite_root / "reliability.tsv"))
+    _write_manifest(suite_root, bench, arms, quant, workload_sha,
+                    args.suite, seed)
+    log(f"wrote repeats.tsv + aggregate.tsv ({len(all_rows)} rows)")
     return 0
 
 
-def _write_manifest(suite_dir, bench, arms, quant, workload_sha, requests, osl, seed):
+def _write_manifest(suite_dir, bench, arms, quant, workload_sha, suite, seed):
     import datetime
     commit = sh("git", "-C", str(ROOT), "rev-parse", "HEAD").stdout.strip()
     gpu = sh("nvidia-smi", "--query-gpu=name,driver_version,memory.total",
@@ -340,7 +375,7 @@ def _write_manifest(suite_dir, bench, arms, quant, workload_sha, requests, osl, 
             "license": m.get("license"),
         }
     manifest = {
-        "suite": "capacity",
+        "suite": suite,
         "git_commit": commit,
         "aiperf_version": "0.12.0",
         "engine": "ggml-org/llama.cpp v0.4.0 (pinned)",
@@ -350,10 +385,10 @@ def _write_manifest(suite_dir, bench, arms, quant, workload_sha, requests, osl, 
         "quantization": quant,
         "workload_sha256": workload_sha,
         "config": {
-            "concurrency": bench["concurrency"]["capacity"],
-            "repeats": bench["repeats"]["capacity"],
-            "requests_per_cell": requests,
-            "output_tokens": osl,
+            "concurrency": bench["concurrency"].get(suite),
+            "repeats": bench["repeats"].get(suite),
+            "requests_per_cell": bench["requests"].get(suite),
+            "output_tokens": bench["output_length"]["default"],
             "seed": seed,
             "temperature": 0, "ignore_eos": True, "cache_prompt": False,
             "connection_reuse": CONNECTION_REUSE,
