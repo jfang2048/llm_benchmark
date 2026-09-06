@@ -63,7 +63,7 @@
     "temp_wait_seconds": 120
   },
   "open_loop": {
-    "load_fractions": [0.25, 0.5, 0.75, 0.9, 1.0, 1.1],
+    "load_fractions": [0.5, 0.75, 0.9, 1.0, 1.1],
     "max_concurrency": 16,
     "slo_profiles": {
       "interactive": {"ttft_ms": 500, "tpot_ms": 30},
