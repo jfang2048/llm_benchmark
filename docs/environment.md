@@ -1,8 +1,8 @@
 # Environment
 
-Reproducibility environment for the published benchmark (run `20260904_192416`).
-These values were captured from the machine and the run artifacts; they are
-also encoded in `results/final/provenance.json`.
+Reproducibility environment for the current 8-9B benchmark. Hardware and
+software values are captured from the machine and also encoded in each suite's
+`results/current/<suite>/manifest.json`.
 
 ## Hardware
 
@@ -11,40 +11,39 @@ also encoded in `results/final/provenance.json`.
 | GPU | NVIDIA GeForce RTX 3060 Laptop GPU |
 | VRAM | 6144 MiB (6 GiB) |
 | GPU driver | 610.74 |
-| CUDA (UMD) | 13.3 |
+| CUDA | 13.3 |
 | CPU | AMD Ryzen 7 6800H with Radeon Graphics (16 logical CPUs) |
-| Platform | WSL2 (Ubuntu 24.04), kernel `6.18.33.2-microsoft-standard-WSL2` |
+| Platform | WSL2 (Ubuntu 24.04) |
 
 ## Software
 
 | Component | Version |
 |---|---|
 | Docker | 29.7.2 |
-| Docker Compose | v5.4.0 |
 | AIPerf | 0.12.0 |
-| llama.cpp | XHToken fork (`github.com/XHToken/llama.cpp`), built against CUDA 13.3.1, arch 86 |
-| llama.cpp serving image | `spark-x25-llama:cuda13` (digest `sha256:28f81be4…`) |
-| vLLM | 0.26.0 (`vllm/vllm-openai:v0.26.0`) — engine-comparison context |
-| vLLM GGUF plugin | 0.0.4 |
+| llama.cpp | ggml-org/llama.cpp, pinned tag `v0.4.0`, built against CUDA 13.3, arch 86 |
+| llama.cpp serving image | `llama-cpp-upstream:v0.4.0` |
 
-## Models
+## Models (current cohort, IQ4_XS)
 
-| Model | Quantization | File | SHA256 |
-|---|---|---|---|
-| Spark-X2.5-4B | Q4_K_M | `Spark-X2.5-4B-Q4_K_M.gguf` | `7934660b…` |
-| Qwen3-4B | Q4_K_M | `Qwen3-4B-Q4_K_M.gguf` | `7485fe6f…` |
+| Model | File | SHA256 |
+|---|---|---|
+| Qwen3-8B | `Qwen3-8B-IQ4_XS.gguf` | `0f69fe02…` |
+| DeepSeek-R1-Distill-Llama-8B | `DeepSeek-R1-Distill-Llama-8B-IQ4_XS.gguf` | `a076a5f7…` |
+| GLM-4-9B-0414 | `GLM-4-9B-0414-IQ4_XS.gguf` | `c85b661e…` |
+| Yi-1.5-9B-Chat | `Yi-1.5-9B-Chat-IQ4_XS.gguf` | `acf00531…` |
 
-Spark-X2.5-4B metadata (from the llama.cpp `/models` endpoint): 4,112,079,360
-parameters, Q4_K - Medium ftype, 131,072 vocab, trained context 1,048,576.
+Full SHA256 values and GGUF sources are in `configs/models.json`. GGUFs come
+from a single uniform source (bartowski, IQ4_XS).
 
 ## Serving configuration (llama.cpp)
 
-Both arms ran the identical command (only `--model` and `--alias` differ):
+All models run the identical command (only `--model` and `--alias` differ):
 
 ```
---model /bench-models/<file>.gguf --alias <name> \
+--model /models/<file>.gguf --alias <name> \
   --host 0.0.0.0 --port 8000 \
-  --ctx-size 9216 --parallel 4 --cont-batching --metrics --n-gpu-layers 999
+  --ctx-size 4096 --parallel 2 --cont-batching --metrics --n-gpu-layers 999
 ```
 
 ## Reproducing this environment
@@ -52,7 +51,10 @@ Both arms ran the identical command (only `--model` and `--alias` differ):
 1. WSL2 + Ubuntu 24.04 with the NVIDIA Windows driver and the NVIDIA Container
    Toolkit inside the distro.
 2. Docker with GPU passthrough (`docker run --rm --gpus all … nvidia-smi`).
-3. `make setup` to download models and build the llama.cpp image.
+3. Acquire the four IQ4_XS GGUFs into `models/` (see `models/README.md`).
+4. Build the image:
+   `docker build -t llama-cpp-upstream:v0.4.0 -f docker/llama-cpp-upstream/Dockerfile docker/llama-cpp-upstream/`
+5. Run `./scripts/admit_8b9b.sh` to verify admission before benchmarking.
 
 Run `./scripts/preflight.sh` to validate a new machine against these
-requirements before benchmarking.
+requirements.

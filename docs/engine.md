@@ -3,63 +3,48 @@
 ## Serving engine
 
 All primary-cohort models are served by the **same llama.cpp binary**, built
-from a single pinned Docker image (`docker/llama-cpp/Dockerfile`).
+from a single pinned Docker image (`docker/llama-cpp-upstream/Dockerfile`) from
+upstream `ggml-org/llama.cpp`, with no fork patches.
 
-The binary is built from the [XHToken/llama.cpp](https://github.com/XHToken/llama.cpp)
-fork, which adds Spark-X2.5 architecture support that upstream llama.cpp does
-not yet provide. The pinned fork's `src/models/models.h` registers all
-primary-cohort architectures — `qwen3`, `spark2_5`, `gemma3`, `phi3`
-(Phi-4), `minicpm3`, `nemotron` — so a single binary serves every candidate.
+- Upstream tag: `v0.4.0` (commit `5ac847190e979e0da7c4a21806630805f396d487`)
+- CUDA arch: `86` (Ampere RTX 3060 Laptop)
+- Image: `llama-cpp-upstream:v0.4.0`
+- Built targets: `llama-server`, `llama-cli`, `llama-quantize`, `llama-bench`
 
-### Fork state (pinned)
+This upstream release registers all four cohort architectures — `qwen3`,
+`llama` (DeepSeek-R1-Distill-Llama-8B and Yi-1.5-9B), `glm4` — so one binary
+serves the whole cohort.
 
-- Fork commit: `4a3635c32fc9f044c2bde9ebeabf50c7e1ec5991` (2026-09-04)
-- Upstream parent: `ggml-org/llama.cpp`
-- Divergence: **15 commits ahead**, **321 commits behind** upstream master
-  (fork base commit `6d05498314db1b57f81c271080018aa2d0b89be9`)
+The legacy 4B cohort used the XHToken/llama.cpp fork (Spark-X2.5 support). That
+fork is retained only for historical 4B reproduction under `docker/llama-cpp/`.
 
-The 15 fork commits add, in a focused way:
+## Quantization
 
-| Area | Files |
-|---|---|
-| Model architecture | `src/models/spark2_5.cpp`, `src/models/models.h`, `src/llama-arch.cpp/.h`, `src/llama-model.cpp`, `src/llama-model-saver.cpp` |
-| Tokenizer / vocab | `src/llama-vocab.cpp/.h` |
-| GGUF conversion | `conversion/spark2_5.py`, `conversion/base.py`, `convert_hf_to_gguf_update.py`, `gguf-py/gguf/constants.py` |
-| Chat template | `models/templates/Spark2.5.jinja` |
-| Function-calling parser | `src/llama-model.cpp`, `docs/autoparser.md` |
+The whole cohort uses a single common quantization: **IQ4_XS**, the smallest
+"good" quant, which is what lets 8-9B models fit the 6 GiB envelope.
 
-### Rebase plan (follow-up)
+The GGUFs are pre-quantized IQ4_XS from a single uniform source (bartowski),
+with SHA256 recorded per model in `configs/models.json`. IQ4_XS's importance
+matrix affects generation quality, not the serving metrics this benchmark
+measures (latency, throughput, VRAM), so the provenance choice does not bias
+the ranking.
 
-The Spark patch is small and mostly additive, so it is a candidate for a
-minimal patch on a recent upstream commit. This is the preferred long-term
-approach but is not yet done: it requires forward-porting the ~18-file patch
-across 321 commits of upstream changes to the arch/vocab/conversion code and
-rebuilding/re-testing both arms. Until that lands, the pinned fork is the
-single source for all arms — no model is served by a different llama.cpp build.
-
-## Quantization recipe
-
-The target is a single, reproducible quantization path for every primary model:
+## Serving policy (identical across models)
 
 ```
-official FP16/BF16 checkpoint
-  -> pinned convert_hf_to_gguf.py   (same commit as the server)
-  -> pinned llama-quantize          (same commit)
-  -> Q4_K_M
-  -> record SHA256
+--model /models/<file>.gguf --alias <name> \
+  --host 0.0.0.0 --port 8000 \
+  --ctx-size 4096 --parallel 2 --cont-batching --metrics --n-gpu-layers 999
 ```
 
-Third-party / official pre-quantized GGUFs are used only for onboarding smoke
-tests, not for the final ranking, unless their provenance is demonstrably
-equivalent to the recipe above.
-
-Current status: Qwen3-4B is served from the official Qwen GGUF
-(`Qwen/Qwen3-4B-GGUF`, Q4_K_M); Spark-X2.5-4B from a locally converted Q4_K_M.
-Both SHA256s are pinned in `configs/models.json`. New models are re-quantized
-through the recipe above during onboarding.
+`--n-gpu-layers 999` offloads every layer to the GPU. Admission confirmed the
+whole cohort fits without CPU offload at this policy (peak 5.1 GiB for
+GLM-4-9B). If any model required CPU offload, that would be recorded
+explicitly and the comparison described as a fixed-hardware deployment
+benchmark, not a pure architecture benchmark.
 
 ## Hardware constraint
 
-The single GPU (RTX 3060 Laptop, 6 GiB VRAM) forces Q4_K_M. It also bounds the
-per-slot context: the server runs `--ctx-size 9216 --parallel 4` with a
-non-unified KV cache, i.e. 2304 tokens per slot.
+The single GPU (RTX 3060 Laptop, 6 GiB VRAM) forces IQ4_XS and a 4096-token
+serving context. The per-slot context (2048 tokens) is bounded by the 4096
+total context shared across `--parallel 2`.
