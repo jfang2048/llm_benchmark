@@ -106,12 +106,13 @@
       "license": "Apache-2.0",
       "gguf_filename": "Qwen3-8B-IQ4_XS.gguf",
       "quantization": "IQ4_XS",
-      "sha256": null,
+      "sha256": "0f69fe02ca9764c93bcc12ac96509bee53488114d6a7fe47764f80990c28751a",
       "chat_template": "chat",
-      "enabled": false,
+      "enabled": true,
       "primary": true,
       "port": 8200,
-      "notes": "Primary cohort. Quantize from official checkpoint via pinned upstream convert + llama-quantize."
+      "notes": "IQ4_XS GGUF from bartowski/Qwen_Qwen3-8B-GGUF (SHA256 recorded). Primary cohort, served via pinned upstream llama.cpp v0.4.0.",
+      "gguf_source": "bartowski/Qwen_Qwen3-8B-GGUF"
     },
     {
       "id": "deepseek_r1_distill_llama_8b",
@@ -126,12 +127,13 @@
       "license": "MIT",
       "gguf_filename": "DeepSeek-R1-Distill-Llama-8B-IQ4_XS.gguf",
       "quantization": "IQ4_XS",
-      "sha256": null,
+      "sha256": "a076a5f7e48a054067d420c32740e1e63b425e1318a9a4eba89024906d67adcd",
       "chat_template": "chat",
-      "enabled": false,
+      "enabled": true,
       "primary": true,
       "port": 8201,
-      "notes": "Primary cohort. Base is Llama 3.1 8B; never describe as DeepSeek-V3/R1 MoE."
+      "notes": "IQ4_XS GGUF from bartowski/DeepSeek-R1-Distill-Llama-8B-GGUF (SHA256 recorded). Primary cohort. Base is Llama 3.1 8B; never describe as DeepSeek-V3/R1 MoE.",
+      "gguf_source": "bartowski/DeepSeek-R1-Distill-Llama-8B-GGUF"
     },
     {
       "id": "glm4_9b_0414",
@@ -146,12 +148,13 @@
       "license": "MIT",
       "gguf_filename": "GLM-4-9B-0414-IQ4_XS.gguf",
       "quantization": "IQ4_XS",
-      "sha256": null,
+      "sha256": "c85b661ed11c36f8b5a4f75da8bc1672b011febf8d71f098feab41186ad1767e",
       "chat_template": "chat",
-      "enabled": false,
+      "enabled": true,
       "primary": true,
       "port": 8202,
-      "notes": "Primary cohort. 9.40B is the largest of the cohort; watch VRAM."
+      "notes": "IQ4_XS GGUF from bartowski/THUDM_GLM-4-9B-0414-GGUF (SHA256 recorded). Primary cohort. 9.40B is the largest of the cohort; watch VRAM.",
+      "gguf_source": "bartowski/THUDM_GLM-4-9B-0414-GGUF"
     },
     {
       "id": "yi_15_9b_chat",
@@ -166,12 +169,13 @@
       "license": "Apache-2.0",
       "gguf_filename": "Yi-1.5-9B-Chat-IQ4_XS.gguf",
       "quantization": "IQ4_XS",
-      "sha256": null,
+      "sha256": "acf005319fa455ea91f6c8954d5beb1a08138114ea0cb88be718cdbfc8b1c5ba",
       "chat_template": "chat",
-      "enabled": false,
+      "enabled": true,
       "primary": true,
       "port": 8203,
-      "notes": "Primary cohort. Yi loads as llama arch; 4K native context."
+      "notes": "IQ4_XS GGUF from bartowski/Yi-1.5-9B-Chat-GGUF (SHA256 recorded). Primary cohort. Yi loads as llama arch; 4K native context.",
+      "gguf_source": "bartowski/Yi-1.5-9B-Chat-GGUF"
     }
   ],
   "engine_comparison_arms": [
