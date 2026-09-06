@@ -17,6 +17,7 @@ ROOT = Path(__file__).resolve().parent.parent
 MODELS = ROOT / "configs" / "models.json"
 BENCHMARK = ROOT / "configs" / "benchmark.json"
 FINAL = ROOT / "results" / "v2" / "final"
+CURRENT = ROOT / "results" / "current"
 
 errors = []
 
@@ -72,7 +73,8 @@ def main():
     defined = set()
     if bench is not None:
         defined = set(bench.get("shape_profiles", {}).get("profiles", {}).keys())
-    for tsv in sorted(FINAL.glob("*/aggregate.tsv")) + sorted(FINAL.glob("*/repeats.tsv")):
+    for tsv in (sorted(FINAL.glob("*/aggregate.tsv")) + sorted(FINAL.glob("*/repeats.tsv"))
+                + sorted(CURRENT.glob("*/aggregate.tsv")) + sorted(CURRENT.glob("*/repeats.tsv"))):
         try:
             import csv
             rows = list(csv.DictReader(open(tsv, encoding="utf-8"), delimiter="\t"))

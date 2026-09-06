@@ -23,7 +23,8 @@ from . import config, results, workload
 ROOT = config.ROOT
 MODEL_DIR = Path(os.environ.get("MODEL_DIR", ROOT / "models"))
 IMAGE = os.environ.get("LLAMA_UPSTREAM_IMAGE", "llama-cpp-upstream:v0.4.0")
-AIPERF = os.environ.get("AIPERF", "/home/jfang/venvs/aiperf/bin/aiperf")
+# AIPerf is expected on PATH; override with AIPERF=/path/to/aiperf if not.
+AIPERF = os.environ.get("AIPERF", "aiperf")
 RESULT_ROOT = ROOT / "results" / "current"
 
 # Common serving policy (identical across the cohort; documented in the manifest).

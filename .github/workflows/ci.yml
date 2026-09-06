@@ -24,7 +24,7 @@ jobs:
           echo "All shell scripts pass bash -n"
 
       - name: Python syntax check
-        run: python3 -m py_compile scripts/generate_report.py
+        run: python3 -m py_compile scripts/*.py bench/*.py
 
       - name: JSON validity check
         run: |
@@ -50,6 +50,12 @@ jobs:
           test -s docs/index.html
           test -s docs/data/benchmark.json
           echo "Report regenerated successfully"
+
+      - name: Current 8-9B dashboard generation
+        run: |
+          python3 scripts/generate_current_report.py
+          test -s docs/current/index.html
+          echo "Current dashboard regenerated"
 
       - name: Forbidden large files (GitHub 100 MiB guard)
         run: |
