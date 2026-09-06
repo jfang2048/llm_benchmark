@@ -1,42 +1,52 @@
 # Local LLM Inference Benchmark
 
-A reproducible benchmark for local LLM inference on a constrained consumer GPU
-(NVIDIA RTX 3060 Laptop, 6 GiB VRAM). It compares ~4B-class models in Q4_K_M
-quantization served by the same llama.cpp engine, under identical runtime
-settings and an identical workload.
+A reproducible benchmark for local LLM inference serving on a constrained
+consumer GPU (NVIDIA RTX 3060 Laptop, 6 GiB VRAM). The current primary cohort
+is four mainstream 8-9B dense open-weight models in IQ4_XS quantization, all
+served by the same pinned upstream llama.cpp build under an identical resource
+policy and workload. The earlier ~4B cohort is preserved as historical data.
 
 > **Dashboard:** https://jfang2048.github.io/llm_benchmark/
->
-> **Benchmark v2 dashboard:** https://jfang2048.github.io/llm_benchmark/v2/
 
 ## What this repository does
 
-- Defines a controlled serving benchmark methodology
-  ([docs/methodology.md](docs/methodology.md)).
-- Provides reproducible Docker builds for llama.cpp (with Spark-X2.5 support)
-  and vLLM.
-- Provides one-command deployment and benchmarking via `make`.
-- Publishes a curated, sanitized dataset under `results/v2/final/`.
-- Generates static dashboards and charts from committed data — every displayed
-  number is derived from machine-readable `.tsv` files.
+- Defines a controlled fixed-hardware deployment benchmark
+  ([docs/methodology.md](docs/methodology.md)): it measures serving
+  performance under one GPU/engine/quantization policy, not model quality.
+- Provides a pinned, reproducible upstream llama.cpp Docker build
+  (`docker/llama-cpp-upstream/`, tag v0.4.0, CUDA arch 86).
+- Derives the active model set and sweep parameters from a single registry
+  (`configs/models.json` + `configs/benchmark.json`); the runner and report
+  generator read from it, never from hardcoded model lists.
+- Runs the benchmark through a small registry-driven harness (`bench/`) with
+  AIPerf as the client.
+- Publishes a curated, sanitized dataset under `results/current/` and renders
+  a static dashboard from it — every displayed number comes from
+  machine-readable `.tsv` files.
 
-## Models
+## Models (current primary cohort)
 
-| Model | Quantization | Parameters |
-|---|---|---|
-| Spark-X2.5-4B | Q4_K_M | 4B |
-| Qwen3-4B | Q4_K_M | 4B |
+| Model | Parameters | Quantization | License |
+|---|---|---|---|
+| Qwen3-8B | 8.19B | IQ4_XS | Apache-2.0 |
+| DeepSeek-R1-Distill-Llama-8B | 8.03B | IQ4_XS | MIT |
+| GLM-4-9B-0414 | 9.40B | IQ4_XS | MIT |
+| Yi-1.5-9B-Chat | 8.83B | IQ4_XS | Apache-2.0 |
+
+All four are served as IQ4_XS GGUF (single uniform source, SHA256 recorded in
+`configs/models.json`) by the same pinned upstream `ggml-org/llama.cpp`
+build. `DeepSeek-R1-Distill-Llama-8B` is a DeepSeek-distilled Llama-3.1-8B
+dense model — not the DeepSeek-R1/V3 MoE architecture.
 
 ## Test system
 
 | Component | Value |
 |---|---|
 | GPU | NVIDIA GeForce RTX 3060 Laptop GPU, 6144 MiB VRAM |
-| Driver / CUDA | 610.74 / 13.3 |
-| CPU | AMD Ryzen 7 6800H (16 logical CPUs) |
+| CPU | AMD Ryzen 7 6800H |
 | Platform | WSL2, Ubuntu 24.04 |
-| Docker | 29.7.2 |
-| Engine | llama.cpp (XHToken fork for Spark-X2.5 support), CUDA 13.3 build |
+| Engine | ggml-org/llama.cpp, pinned tag v0.4.0 (CUDA arch 86) |
+| Serving policy | `--ctx-size 4096 --parallel 2 --n-gpu-layers 999 --cont-batching` |
 | Benchmark tool | NVIDIA AIPerf 0.12.0 |
 
 ## Quick start
@@ -44,30 +54,30 @@ settings and an identical workload.
 ```bash
 git clone https://github.com/jfang2048/llm_benchmark.git
 cd llm_benchmark
-make preflight      # validate GPU, Docker, ports, models
-make setup          # download models + build images
-make deploy         # create serving containers
-make healthcheck    # verify endpoints
-make benchmark      # run the benchmark
-make report         # rebuild the dashboard
+make preflight             # validate GPU, Docker, models
+# acquire the 4 IQ4_XS GGUFs into models/ (see models/README.md), then:
+docker build -t llama-cpp-upstream:v0.4.0 -f docker/llama-cpp-upstream/Dockerfile docker/llama-cpp-upstream/
+./scripts/admit_8b9b.sh    # serve + healthcheck + smoke + VRAM admission
+make benchmark-8b9b        # capacity sweep (registry-driven)
+make report-current        # rebuild docs/current/index.html
 ```
 
 ## Benchmark suites
 
-Each suite is a `make benchmark-<name>` target writing results under
-`results/v2/`:
+Run via the registry-driven harness (`bench/runner.py`); `make` targets wrap it.
 
-- `capacity` — closed-loop throughput/error sweep vs concurrency.
-- `shape` — token-controlled ISL/OSL workload sweep.
-- `open-loop` — Poisson load sweep with SLO/goodput compliance.
-- `startup` — process cold-start latency.
-- `soak` — sustained load + thermal degradation.
-- `sessions` — multi-turn latency by turn.
-- `backend` — engine comparison (same Qwen GGUF on llama.cpp vs vLLM+GGUF).
+- `make benchmark-8b9b` — capacity: closed-loop throughput/latency/error sweep
+  vs concurrency (1/2/4/6/8, 60 req/cell, 3 repeats, rotated model order).
+- `make reliability-8b9b` — transport-reliability gate (≥200 requests, Wilson
+  95% CI on success rate, error classification).
+- `make shape-8b9b` — token-controlled ISL/OSL workload sweep.
+- `make llama-bench` — raw-engine microbenchmark (pp512/tg128) with the same
+  binary; kept separate from the AIPerf end-to-end serving numbers.
 
-Transport reliability is gated: a run must reach ≥ 99.5% request success before
-its results are presented as a ranking; `FORCE_UNSTABLE=1` overrides this and
-marks the run `INVALID_FOR_RANKING`.
+Serving is gated on a per-model admission test (`scripts/admit_8b9b.sh`):
+healthcheck, a generation request, a 20-request smoke test, and a VRAM/OOM
+check before a model enters the benchmark. Capacity results with `FAILED` or
+`UNSTABLE` cells are never presented as valid ranking points.
 
 ## Reproduce
 
@@ -75,42 +85,35 @@ marks the run `INVALID_FOR_RANKING`.
 make reproduce
 ```
 
-Runs preflight → download → build → deploy → healthcheck → benchmark → report.
-Idempotent: existing models and images are reused. Use
-`REPRODUCE_MODE=smoke ./scripts/reproduce.sh` for a fast validation path.
-
-> Qwen3-4B-Q4_K_M downloads from the official Qwen GGUF repo.
-> Spark-X2.5-4B-Q4_K_M has no canonical public GGUF URL — see
-> [models/README.md](models/README.md) for acquisition paths. Both are verified
-> against pinned SHA256 hashes.
-
 ## Methodology
 
-See [docs/methodology.md](docs/methodology.md) for the design, metric
-definitions (TTFT, ITL, E2E latency, throughput, error rate), aggregation, and
-limitations.
+See [docs/methodology.md](docs/methodology.md) for metric definitions (TTFT,
+ITL, E2E latency, throughput, goodput), aggregation, and limitations. This is
+a fixed-hardware deployment benchmark: numbers are representative of this
+exact GPU/engine/quantization envelope, not a general model ranking.
 
 ## Data
 
-- Current dataset: [`results/v2/`](results/v2/README.md)
-- Historical v1 (diagnostic): [`docs/history/v1.md`](docs/history/v1.md)
+- Current 8-9B dataset: `results/current/` (curated TSVs + manifest).
+- Historical ~4B cohort: `results/v2/final/` and `docs/history/`.
 
 ## Limitations
 
-- One GPU, one laptop, one driver version — representative of this exact
-  environment, not a general ranking.
+- One GPU, one laptop, one driver version.
 - Serving cost, not model quality (accuracy/reasoning).
-- Cross-model tokens/s is secondary because the tokenizers differ.
+- Cross-model tokens/s is secondary because tokenizers differ.
+- IQ4_XS fits the whole cohort at ctx=4096/parallel=2, but the largest model
+  (GLM-4-9B) sits near the VRAM ceiling; any CPU-offload variant would be
+  recorded explicitly as such.
 
 ## License
 
 No source-code license is asserted for this repository. Model weights are
-governed by their own upstream licenses (Qwen3, Spark-X2.5) and are not
-redistributed here.
+governed by their own upstream licenses and are not redistributed here.
 
 ## Security
 
-Model weights, caches, credentials, raw Docker inspection dumps, and private
+Model weights, caches, credentials, raw benchmark cell artifacts, and private
 machine paths are excluded (see `.gitignore`). A pre-push gate
 (`./scripts/security_check.sh`, also run in CI) checks for secrets, private
 paths, oversized files, and non-English text.
