@@ -47,14 +47,14 @@ jobs:
         run: |
           python3 -m pip install --quiet -r requirements-report.txt
           python3 scripts/generate_report.py
-          test -s docs/index.html
-          test -s docs/data/benchmark.json
-          echo "Report regenerated successfully"
+          test -s docs/history/v1/index.html
+          test -s docs/history/v1/data/benchmark.json
+          echo "Historical v1 report regenerated"
 
       - name: Current 8-9B dashboard generation
         run: |
           python3 scripts/generate_current_report.py
-          test -s docs/current/index.html
+          test -s docs/index.html
           echo "Current dashboard regenerated"
 
       - name: Forbidden large files (GitHub 100 MiB guard)

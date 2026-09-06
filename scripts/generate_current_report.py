@@ -246,6 +246,67 @@ def repeats_table(rows):
             f"{''.join(body)}</tbody></table>")
 
 
+def shape_view():
+    rows = load_tsv(RESULT_ROOT / "shape" / "aggregate.tsv")
+    out = []
+    for r in rows:
+        if not r.get("suite", "").startswith("shape_"):
+            continue
+        profile = r["suite"][len("shape_"):]
+        failed = int(r.get("failed_runs") or 0)
+        unstable = int(r.get("unstable_runs") or 0)
+        passed = int(r.get("pass_runs") or 0)
+        if failed > 0:
+            status = "FAIL"
+        elif unstable > 0:
+            status = "UNSTABLE"
+        elif passed == 0:
+            status = "EXCLUDED"
+        else:
+            status = "PASS"
+        out.append({
+            "profile": profile, "arm": r["arm"],
+            "concurrency": r["concurrency"], "status": status,
+            "ttft_p50": _num(r.get("ttft_p50_ms_mean")),
+            "lat_p50": _num(r.get("latency_p50_ms_mean")),
+            "output_tps": _num(r.get("output_tps_mean")),
+        })
+    return out
+
+
+def shape_table(rows):
+    if not rows:
+        return "<h2>Workload shape</h2><p>No shape data yet.</p>"
+    order = config.shape_order()
+    profiles = [p for p in order if any(r["profile"] == p for r in rows)]
+    profiles += sorted({r["profile"] for r in rows if r["profile"] not in order})
+    arms = sorted({r["arm"] for r in rows})
+    body = []
+    for arm in arms:
+        for c in sorted({r["concurrency"] for r in rows}):
+            cells = []
+            for p in profiles:
+                cell = next((x for x in rows
+                             if x["arm"] == arm and x["profile"] == p
+                             and x["concurrency"] == c), None)
+                if cell is None:
+                    cells.append("<td>-</td>")
+                elif cell["status"] == "PASS":
+                    cells.append(f"<td>{cell['ttft_p50']:.0f} ms</td>")
+                else:
+                    cells.append(f'<td class="fail">{cell["status"]}</td>')
+            body.append(f"<tr><td>{html_escape(arm)}</td><td>c={c}</td>"
+                        f"{''.join(cells)}</tr>")
+    head = "".join(f"<th>{html_escape(p)}</th>" for p in profiles)
+    return (f"<h2>Workload shape &mdash; TTFT p50 (ms) by ISL/OSL profile</h2>"
+            f"<table><thead><tr><th>Model</th><th>Concurrency</th>{head}</tr>"
+            f"</thead><tbody>{''.join(body)}</tbody></table>"
+            f"<p class='meta'>Profiles: short_chat 128/128, balanced 256/256, "
+            f"summarization 512/128, rag_medium 768/128, generation 128/512. "
+            f"rag_medium is marked UNSTABLE/TIMEOUT for models that dropped "
+            f"streams at ISL 768.</p>")
+
+
 def build_html(meta, manifest):
     cells = capacity_view(meta)
     return f"""<!doctype html>
@@ -273,13 +334,14 @@ llama.cpp pinned upstream, IQ4_XS, identical serving policy across models.</p>
 {output_tps_table(cells)}
 {capacity_chart(cells)}
 {repeats_table(repeats_view())}
+{shape_table(shape_view())}
 {reliability_table(reliability_view())}
 </body></html>"""
 
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--out", default=str(ROOT / "docs" / "current" / "index.html"))
+    ap.add_argument("--out", default=str(ROOT / "docs" / "index.html"))
     args = ap.parse_args()
     meta = registry_meta()
     html = build_html(meta, manifest())

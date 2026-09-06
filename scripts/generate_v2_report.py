@@ -35,7 +35,7 @@ from bench.config import shape_profiles  # noqa: E402  (canonical config)
 
 RUNS = ROOT / "results" / "v2" / "runs"
 FINAL_RUNS = ROOT / "results" / "v2" / "final"
-DOCS = ROOT / "docs"
+DOCS = ROOT / "docs" / "history" / "v2"
 DATA_DIR = DOCS / "data"
 
 ARM_LABELS = {
@@ -475,7 +475,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--runs", default=None,
                     help="runs directory (default: results/v2/final if curated, else results/v2/runs)")
-    ap.add_argument("--out", default=str(DOCS / "v2"))
+    ap.add_argument("--out", default=str(DOCS))
     args = ap.parse_args()
 
     runs_base = args.runs

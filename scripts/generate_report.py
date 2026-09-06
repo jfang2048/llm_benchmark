@@ -26,7 +26,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 RESULTS = ROOT / "results" / "final"
-DOCS = ROOT / "docs"
+DOCS = ROOT / "docs" / "history" / "v1"
 DATA_DIR = DOCS / "data"
 ASSETS_DIR = DOCS / "assets"
 
