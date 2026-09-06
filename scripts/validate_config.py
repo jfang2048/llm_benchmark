@@ -32,15 +32,31 @@ def load(path):
 def main():
     models = load(MODELS)
     bench = load(BENCHMARK)
+    cohorts = set()
 
     if models is not None:
+        cohorts = set(models.get("cohorts", {}).keys())
         ids = [m.get("id") for m in models.get("models", [])]
+        arms = [m.get("arm") for m in models.get("models", [])]
         if len(ids) != len(set(ids)):
             errors.append("models.json: duplicate model ids")
+        if len(arms) != len(set(arms)):
+            errors.append("models.json: duplicate arm keys")
         for m in models.get("models", []):
-            for req in ("id", "display_name", "arm", "quantization", "sha256"):
+            mid = m.get("id")
+            for req in ("id", "display_name", "arm", "cohort", "upstream_repo",
+                        "quantization", "chat_template", "port"):
                 if not m.get(req):
-                    errors.append(f"models.json: model {m.get('id')} missing '{req}'")
+                    errors.append(f"models.json: model {mid} missing '{req}'")
+            if m.get("cohort") not in cohorts:
+                errors.append(f"models.json: model {mid} has unknown cohort '{m.get('cohort')}'")
+            if "enabled" not in m or "primary" not in m:
+                errors.append(f"models.json: model {mid} missing enabled/primary booleans")
+            pc = m.get("actual_parameter_count")
+            if pc is not None and not isinstance(pc, int):
+                errors.append(f"models.json: model {mid} actual_parameter_count not an integer")
+            if m.get("sha256") is not None and not isinstance(m.get("sha256"), str):
+                errors.append(f"models.json: model {mid} sha256 must be string or null")
 
     if bench is not None:
         sp = bench.get("shape_profiles", {})
@@ -80,7 +96,7 @@ def main():
         sys.exit(1)
 
     print("config validation PASSED")
-    print(f"  models: {len(models['models']) if models else 0} primary")
+    print(f"  models: {len(models['models']) if models else 0} (cohorts: {', '.join(sorted(cohorts))})")
     print(f"  shape profiles: {', '.join(defined)}")
 
 

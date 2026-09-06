@@ -31,6 +31,34 @@ def shape_order():
     return load_benchmark()["shape_profiles"]["order"]
 
 
+def models():
+    """Return the list of registered models."""
+    return load_models()["models"]
+
+
+def cohorts():
+    """Return the cohort definitions keyed by cohort name."""
+    return load_models()["cohorts"]
+
+
+def primary_cohort():
+    """Return the models that form the current primary benchmark cohort."""
+    return [m for m in models() if m.get("primary")]
+
+
+def enabled_models():
+    """Return models enabled for benchmarking (passed admission)."""
+    return [m for m in models() if m.get("enabled")]
+
+
+def model_by_arm(arm):
+    """Return the model dict for an arm key, or None."""
+    for m in models():
+        if m.get("arm") == arm:
+            return m
+    return None
+
+
 def reliability_min_success():
     """Return the transport-reliability gate threshold (percent)."""
     return float(load_benchmark()["reliability"]["min_success_pct"])
