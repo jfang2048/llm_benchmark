@@ -1,0 +1,10 @@
+ggml_cuda_init: found 1 CUDA devices (Total VRAM: 6143 MiB):
+  Device 0: NVIDIA GeForce RTX 3060 Laptop GPU, compute capability 8.6, VMM: yes, VRAM: 6143 MiB
+load_backend: loaded CUDA backend from /src/build/bin/libggml-cuda.so
+load_backend: loaded CPU backend from /src/build/bin/libggml-cpu-haswell.so
+| model                          |       size |     params | backend    | ngl |            test |                  t/s |
+| ------------------------------ | ---------: | ---------: | ---------- | --: | --------------: | -------------------: |
+| qwen3 8B IQ4_XS - 4.25 bpw     |   4.24 GiB |     8.19 B | CUDA       |  99 |           pp512 |      1913.48 ± 40.11 |
+| qwen3 8B IQ4_XS - 4.25 bpw     |   4.24 GiB |     8.19 B | CUDA       |  99 |           tg128 |         56.05 ± 0.06 |
+
+build: unknown (0)

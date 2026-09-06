@@ -1,0 +1,76 @@
+{
+  "suite": "shape",
+  "git_commit": "704af71655581c4ed368690725150afe19bb4ecf",
+  "aiperf_version": "0.12.0",
+  "engine": "ggml-org/llama.cpp v0.4.0 (pinned)",
+  "image": "llama-cpp-upstream:v0.4.0",
+  "gpu": "NVIDIA GeForce RTX 3060 Laptop GPU, 610.74, 6144",
+  "serving_flags": [
+    "--ctx-size",
+    "4096",
+    "--parallel",
+    "2",
+    "--cont-batching",
+    "--metrics",
+    "--n-gpu-layers",
+    "999"
+  ],
+  "quantization": "IQ4_XS",
+  "workload_sha256": "294866ca6a5c118b52f34d0e97a7facc625d2e1b5cfb859fa7a8e348bae91263",
+  "config": {
+    "concurrency": [
+      1,
+      4
+    ],
+    "repeats": 1,
+    "requests_per_cell": 60,
+    "output_tokens": 128,
+    "seed": 42,
+    "temperature": 0,
+    "ignore_eos": true,
+    "cache_prompt": false,
+    "connection_reuse": "never",
+    "ctx_size": 4096,
+    "parallel": 2,
+    "n_gpu_layers": "999"
+  },
+  "models": {
+    "Qwen3-8B-IQ4_XS.gguf": {
+      "display_name": "Qwen3-8B",
+      "actual_parameter_count": 8190735360,
+      "sha256": "0f69fe02ca9764c93bcc12ac96509bee53488114d6a7fe47764f80990c28751a",
+      "quantization": "IQ4_XS",
+      "gguf_source": "bartowski/Qwen_Qwen3-8B-GGUF",
+      "upstream_repo": "Qwen/Qwen3-8B",
+      "license": "Apache-2.0"
+    },
+    "DeepSeek-R1-Distill-Llama-8B-IQ4_XS.gguf": {
+      "display_name": "DeepSeek-R1-Distill-Llama-8B",
+      "actual_parameter_count": 8030261248,
+      "sha256": "a076a5f7e48a054067d420c32740e1e63b425e1318a9a4eba89024906d67adcd",
+      "quantization": "IQ4_XS",
+      "gguf_source": "bartowski/DeepSeek-R1-Distill-Llama-8B-GGUF",
+      "upstream_repo": "deepseek-ai/DeepSeek-R1-Distill-Llama-8B",
+      "license": "MIT"
+    },
+    "GLM-4-9B-0414-IQ4_XS.gguf": {
+      "display_name": "GLM-4-9B-0414",
+      "actual_parameter_count": 9400279040,
+      "sha256": "c85b661ed11c36f8b5a4f75da8bc1672b011febf8d71f098feab41186ad1767e",
+      "quantization": "IQ4_XS",
+      "gguf_source": "bartowski/THUDM_GLM-4-9B-0414-GGUF",
+      "upstream_repo": "zai-org/GLM-4-9B-0414",
+      "license": "MIT"
+    },
+    "Yi-1.5-9B-Chat-IQ4_XS.gguf": {
+      "display_name": "Yi-1.5-9B-Chat",
+      "actual_parameter_count": 8829407232,
+      "sha256": "acf005319fa455ea91f6c8954d5beb1a08138114ea0cb88be718cdbfc8b1c5ba",
+      "quantization": "IQ4_XS",
+      "gguf_source": "bartowski/Yi-1.5-9B-Chat-GGUF",
+      "upstream_repo": "01-ai/Yi-1.5-9B-Chat",
+      "license": "Apache-2.0"
+    }
+  },
+  "generated_at": "2026-09-06T18:51:21.470965+00:00"
+}
