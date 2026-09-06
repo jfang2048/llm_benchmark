@@ -1,0 +1,13 @@
+arm	suite	isl	concurrency	repeat	status	error_rate_pct	attempted_requests	successful_requests	failed_requests	success_rate_pct	input_tokens_avg	output_tokens_avg	ttft_avg_ms	ttft_p50_ms	ttft_p95_ms	ttft_p99_ms	itl_avg_ms	itl_p50_ms	itl_p95_ms	itl_p99_ms	latency_avg_ms	latency_p50_ms	latency_p95_ms	latency_p99_ms	request_tps	output_tps	peak_vram_mib	peak_power_w	avg_gpu_util_pct	peak_temp_c	gpu_energy_j	gpu_j_per_request	gpu_j_per_output_token
+qwen3_8b	startup	raw	1	1	PASS		1	1	0	100.0000			354.64	354.64																			
+qwen3_8b	startup	raw	1	2	PASS		1	1	0	100.0000			354.88	354.88																			
+qwen3_8b	startup	raw	1	3	PASS		1	1	0	100.0000			361.25	361.25																			
+deepseek_r1_8b	startup	raw	1	1	PASS		1	1	0	100.0000			345.44	345.44																			
+deepseek_r1_8b	startup	raw	1	2	PASS		1	1	0	100.0000			313.29	313.29																			
+deepseek_r1_8b	startup	raw	1	3	PASS		1	1	0	100.0000			312.49	312.49																			
+glm4_9b	startup	raw	1	1	PASS		1	1	0	100.0000			443.39	443.39																			
+glm4_9b	startup	raw	1	2	PASS		1	1	0	100.0000			387.34	387.34																			
+glm4_9b	startup	raw	1	3	PASS		1	1	0	100.0000			383.53	383.53																			
+yi_15_9b	startup	raw	1	1	PASS		1	1	0	100.0000			319.26	319.26																			
+yi_15_9b	startup	raw	1	2	PASS		1	1	0	100.0000			271.65	271.65																			
+yi_15_9b	startup	raw	1	3	PASS		1	1	0	100.0000			272.65	272.65																			
