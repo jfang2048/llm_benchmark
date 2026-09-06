@@ -24,7 +24,7 @@
 SHELL := /bin/bash
 SCRIPTS := scripts
 
-.PHONY: help setup smoke benchmark benchmark-v1 capacity shape open-loop startup \
+.PHONY: help setup smoke benchmark benchmark-8b9b benchmark-v1 capacity shape open-loop startup \
 	soak sessions backend reliability report report-v1 reproduce security clean \
 	preflight deploy healthcheck
 
@@ -63,6 +63,10 @@ smoke:
 
 benchmark:
 	MODE=capacity ./$(SCRIPTS)/benchmark.sh
+
+# Mainstream 8-9B cohort (current primary): registry-driven runner.
+benchmark-8b9b:
+	python3 -m bench.runner
 
 benchmark-v1:
 	MODE=final ./$(SCRIPTS)/benchmark.sh
