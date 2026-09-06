@@ -45,6 +45,9 @@ MAX_START_TEMP_C = int(os.environ.get("MAX_START_TEMP_C", "70"))
 THERMAL_LIMIT_C = int(os.environ.get("THERMAL_LIMIT_C", "85"))
 VRAM_LIMIT_MIB = int(os.environ.get("VRAM_LIMIT_MIB", "6000"))
 STARTUP_TIMEOUT = int(os.environ.get("STARTUP_TIMEOUT", "300"))
+# Concurrency used for the rate-based (open-loop/soak) suites: high enough that
+# the server is not artificially serialized, matching the capacity sweep max.
+RATE_CONC = int(os.environ.get("RATE_CONC", "8"))
 
 
 def log(msg):
@@ -529,7 +532,7 @@ def main():
                     continue
                 out_dir = suite_root / arm / "rep_1"
                 out_dir.mkdir(parents=True, exist_ok=True)
-                row = run_rate_cell(arm, model_name, url, container, 1, 1,
+                row = run_rate_cell(arm, model_name, url, container, RATE_CONC, 1,
                                     str(out_dir), workload_path, rate, duration,
                                     osl_default, seed, "soak", "raw")
                 if row is None:
@@ -557,7 +560,7 @@ def main():
                         continue
                     out_dir = suite_root / arm / f"frac_{frac:.2f}"
                     out_dir.mkdir(parents=True, exist_ok=True)
-                    row = run_rate_cell(arm, model_name, url, container, 1, 1,
+                    row = run_rate_cell(arm, model_name, url, container, RATE_CONC, 1,
                                         str(out_dir), workload_path, rate,
                                         duration, osl_default, seed,
                                         "openloop", isl)
