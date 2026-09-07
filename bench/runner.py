@@ -267,10 +267,10 @@ def _num(s):
         return None
 
 
-def _base_rates():
+def _base_rates(cohort_dir):
     """Return {arm: max request_tps} from the committed capacity aggregate."""
     import csv
-    p = RESULT_ROOT / "capacity" / "aggregate.tsv"
+    p = RESULT_ROOT / cohort_dir / "capacity" / "aggregate.tsv"
     rates = {}
     if not p.exists():
         return rates
@@ -455,23 +455,36 @@ def main():
     ap.add_argument("--suite", default="capacity",
                     choices=["capacity", "reliability", "shape", "startup",
                              "soak", "open-loop", "sessions"])
+    ap.add_argument("--cohort", default="mainstream_8_9b")
     ap.add_argument("--dry-run", action="store_true")
     args = ap.parse_args()
 
     bench = config.load_benchmark()
-    cohort = config.cohorts().get("mainstream_8_9b", {})
-    quant = cohort.get("quantization", "IQ4_XS")
-
-    arms = [m for m in config.models()
-            if m.get("cohort") == "mainstream_8_9b" and m.get("enabled")]
-    if not arms:
-        log("no enabled mainstream_8_9b models")
+    cohort = config.cohorts().get(args.cohort)
+    if cohort is None:
+        log(f"unknown cohort {args.cohort}")
         return 1
+    quant = cohort.get("quantization")
+
+    arms = config.models_for_cohort(args.cohort)
+    if not arms:
+        log(f"no enabled models in cohort {args.cohort}")
+        return 1
+
+    # Engine image is registry-driven: upstream llama.cpp for the 8-9B cohort,
+    # the pinned XHToken fork for the Spark reference.
+    global IMAGE
+    engine = config.cohort_engine(args.cohort)
+    img = config.engine_image(engine) if engine else None
+    if img:
+        IMAGE = img
+    log(f"cohort={args.cohort} engine={engine} image={IMAGE}")
 
     seed = bench["sampling"]["seed"]
     osl_default = bench["output_length"]["default"]
 
-    suite_root = RESULT_ROOT / args.suite
+    cohort_dir = args.cohort.replace("_", "-")
+    suite_root = RESULT_ROOT / cohort_dir / args.suite
     suite_root.mkdir(parents=True, exist_ok=True)
     workload_path = str(suite_root / "model_workload.jsonl")
     workload_sha = workload.write_workload_jsonl(workload_path)
@@ -498,7 +511,7 @@ def main():
 
     # --- rate/timing/multi-turn suites ---
     if args.suite in ("startup", "soak", "open-loop", "sessions"):
-        rates = _base_rates()
+        rates = _base_rates(cohort_dir)
         if args.suite == "startup":
             reps = bench["repeats"]["startup"]
             for m in arms:
@@ -607,7 +620,7 @@ def main():
         if args.suite == "startup":
             _write_startup_summary(all_rows, str(suite_root / "startup.tsv"))
         _write_manifest(suite_root, bench, arms, quant, workload_sha,
-                        args.suite, seed)
+                        args.suite, seed, engine, args.cohort)
         log(f"wrote repeats.tsv + aggregate.tsv ({len(all_rows)} rows)")
         return 0
 
@@ -673,16 +686,19 @@ def main():
         results.write_reliability_tsv(results.reliability_summary(all_rows),
                                       str(suite_root / "reliability.tsv"))
     _write_manifest(suite_root, bench, arms, quant, workload_sha,
-                    args.suite, seed)
+                    args.suite, seed, engine, args.cohort)
     log(f"wrote repeats.tsv + aggregate.tsv ({len(all_rows)} rows)")
     return 0
 
 
-def _write_manifest(suite_dir, bench, arms, quant, workload_sha, suite, seed):
+def _write_manifest(suite_dir, bench, arms, quant, workload_sha, suite, seed,
+                    engine_name, cohort):
     import datetime
     commit = sh("git", "-C", str(ROOT), "rev-parse", "HEAD").stdout.strip()
     gpu = sh("nvidia-smi", "--query-gpu=name,driver_version,memory.total",
              "--format=csv,noheader,nounits").stdout.strip().splitlines()[0]
+    eng = config.engines().get(engine_name, {})
+    image = eng.get("image") or IMAGE
     models = {}
     for m in arms:
         gguf = m["gguf_filename"]
@@ -698,10 +714,13 @@ def _write_manifest(suite_dir, bench, arms, quant, workload_sha, suite, seed):
         }
     manifest = {
         "suite": suite,
+        "cohort": cohort,
         "git_commit": commit,
         "aiperf_version": "0.12.0",
-        "engine": "ggml-org/llama.cpp v0.4.0 (pinned)",
-        "image": IMAGE,
+        "engine": engine_name,
+        "engine_source": eng.get("source"),
+        "engine_commit": eng.get("commit"),
+        "image": image,
         "gpu": gpu,
         "serving_flags": SERVING_FLAGS,
         "quantization": quant,

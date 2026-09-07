@@ -46,6 +46,38 @@ def primary_cohort():
     return [m for m in models() if m.get("primary")]
 
 
+def models_for_cohort(cohort):
+    """Return enabled models in a given cohort, in registry order."""
+    return [m for m in models()
+            if m.get("cohort") == cohort and m.get("enabled")]
+
+
+def reference_models():
+    """Return first-class reference models (cross-cohort baselines)."""
+    return [m for m in models() if m.get("role") == "reference" and m.get("enabled")]
+
+
+def visible_models():
+    """Return models shown in the current dashboard (primary + reference)."""
+    return [m for m in models() if m.get("enabled") and m.get("cohort") in
+            ("mainstream_8_9b", "spark_reference")]
+
+
+def engines():
+    """Return the engine registry {name: {source, commit, image, ...}}."""
+    return load_models().get("engines", {})
+
+
+def cohort_engine(cohort):
+    """Return the engine name for a cohort, or None."""
+    return cohorts().get(cohort, {}).get("engine")
+
+
+def engine_image(engine):
+    """Return the Docker image for an engine name, or None."""
+    return engines().get(engine, {}).get("image")
+
+
 def enabled_models():
     """Return models enabled for benchmarking (passed admission)."""
     return [m for m in models() if m.get("enabled")]

@@ -32,7 +32,7 @@ jobs:
           import json, glob, sys
           files = (glob.glob("docs/data/*.json") + glob.glob("docs/history/*/data/*.json")
                    + glob.glob("results/final/*.json")
-                   + glob.glob("results/current/*/manifest.json")
+                   + glob.glob("results/current/*/*/manifest.json")
                    + glob.glob("monitoring/grafana/dashboards/*.json"))
           for f in files:
               json.load(open(f, encoding="utf-8"))
