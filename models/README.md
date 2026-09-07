@@ -28,19 +28,31 @@ mv models/Qwen_Qwen3-8B-IQ4_XS.gguf models/Qwen3-8B-IQ4_XS.gguf
 A helper that downloads all four and verifies SHA256 is available in the
 onboarding tooling (`.agent/download_ggufs.py`).
 
-## Reference model (Spark-X2.5-4B, Q4_K_M)
+## Reference model (Spark-X2.5-4B, IQ4_XS)
 
 Spark-X2.5-4B is the current fixed-hardware reference baseline, served on the
 XHToken llama.cpp fork (`spark-x25-llama:cuda13`).
 
 | Model | File | SHA256 | Size (approx) |
 |---|---|---|---|
-| Spark-X2.5-4B | `Spark-X2.5-4B-Q4_K_M.gguf` | `7934660bfc5b9bf04be0a0ac6179a1d16e1d4331b448857c86b8b2801b3ef72c` | ~2.4 GiB |
+| Spark-X2.5-4B | `Spark-X2.5-4B-IQ4_XS.gguf` | `e164454ef60b72af5f2dd544fafd754f2e30f6133cbab0506b925cc863070b38` | ~2.3 GiB |
 
-Spark-X2.5-4B has no single canonical public GGUF URL; obtain it by copying an
-existing `Spark-X2.5-4B-Q4_K_M.gguf` and verifying against the SHA256 above,
-or convert from the official XHToken/Spark-X2.5-4B weights using the fork in
-`docker/llama-cpp/`.
+The IQ4_XS artifact is produced from the official FP16 GGUF with the fork's
+`llama-quantize` (which supports IQ4_XS):
+
+```bash
+# 1. official FP16 GGUF (XHToken/Spark-X2.5-4B-GGUF, ungated)
+hf download XHToken/Spark-X2.5-4B-GGUF Spark-X2.5-4B.gguf --local-dir staging/
+# 2. quantize to IQ4_XS with the pinned fork binary
+docker run --rm -v "$PWD/models:/models:rw" -v "$PWD/staging:/staging:ro" \
+  --entrypoint /src/build/bin/llama-quantize spark-x25-llama:cuda13 \
+  /staging/Spark-X2.5-4B.gguf /models/Spark-X2.5-4B-IQ4_XS.gguf IQ4_XS
+# 3. verify
+sha256sum models/Spark-X2.5-4B-IQ4_XS.gguf   # e164454e...
+```
+
+The earlier Q4_K_M artifact (`7934660b...`, ~2.4 GiB) is retained as
+historical data.
 
 ## Historical cohort (4B, Q4_K_M)
 

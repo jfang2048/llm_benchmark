@@ -1,18 +1,24 @@
 # Results
 
-Results for the current mainstream 8-9B cohort. All numbers are generated from
-the machine-readable data under [`results/current/`](../results/current/); the
-interactive dashboard is at [`docs/index.html`](../index.html). Nothing here is
-hand-edited.
+Results for the current benchmark: the mainstream 8-9B cohort plus the
+Spark-X2.5-4B reference baseline. All numbers are generated from the
+machine-readable data under [`results/current/`](../results/current/); the
+interactive dashboard is at [`docs/index.html`](../index.html). Nothing here
+is hand-edited.
 
-## Serving conditions (identical across all models)
+## Serving conditions
 
-- Engine: ggml-org/llama.cpp pinned tag v0.4.0, CUDA arch 86.
-- Quantization: IQ4_XS (single uniform source, SHA256 in `configs/models.json`).
-- Serving: `--ctx-size 4096 --parallel 2 --n-gpu-layers 999 --cont-batching`.
-- GPU: RTX 3060 Laptop, 6 GiB VRAM. No CPU offload used.
+| Cohort | Engine | Quantization |
+|---|---|---|
+| Mainstream 8-9B | ggml-org/llama.cpp v0.4.0 (CUDA arch 86) | IQ4_XS |
+| Spark reference | XHToken llama.cpp fork (pinned) | IQ4_XS |
 
-## Capacity (60 req/cell, 3 repeats, temperature 0, OSL 128)
+Serving: `--ctx-size 4096 --parallel 2 --n-gpu-layers 999 --cont-batching`,
+GPU RTX 3060 Laptop (6 GiB), no CPU offload.
+
+## Mainstream 8-9B cohort
+
+### Capacity (60 req/cell, 3 repeats, temperature 0, OSL 128)
 
 All four models completed the sweep with 0 failures and 0% error at every
 concurrency (1/2/4/6/8). Aggregate means over 3 repeats:
@@ -28,20 +34,19 @@ GLM-4-9B has the lowest first-token latency but also the lowest sustained
 throughput and the highest VRAM (closest to the 6 GiB ceiling). DeepSeek-R1-
 Distill-Llama-8B has the highest sustained throughput.
 
-## Reliability (200 requests, c=1 and c=4, Wilson 95% CI)
+### Reliability (200 requests, c=1 and c=4, Wilson 95% CI)
 
 Every cell: 200/200 successful, observed 100%, Wilson 95% CI [98.12%, 100%].
 No transport errors for any model.
 
-## Workload shape (per-model tokenizer, 5 profiles)
+### Workload shape (per-model tokenizer, 5 profiles)
 
 36 of 40 cells PASS. `rag_medium` (ISL 768) is unreliable for **Qwen3-8B** and
 **DeepSeek-R1-Distill-Llama-8B** (`ServerDisconnectedError`/`ConnectionReset`/
-request timeouts) while **GLM-4-9B** and **Yi-1.5-9B** remain clean. Those cells
-are marked `UNSTABLE`/`TIMEOUT` and are excluded from the ranking — see the
-dashboard shape table and `results/current/shape/`.
+request timeouts) while **GLM-4-9B** and **Yi-1.5-9B** remain clean. Those
+cells are marked `UNSTABLE`/`TIMEOUT` and are excluded from the ranking.
 
-## Raw engine microbenchmark (llama-bench, pp512 / tg128, same binary)
+### Raw engine microbenchmark (llama-bench, pp512 / tg128, same binary)
 
 | Model | pp512 tok/s | tg128 tok/s |
 |---|---|---|
@@ -50,12 +55,9 @@ dashboard shape table and `results/current/shape/`.
 | GLM-4-9B-0414 | 1649 | 47.5 |
 | Yi-1.5-9B-Chat | 1593 | 50.8 |
 
-These are raw-engine numbers and are kept separate from the AIPerf end-to-end
-serving numbers above.
+Raw-engine numbers, kept separate from the AIPerf end-to-end serving numbers.
 
-## Startup (cold start, 3 repeats)
-
-Cold start to first token, min/mean/max over 3 repeats:
+### Startup (cold start, 3 repeats)
 
 | Model | min (ms) | mean (ms) | max (ms) |
 |---|---|---|---|
@@ -64,51 +66,84 @@ Cold start to first token, min/mean/max over 3 repeats:
 | GLM-4-9B-0414 | 4806 | 6114 | 7527 |
 | Yi-1.5-9B-Chat | 4270 | 5327 | 7438 |
 
-The first repeat is consistently slower (cold CUDA graph compilation); repeats
-2-3 stabilize.
-
-## Soak (sustained 600 s load at 0.75 x stable capacity, c=8)
+### Soak (600 s at 0.75 x capacity, c=8)
 
 All four models ran 600 s without errors and without thermal throttle: GPU
-temperature plateaued at ~77 C, power ~81-85 W, 0% error rate.
+~77 C, power ~81-85 W, 0% error rate.
 
-## Open-loop (Poisson goodput, c=8)
+### Open-loop (Poisson goodput, c=8)
 
-Offered Poisson load at 50/75/90/100/110% of each model's measured stable
-capacity. Achieved throughput tracks the offer up to ~90-100% and then flattens
-as the model saturates; no request errors at any load fraction. See
-`results/current/open-loop/` and the dashboard for the per-model curve.
+Achieved throughput tracks the offered load up to ~90-100% then flattens;
+no request errors at any load fraction.
 
-## Sessions (multi-turn, 3 turns, cache on/off)
+### Sessions (multi-turn, 3 turns, cache on/off)
 
-Per-turn TTFT p50 (ms):
+Per-turn TTFT p50 (ms): nocache 681-835 ms, cache 400-434 ms. `cache_prompt`
+roughly halves per-turn TTFT.
 
-| Model | TTFT nocache | TTFT cache |
-|---|---|---|
-| Qwen3-8B | 724 | 425 |
-| DeepSeek-R1-Distill-Llama-8B | 681 | 400 |
-| GLM-4-9B-0414 | 759 | 424 |
-| Yi-1.5-9B-Chat | 835 | 434 |
+## Reference baseline: Spark-X2.5-4B (IQ4_XS)
 
-`cache_prompt=true` avoids re-prefilling the conversation history, roughly
-halving per-turn TTFT. Four-turn conversations exceed the 2048-token per-slot
-serving context on this hardware, so sessions use 3 turns.
+Spark-X2.5-4B (4.11B, IQ4_XS, XHToken fork) is a fixed-hardware cross-cohort
+reference. It is **not ranked against the 8-9B cohort** (different parameter
+count, serving fork, and quantization pipeline); it appears for
+hardware-efficiency context.
+
+### Capacity
+
+| Concurrency | TTFT p50 (ms) | Output tok/s | Peak VRAM (MiB) |
+|---|---|---|---|
+| 1 | 114.7 | 66.3 | 2845 |
+| 2 | 186.8 | 112.2 | 2847 |
+| 4 | 2465.1 | 111.9 | 2847 |
+| 6 | 4742.0 | 111.9 | 2847 |
+| 8 | 7085.3 | 111.1 | 2847 |
+
+Output throughput saturates ~112 tok/s at c>=2 (GPU-bound); higher concurrency
+only adds queueing latency. IQ4_XS uses ~2847 MiB VRAM (the Q4_K_M historical
+run used ~3045 MiB).
+
+### Reliability
+
+200/200 successful at c=1 and c=4, observed 100%, Wilson 95% CI
+[98.12%, 100%], zero errors.
+
+### Startup
+
+Cold start 4.7 s (first) / ~2.9 s (warm).
+
+### Soak
+
+600 s at 0.75 x capacity: 0% error, peak ~78 C / ~86 W.
+
+### Open-loop
+
+Poisson 0.5-1.1 x capacity: 0% error, achieved goodput 0.42-0.82 req/s.
+
+### Sessions
+
+TTFT p50 582 ms nocache / 362 ms cache_prompt.
+
+### Workload shape (transport limit)
+
+ISL 128 profiles (`short_chat`, `generation`) PASS 60/60. At ISL >= 256 the
+XHToken fork drops streaming connections: `balanced` (256) ~56/60,
+`summarization` (512) ~42/60, `rag_medium` (768) TIMEOUT/UNSTABLE. This is a
+property of the fork's HTTP server, not the quantization (the Q4_K_M run
+showed the same limit). Affected cells are marked and excluded from ranking.
 
 ## Energy estimate
 
 `gpu_energy_j` / `gpu_j_per_request` / `gpu_j_per_output_token` in the cell
 telemetry are GPU-side estimates (integral of 500 ms `nvidia-smi` power
-sampling). They are not full-system energy and are not MLPerf Power compliant.
+sampling). Not full-system energy, not MLPerf Power compliant.
 
 ## Reading the data
 
-- `results/current/capacity/` — `aggregate.tsv` (mean + CI95), `repeats.tsv`
-  (raw repeats), `manifest.json` (engine/image/flags/workload hash).
-- `results/current/reliability/` — `reliability.tsv` (Wilson CI + error types).
-- `results/current/shape/` — per-profile aggregate + repeats.
-- `results/current/startup/` — `startup.tsv` (ready/first-token/cold-start ms).
-- `results/current/soak/` and `results/current/open-loop/` — rate-based cells.
-- `results/current/sessions/` — multi-turn aggregate + repeats.
-- `results/current/llama-bench/` — raw llama-bench output.
+- `results/current/mainstream-8-9b/` — 8-9B cohort suites.
+- `results/current/spark-reference/` — Spark reference suites.
+- `results/history/spark-q4-km/` — historical Spark Q4_K_M run.
+- Each suite dir: `aggregate.tsv` (mean + CI95), `repeats.tsv` (raw repeats),
+  `manifest.json` (engine/image/flags/workload hash), plus `reliability.tsv`
+  and `startup.tsv` where applicable.
 
-Regenerate the dashboard with `make report-current`.
+Regenerate the dashboard with `make report`.
