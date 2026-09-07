@@ -22,6 +22,9 @@ sys.path.insert(0, str(ROOT))
 from bench import config  # noqa: E402
 
 RESULT_ROOT = ROOT / "results" / "current"
+# (filesystem dir, registry cohort) for the current cohorts.
+COHORTS = [("mainstream-8-9b", "mainstream_8_9b"),
+           ("spark-reference", "spark_reference")]
 PALETTE = ["#3a7bd5", "#e07b39", "#2fa36b", "#8e44ad", "#c0392b", "#16a085"]
 
 
@@ -42,14 +45,52 @@ def load_tsv(path):
 def registry_meta():
     meta = {}
     for m in config.models():
-        if m.get("cohort") != "mainstream_8_9b":
-            continue
-        meta[m["arm"]] = m
+        if m.get("enabled") and m.get("cohort") in ("mainstream_8_9b", "spark_reference"):
+            meta[m["arm"]] = m
     return meta
 
 
+def is_reference(meta, arm):
+    return meta.get(arm, {}).get("role") == "reference"
+
+
+def disp(meta, arm):
+    """Display name; the Spark reference is labeled, never ranked as 8-9B."""
+    m = meta.get(arm, {})
+    name = m.get("display_name", arm)
+    if m.get("role") == "reference":
+        return name + " (REFERENCE / 4B)"
+    return name
+
+
+def cohort_of(arm):
+    for m in config.models():
+        if m.get("arm") == arm:
+            return "spark" if m.get("role") == "reference" else "mainstream"
+    return "mainstream"
+
+
+def _cohort_attr(cohort):
+    return f' data-cohort="{cohort}"'
+
+
+def load_suite(suite, *globs):
+    """Load TSV rows from a suite across cohorts, tagged with cohort + role."""
+    out = []
+    for cohort_dir, cohort_name in COHORTS:
+        base = RESULT_ROOT / cohort_dir / suite
+        for g in globs:
+            for p in base.glob(g):
+                for r in load_tsv(p):
+                    r = dict(r)
+                    r["_cohort_dir"] = cohort_dir
+                    r["_cohort"] = cohort_name
+                    out.append(r)
+    return out
+
+
 def manifest():
-    p = RESULT_ROOT / "capacity" / "manifest.json"
+    p = RESULT_ROOT / "mainstream-8-9b" / "capacity" / "manifest.json"
     if not p.exists():
         return {}
     try:
@@ -64,15 +105,15 @@ def html_escape(s):
 
 
 def capacity_view(meta):
-    rows = load_tsv(RESULT_ROOT / "capacity" / "aggregate.tsv")
+    rows = load_suite("capacity", "aggregate.tsv")
     out = []
     for r in rows:
         if r.get("suite") != "capacity":
             continue
         arm = r["arm"]
-        m = meta.get(arm, {})
         out.append({
-            "model": m.get("display_name", arm),
+            "model": disp(meta, arm),
+            "cohort": cohort_of(arm),
             "concurrency": int(r["concurrency"]),
             "ttft_p50": _num(r.get("ttft_p50_ms_mean")),
             "lat_p50": _num(r.get("latency_p50_ms_mean")),
@@ -87,19 +128,23 @@ def capacity_view(meta):
 
 
 def repeats_view():
-    return load_tsv(RESULT_ROOT / "capacity" / "repeats.tsv")
+    return load_suite("capacity", "repeats.tsv")
 
 
 def reliability_view():
-    return load_tsv(RESULT_ROOT / "reliability" / "reliability.tsv")
+    return load_suite("reliability", "reliability.tsv")
 
 
 def model_table(meta, manifest):
     rows = []
     for arm, m in sorted(meta.items(), key=lambda kv: kv[1].get("port", 0)):
         pc = m.get("actual_parameter_count")
+        role = "Reference (4B)" if m.get("role") == "reference" else "Primary (8-9B)"
+        cls = ' class="ref"' if m.get("role") == "reference" else ""
+        cohort = "spark" if m.get("role") == "reference" else "mainstream"
         rows.append(
-            f"<tr><td>{html_escape(m.get('display_name', arm))}</td>"
+            f"<tr{cls}{_cohort_attr(cohort)}><td>{html_escape(m.get('display_name', arm))}</td>"
+            f"<td>{role}</td>"
             f"<td>{html_escape(m.get('upstream_repo', ''))}</td>"
             f"<td>{pc / 1e9:.2f}B</td>"
             f"<td>{html_escape(m.get('quantization', ''))}</td>"
@@ -109,7 +154,7 @@ def model_table(meta, manifest):
     gpu = manifest.get("gpu", "")
     return f"""
     <h2>Models</h2>
-    <table><thead><tr><th>Model</th><th>Upstream</th><th>Params</th>
+    <table><thead><tr><th>Model</th><th>Role</th><th>Upstream</th><th>Params</th>
     <th>Quant</th><th>License</th></tr></thead><tbody>
     {''.join(rows)}</tbody></table>
     <p class="meta">Engine: {html_escape(engine)} &middot; GPU: {html_escape(gpu)}</p>
@@ -121,6 +166,7 @@ def capacity_table(cells):
         return "<h2>Capacity</h2><p>No capacity data yet.</p>"
     models = sorted({c["model"] for c in cells})
     concs = sorted({c["concurrency"] for c in cells})
+    model_cohort = {c["model"]: c["cohort"] for c in cells}
     head = "".join(f"<th>c={c}</th>" for c in concs)
     body = []
     for model in models:
@@ -139,7 +185,8 @@ def capacity_table(cells):
                 tts.append('<td class="excluded">EXCLUDED</td>')
             else:
                 tts.append(f"<td>{cell['ttft_p50']:.1f} ms</td>")
-        body.append(f"<tr><td>{html_escape(model)}</td>{''.join(tts)}</tr>")
+        body.append(f"<tr{_cohort_attr(model_cohort.get(model, 'mainstream'))}>"
+                    f"<td>{html_escape(model)}</td>{''.join(tts)}</tr>")
     return (f"<h2>Capacity &mdash; TTFT p50 (ms) vs concurrency</h2>"
             f"<table><thead><tr><th>Model</th>{head}</tr></thead><tbody>"
             f"{''.join(body)}</tbody></table>")
@@ -150,6 +197,7 @@ def output_tps_table(cells):
         return ""
     models = sorted({c["model"] for c in cells})
     concs = sorted({c["concurrency"] for c in cells})
+    model_cohort = {c["model"]: c["cohort"] for c in cells}
     head = "".join(f"<th>c={c}</th>" for c in concs)
     body = []
     for model in models:
@@ -161,7 +209,8 @@ def output_tps_table(cells):
                 tds.append(f"<td>{cell['output_tps']:.1f}</td>")
             else:
                 tds.append('<td class="fail">-</td>')
-        body.append(f"<tr><td>{html_escape(model)}</td>{''.join(tds)}</tr>")
+        body.append(f"<tr{_cohort_attr(model_cohort.get(model, 'mainstream'))}>"
+                    f"<td>{html_escape(model)}</td>{''.join(tds)}</tr>")
     return (f"<h2>Capacity &mdash; output tokens/s vs concurrency</h2>"
             f"<table><thead><tr><th>Model</th>{head}</tr></thead><tbody>"
             f"{''.join(body)}</tbody></table>")
@@ -202,13 +251,13 @@ def capacity_chart(cells):
             f'{xlabels}{legend}{"".join(polylines)}</svg>')
 
 
-def reliability_table(rows):
+def reliability_table(rows, meta):
     if not rows:
         return "<h2>Reliability</h2><p>No reliability data yet.</p>"
     body = []
     for r in rows:
         body.append(
-            f"<tr><td>{html_escape(r['arm'])}</td><td>{r['concurrency']}</td>"
+            f"<tr{_cohort_attr(cohort_of(r['arm']))}><td>{html_escape(disp(meta, r['arm']))}</td><td>{r['concurrency']}</td>"
             f"<td>{r['attempted']}</td><td>{r['successful']}</td>"
             f"<td>{r['failed']}</td><td>{r['success_rate_pct']}%</td>"
             f"<td>[{r['wilson_low_pct']}, {r['wilson_high_pct']}]</td>"
@@ -220,7 +269,7 @@ def reliability_table(rows):
             f"</tr></thead><tbody>{''.join(body)}</tbody></table>")
 
 
-def repeats_table(rows):
+def repeats_table(rows, meta):
     if not rows:
         return ""
     body = []
@@ -231,7 +280,7 @@ def repeats_table(rows):
         elif r.get("status") == "UNSTABLE":
             cls = ' class="unstable"'
         body.append(
-            f"<tr{cls}><td>{html_escape(r.get('arm'))}</td>"
+            f"<tr{cls}{_cohort_attr(cohort_of(r.get('arm')))}><td>{html_escape(disp(meta, r.get('arm'))) }</td>"
             f"<td>{r.get('concurrency')}</td><td>{r.get('repeat')}</td>"
             f"<td>{r.get('status')}</td>"
             f"<td>{r.get('ttft_p50_ms') or '-'}</td>"
@@ -247,7 +296,7 @@ def repeats_table(rows):
 
 
 def shape_view():
-    rows = load_tsv(RESULT_ROOT / "shape" / "aggregate.tsv")
+    rows = load_suite("shape", "aggregate.tsv")
     out = []
     for r in rows:
         if not r.get("suite", "").startswith("shape_"):
@@ -274,7 +323,7 @@ def shape_view():
     return out
 
 
-def shape_table(rows):
+def shape_table(rows, meta):
     if not rows:
         return "<h2>Workload shape</h2><p>No shape data yet.</p>"
     order = config.shape_order()
@@ -283,6 +332,7 @@ def shape_table(rows):
     arms = sorted({r["arm"] for r in rows})
     body = []
     for arm in arms:
+        name = disp(meta, arm)
         for c in sorted({r["concurrency"] for r in rows}):
             cells = []
             for p in profiles:
@@ -295,7 +345,7 @@ def shape_table(rows):
                     cells.append(f"<td>{cell['ttft_p50']:.0f} ms</td>")
                 else:
                     cells.append(f'<td class="fail">{cell["status"]}</td>')
-            body.append(f"<tr><td>{html_escape(arm)}</td><td>c={c}</td>"
+            body.append(f"<tr{_cohort_attr(cohort_of(arm))}><td>{html_escape(name)}</td><td>c={c}</td>"
                         f"{''.join(cells)}</tr>")
     head = "".join(f"<th>{html_escape(p)}</th>" for p in profiles)
     return (f"<h2>Workload shape &mdash; TTFT p50 (ms) by ISL/OSL profile</h2>"
@@ -308,7 +358,7 @@ def shape_table(rows):
 
 
 def startup_table(meta):
-    rows = load_tsv(RESULT_ROOT / "startup" / "startup.tsv")
+    rows = load_suite("startup", "startup.tsv")
     if not rows:
         return ""
     by_arm = {}
@@ -319,8 +369,8 @@ def startup_table(meta):
     body = []
     for arm, vals in sorted(by_arm.items()):
         mean = sum(vals) / len(vals)
-        name = meta.get(arm, {}).get("display_name", arm)
-        body.append(f"<tr><td>{html_escape(name)}</td>"
+        name = disp(meta, arm)
+        body.append(f"<tr{_cohort_attr(cohort_of(arm))}><td>{html_escape(name)}</td>"
                     f"<td>{min(vals):.0f}</td><td>{mean:.0f}</td>"
                     f"<td>{max(vals):.0f}</td></tr>")
     return (f"<h2>Startup &mdash; cold start to first token (ms)</h2>"
@@ -330,7 +380,7 @@ def startup_table(meta):
 
 
 def openloop_table(meta):
-    rows = load_tsv(RESULT_ROOT / "open-loop" / "aggregate.tsv")
+    rows = load_suite("open-loop", "aggregate.tsv")
     if not rows:
         return ""
     arms = sorted({r["arm"] for r in rows})
@@ -338,7 +388,7 @@ def openloop_table(meta):
     head = "".join(f"<th>{f}</th>" for f in fracs)
     body = []
     for arm in arms:
-        name = meta.get(arm, {}).get("display_name", arm)
+        name = disp(meta, arm)
         tds = []
         for f in fracs:
             r = next((x for x in rows if x["arm"] == arm and x["isl"] == f), None)
@@ -346,7 +396,7 @@ def openloop_table(meta):
                 tds.append(f"<td>{_num(r.get('request_tps_mean')):.2f}</td>")
             else:
                 tds.append("<td>-</td>")
-        body.append(f"<tr><td>{html_escape(name)}</td>{''.join(tds)}</tr>")
+        body.append(f"<tr{_cohort_attr(cohort_of(arm))}><td>{html_escape(name)}</td>{''.join(tds)}</tr>")
     return (f"<h2>Open-loop &mdash; achieved goodput (req/s) vs load fraction</h2>"
             f"<table><thead><tr><th>Model</th><th>load fraction x capacity</th></tr>"
             f"<tr><th></th>{head}</tr></thead><tbody>{''.join(body)}</tbody>"
@@ -356,16 +406,16 @@ def openloop_table(meta):
 
 
 def sessions_table(meta):
-    rows = load_tsv(RESULT_ROOT / "sessions" / "aggregate.tsv")
+    rows = load_suite("sessions", "aggregate.tsv")
     if not rows:
         return ""
     body = []
     for arm in sorted({r["arm"] for r in rows}):
-        name = meta.get(arm, {}).get("display_name", arm)
+        name = disp(meta, arm)
         nc = next((r for r in rows if r["arm"] == arm and r["isl"] == "nocache"), None)
         ca = next((r for r in rows if r["arm"] == arm and r["isl"] == "cache"), None)
         body.append(
-            f"<tr><td>{html_escape(name)}</td>"
+            f"<tr{_cohort_attr(cohort_of(arm))}><td>{html_escape(name)}</td>"
             f"<td>{_num(nc['ttft_p50_ms_mean']) if nc else ''}</td>"
             f"<td>{_num(ca['ttft_p50_ms_mean']) if ca else ''}</td>"
             f"<td>{_num(nc['itl_p50_ms_mean']) if nc else ''}</td>"
@@ -383,7 +433,7 @@ def build_html(meta, manifest):
     return f"""<!doctype html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Local LLM Inference Benchmark &mdash; Mainstream 8-9B</title>
+<title>Local LLM Inference Benchmark</title>
 <style>
 body {{ font-family: -apple-system, Segoe UI, Roboto, sans-serif; margin: 2rem; color: #222; }}
 h1 {{ border-bottom: 2px solid #333; padding-bottom: .3rem; }}
@@ -395,21 +445,42 @@ td:first-child, th:first-child {{ text-align: left; }}
 .fail {{ background: #fdecea; color: #b3261e; font-weight: 600; }}
 .unstable {{ background: #fff4e5; color: #b26a00; font-weight: 600; }}
 .excluded {{ background: #eee; color: #777; }}
+.ref {{ background: #f3f6fb; }}
+.badge {{ display: inline-block; font-size: .72rem; padding: .1rem .45rem;
+         border-radius: 3px; background: #3a7bd5; color: #fff; vertical-align: middle; }}
 .meta {{ color: #555; font-size: .85rem; }}
+.filter {{ margin: 1rem 0; font-size: .9rem; }}
 </style></head><body>
-<h1>Local LLM Inference Benchmark &mdash; Mainstream 8-9B</h1>
-<p class="meta">Fixed-hardware deployment benchmark: RTX 3060 Laptop (6 GiB),
-llama.cpp pinned upstream, IQ4_XS, identical serving policy across models.</p>
+<h1>Local LLM Inference Benchmark</h1>
+<p class="meta">Fixed-hardware deployment benchmark on RTX 3060 Laptop (6 GiB).
+Primary cohort: 4 mainstream 8-9B models, same pinned upstream llama.cpp,
+IQ4_XS, identical serving policy. <span class="badge">REFERENCE / 4B</span>
+marks Spark-X2.5-4B, a fixed-hardware reference baseline served on the
+XHToken llama.cpp fork (Q4_K_M); it is never ranked against the 8-9B cohort.</p>
+<div class="filter">Cohort:
+<select id="cohortFilter" onchange="applyFilter()">
+<option value="all">All</option>
+<option value="mainstream">Mainstream 8-9B</option>
+<option value="spark">Spark reference</option>
+</select></div>
 {model_table(meta, manifest)}
 {capacity_table(cells)}
 {output_tps_table(cells)}
 {capacity_chart(cells)}
-{repeats_table(repeats_view())}
-{shape_table(shape_view())}
+{repeats_table(repeats_view(), meta)}
+{shape_table(shape_view(), meta)}
 {openloop_table(meta)}
 {startup_table(meta)}
 {sessions_table(meta)}
-{reliability_table(reliability_view())}
+{reliability_table(reliability_view(), meta)}
+<script>
+function applyFilter() {{
+  const v = document.getElementById('cohortFilter').value;
+  document.querySelectorAll('tr[data-cohort]').forEach(tr => {{
+    tr.style.display = (v === 'all' || tr.dataset.cohort === v) ? '' : 'none';
+  }});
+}}
+</script>
 </body></html>"""
 
 
