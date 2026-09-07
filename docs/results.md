@@ -53,6 +53,47 @@ dashboard shape table and `results/current/shape/`.
 These are raw-engine numbers and are kept separate from the AIPerf end-to-end
 serving numbers above.
 
+## Startup (cold start, 3 repeats)
+
+Cold start to first token, min/mean/max over 3 repeats:
+
+| Model | min (ms) | mean (ms) | max (ms) |
+|---|---|---|---|
+| Qwen3-8B | 4213 | 4740 | 5352 |
+| DeepSeek-R1-Distill-Llama-8B | 4203 | 5382 | 6184 |
+| GLM-4-9B-0414 | 4806 | 6114 | 7527 |
+| Yi-1.5-9B-Chat | 4270 | 5327 | 7438 |
+
+The first repeat is consistently slower (cold CUDA graph compilation); repeats
+2-3 stabilize.
+
+## Soak (sustained 600 s load at 0.75 x stable capacity, c=8)
+
+All four models ran 600 s without errors and without thermal throttle: GPU
+temperature plateaued at ~77 C, power ~81-85 W, 0% error rate.
+
+## Open-loop (Poisson goodput, c=8)
+
+Offered Poisson load at 50/75/90/100/110% of each model's measured stable
+capacity. Achieved throughput tracks the offer up to ~90-100% and then flattens
+as the model saturates; no request errors at any load fraction. See
+`results/current/open-loop/` and the dashboard for the per-model curve.
+
+## Sessions (multi-turn, 3 turns, cache on/off)
+
+Per-turn TTFT p50 (ms):
+
+| Model | TTFT nocache | TTFT cache |
+|---|---|---|
+| Qwen3-8B | 724 | 425 |
+| DeepSeek-R1-Distill-Llama-8B | 681 | 400 |
+| GLM-4-9B-0414 | 759 | 424 |
+| Yi-1.5-9B-Chat | 835 | 434 |
+
+`cache_prompt=true` avoids re-prefilling the conversation history, roughly
+halving per-turn TTFT. Four-turn conversations exceed the 2048-token per-slot
+serving context on this hardware, so sessions use 3 turns.
+
 ## Energy estimate
 
 `gpu_energy_j` / `gpu_j_per_request` / `gpu_j_per_output_token` in the cell
@@ -65,6 +106,9 @@ sampling). They are not full-system energy and are not MLPerf Power compliant.
   (raw repeats), `manifest.json` (engine/image/flags/workload hash).
 - `results/current/reliability/` — `reliability.tsv` (Wilson CI + error types).
 - `results/current/shape/` — per-profile aggregate + repeats.
+- `results/current/startup/` — `startup.tsv` (ready/first-token/cold-start ms).
+- `results/current/soak/` and `results/current/open-loop/` — rate-based cells.
+- `results/current/sessions/` — multi-turn aggregate + repeats.
 - `results/current/llama-bench/` — raw llama-bench output.
 
 Regenerate the dashboard with `make report-current`.
