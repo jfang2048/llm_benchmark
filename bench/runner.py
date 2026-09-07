@@ -524,7 +524,7 @@ def main():
             for m in arms:
                 arm, url, container, model_name = _arm_info(m)
                 rate = rates.get(arm, 0.5) * frac
-                key = ("soak", arm, "raw", "1", "1")
+                key = ("soak", arm, "raw", str(RATE_CONC), "1")
                 if key in completed:
                     continue
                 log(f"cell suite=soak arm={arm} rate={rate:.3f} dur={duration}s")
@@ -550,7 +550,7 @@ def main():
                 R = rates.get(arm, 0.5)
                 for frac in fracs:
                     isl = f"{frac:.2f}"
-                    key = ("openloop", arm, isl, "1", "1")
+                    key = ("openloop", arm, isl, str(RATE_CONC), "1")
                     if key in completed:
                         continue
                     rate = R * frac
