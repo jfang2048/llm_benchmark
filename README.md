@@ -1,10 +1,14 @@
 # Local LLM Inference Benchmark
 
 A reproducible benchmark for local LLM inference serving on a constrained
-consumer GPU (NVIDIA RTX 3060 Laptop, 6 GiB VRAM). The current primary cohort
-is four mainstream 8-9B dense open-weight models in IQ4_XS quantization, all
-served by the same pinned upstream llama.cpp build under an identical resource
-policy and workload. The earlier ~4B cohort is preserved as historical data.
+consumer GPU (NVIDIA RTX 3060 Laptop, 6 GiB VRAM).
+
+- **Current benchmark — mainstream 8-9B cohort:** four dense open-weight
+  8-9B models in IQ4_XS quantization, all served by the same pinned upstream
+  llama.cpp build under an identical resource policy and workload.
+- **Reference baseline — Spark-X2.5-4B:** a 4B model served on the XHToken
+  llama.cpp fork (Q4_K_M). It is shown alongside the cohort as a fixed-hardware
+  cross-cohort reference, never as a size-matched competitor.
 
 > **Dashboard:** https://jfang2048.github.io/llm_benchmark/
 
@@ -13,8 +17,10 @@ policy and workload. The earlier ~4B cohort is preserved as historical data.
 - Defines a controlled fixed-hardware deployment benchmark
   ([docs/methodology.md](docs/methodology.md)): it measures serving
   performance under one GPU/engine/quantization policy, not model quality.
-- Provides a pinned, reproducible upstream llama.cpp Docker build
-  (`docker/llama-cpp-upstream/`, tag v0.4.0, CUDA arch 86).
+- Provides two pinned engine profiles (see `configs/models.json`):
+  - `upstream_llama_cpp` (`docker/llama-cpp-upstream/`, tag v0.4.0, CUDA arch
+    86) for the 8-9B cohort;
+  - `xhtoken_llama_cpp` (the Spark-X2.5 XHToken fork) for the reference model.
 - Derives the active model set and sweep parameters from a single registry
   (`configs/models.json` + `configs/benchmark.json`); the runner and report
   generator read from it, never from hardcoded model lists.
@@ -24,7 +30,9 @@ policy and workload. The earlier ~4B cohort is preserved as historical data.
   a static dashboard from it — every displayed number comes from
   machine-readable `.tsv` files.
 
-## Models (current primary cohort)
+## Models
+
+### Current benchmark: mainstream 8-9B cohort
 
 | Model | Parameters | Quantization | License |
 |---|---|---|---|
@@ -38,6 +46,17 @@ All four are served as IQ4_XS GGUF (single uniform source, SHA256 recorded in
 build. `DeepSeek-R1-Distill-Llama-8B` is a DeepSeek-distilled Llama-3.1-8B
 dense model — not the DeepSeek-R1/V3 MoE architecture.
 
+### Reference baseline: Spark-X2.5-4B
+
+| Model | Parameters | Quantization | Engine |
+|---|---|---|---|
+| Spark-X2.5-4B | 4.11B | Q4_K_M | XHToken llama.cpp fork |
+
+Spark differs from the cohort in parameter count, serving fork, and
+quantization, so it is reported as a fixed-hardware reference — not ranked
+against the 8-9B models. Its engine profile and commit are pinned in
+`configs/models.json` exactly like the upstream build.
+
 ## Test system
 
 | Component | Value |
@@ -45,7 +64,8 @@ dense model — not the DeepSeek-R1/V3 MoE architecture.
 | GPU | NVIDIA GeForce RTX 3060 Laptop GPU, 6144 MiB VRAM |
 | CPU | AMD Ryzen 7 6800H |
 | Platform | WSL2, Ubuntu 24.04 |
-| Engine | ggml-org/llama.cpp, pinned tag v0.4.0 (CUDA arch 86) |
+| Engine (8-9B) | ggml-org/llama.cpp, pinned tag v0.4.0 (CUDA arch 86) |
+| Engine (Spark) | XHToken llama.cpp fork, pinned commit |
 | Serving policy | `--ctx-size 4096 --parallel 2 --n-gpu-layers 999 --cont-batching` |
 | Benchmark tool | NVIDIA AIPerf 0.12.0 |
 
@@ -54,25 +74,28 @@ dense model — not the DeepSeek-R1/V3 MoE architecture.
 ```bash
 git clone https://github.com/jfang2048/llm_benchmark.git
 cd llm_benchmark
-make preflight             # validate GPU, Docker, models
-# acquire the 4 IQ4_XS GGUFs into models/ (see models/README.md), then:
-docker build -t llama-cpp-upstream:v0.4.0 -f docker/llama-cpp-upstream/Dockerfile docker/llama-cpp-upstream/
-./scripts/admit_8b9b.sh    # serve + healthcheck + smoke + VRAM admission
-make benchmark-8b9b        # capacity sweep (registry-driven)
-make report-current        # rebuild docs/current/index.html
+make setup                 # preflight + download models + build images
+make smoke                 # admission sanity check (serve + smoke + VRAM)
+make benchmark             # mainstream 8-9B capacity sweep
+make spark                 # Spark reference capacity sweep
+make report                # rebuild the current dashboard
 ```
 
 ## Benchmark suites
 
 Run via the registry-driven harness (`bench/runner.py`); `make` targets wrap it.
 
-- `make benchmark-8b9b` — capacity: closed-loop throughput/latency/error sweep
-  vs concurrency (1/2/4/6/8, 60 req/cell, 3 repeats, rotated model order).
-- `make reliability-8b9b` — transport-reliability gate (≥200 requests, Wilson
-  95% CI on success rate, error classification).
-- `make shape-8b9b` — token-controlled ISL/OSL workload sweep.
+- `make benchmark` / `make spark` — capacity: closed-loop throughput/latency/
+  error sweep vs concurrency (1/2/4/6/8, 60 req/cell, 3 repeats, rotated model
+  order).
+- `make reliability` — transport-reliability gate (≥200 requests, Wilson 95%
+  CI on success rate, error classification).
+- `make shape` — token-controlled ISL/OSL workload sweep.
+- `make open-loop` — Poisson load + SLO/goodput sweep.
+- `make startup` / `make soak` / `make sessions` — cold-start latency,
+  sustained-load thermal degradation, multi-turn latency.
 - `make llama-bench` — raw-engine microbenchmark (pp512/tg128) with the same
-  binary; kept separate from the AIPerf end-to-end serving numbers.
+  upstream binary; kept separate from the AIPerf end-to-end serving numbers.
 
 Serving is gated on a per-model admission test (`scripts/admit_8b9b.sh`):
 healthcheck, a generation request, a 20-request smoke test, and a VRAM/OOM
@@ -82,7 +105,8 @@ check before a model enters the benchmark. Capacity results with `FAILED` or
 ## Reproduce
 
 ```bash
-make reproduce
+make reproduce              # full: both cohorts + dashboard
+REPRODUCE_MODE=smoke make reproduce   # fast admission path
 ```
 
 ## Methodology
@@ -94,7 +118,8 @@ exact GPU/engine/quantization envelope, not a general model ranking.
 
 ## Data
 
-- Current 8-9B dataset: `results/current/` (curated TSVs + manifest).
+- Current 8-9B dataset: `results/current/mainstream-8-9b/`.
+- Current Spark reference: `results/current/spark-reference/`.
 - Historical ~4B cohort: `results/v2/final/` and `docs/history/`.
 
 ## Limitations
@@ -102,9 +127,11 @@ exact GPU/engine/quantization envelope, not a general model ranking.
 - One GPU, one laptop, one driver version.
 - Serving cost, not model quality (accuracy/reasoning).
 - Cross-model tokens/s is secondary because tokenizers differ.
-- IQ4_XS fits the whole cohort at ctx=4096/parallel=2, but the largest model
-  (GLM-4-9B) sits near the VRAM ceiling; any CPU-offload variant would be
-  recorded explicitly as such.
+- IQ4_XS fits the whole 8-9B cohort at ctx=4096/parallel=2, but the largest
+  model (GLM-4-9B) sits near the VRAM ceiling; any CPU-offload variant would
+  be recorded explicitly as such.
+- Spark-X2.5-4B is a reasoning model (emits `reasoning_content`), so its
+  output latency reflects reasoning tokens, not only final content.
 
 ## License
 

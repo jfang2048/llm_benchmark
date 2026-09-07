@@ -15,8 +15,19 @@ This upstream release registers all four cohort architectures — `qwen3`,
 `llama` (DeepSeek-R1-Distill-Llama-8B and Yi-1.5-9B), `glm4` — so one binary
 serves the whole cohort.
 
-The legacy 4B cohort used the XHToken/llama.cpp fork (Spark-X2.5 support). That
-fork is retained only for historical 4B reproduction under `docker/llama-cpp/`.
+The Spark-X2.5-4B reference baseline is served by a second, pinned engine
+profile — the **XHToken llama.cpp fork** (image `spark-x25-llama:cuda13`,
+built from `docker/llama-cpp/`), because Spark-X2.5 requires XHToken support
+that upstream llama.cpp does not provide.
+
+| Engine | Cohort | Image | Source |
+|---|---|---|---|
+| `upstream_llama_cpp` | mainstream 8-9B | `llama-cpp-upstream:v0.4.0` | ggml-org/llama.cpp v0.4.0 |
+| `xhtoken_llama_cpp` | spark_reference | `spark-x25-llama:cuda13` | XHToken llama.cpp fork |
+
+Both engines are pinned (commit/image recorded in `configs/models.json`); the
+engine profile is the reason Spark is reported as a reference, not ranked
+against the upstream-served 8-9B cohort.
 
 ## Quantization
 

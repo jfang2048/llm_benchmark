@@ -26,11 +26,19 @@ not marketing names. All four models are MIT or Apache-2.0 and ungated.
   constraint on this hardware for every model in the cohort.
 - Exact GGUF SHA256 values are recorded in `configs/models.json`.
 
+## Reference model
+
+- **Spark-X2.5-4B** (4.11B params, Q4_K_M, XHToken llama.cpp fork) is a
+  fixed-hardware cross-cohort reference baseline. It is not part of the
+  size-matched 8-9B ranking: it differs in parameter count, serving fork, and
+  quantization. It is reported alongside the cohort for hardware-efficiency
+  context and never compared as a size-matched winner.
+
 ## Excluded
 
 - **Meta-Llama-3.1-8B-Instruct** and **gemma-2-9b-it** were considered as
   optional arms but are gated on Hugging Face; gated models must not block
   progress, so they are not part of the primary ranking.
-- Models substantially outside the 8-9B window (e.g. the legacy ~4B cohort,
-  14B/32B/70B models) are not in the primary ranking. The legacy 4B cohort
+- Models substantially outside the 8-9B window (14B/32B/70B, and the earlier
+  ~4B cohort) are not in the primary ranking. The earlier 4B comparison
   remains available as historical data.

@@ -64,7 +64,7 @@ select device driver … unknown capability gpu".
 **Symptom** — `curl` to the endpoint returns connection refused.
 
 **Cause** — The everyday deployments use 8000/8001; the 8-9B benchmark arms use
-8200-8203 (historical 4B arms used 8100-8105).
+8200-8203 and the Spark reference uses 8100 (historical 4B arms used 8101-8105).
 
 **Verification** — `./scripts/preflight.sh` port checks; check `configs/models.json`
 for the per-model port.
@@ -81,3 +81,33 @@ laptop it can exceed the default timeout.
 **Verification** — `docker logs --timestamps` shows the model still loading.
 
 **Fix** — Raise `STARTUP_TIMEOUT` (e.g. `STARTUP_TIMEOUT=300`).
+
+## 7. Spark-X2.5-4B returns empty `content` (reasoning model)
+
+**Symptom** — A short generation against the Spark reference returns an empty
+`choices[0].message.content` even though `usage.completion_tokens > 0`.
+
+**Cause** — Spark-X2.5-4B is a reasoning model; its first tokens are emitted in
+`message.reasoning_content`, and `content` stays empty until reasoning ends.
+
+**Verification** — Inspect the full response: `message` has both `content` and
+`reasoning_content` keys.
+
+**Fix** — None needed for the benchmark. AIPerf runs with
+`--use-server-token-count`, so the server's `usage.completion_tokens` (which
+includes reasoning tokens) drives the metrics.
+
+## 8. Spark-X2.5-4B drops requests at long inputs
+
+**Symptom** — The Spark reference is transport-unreliable at input lengths
+&ge; 256 tokens; shape cells at higher ISL (256/512/768) show a nonzero error
+rate.
+
+**Cause** — The XHToken fork's HTTP server drops streaming connections under
+long-prefill load; this is specific to the fork, not the upstream build.
+
+**Verification** — The `shape` suite aggregate marks these cells `UNSTABLE` or
+`FAIL`.
+
+**Fix** — The affected shape cells are reported as `UNSTABLE` and excluded
+from ranking. Short-prompt suites (capacity, reliability) are unaffected.
