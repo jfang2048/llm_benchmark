@@ -89,6 +89,8 @@ def wait_thermal():
 
 
 def docker_run_detached(container, image, port, gguf, alias):
+    # Drop any stale container with the same name first (resume/restart safety).
+    sh("docker", "rm", "-f", container)
     args = [
         "docker", "run", "-d", "--name", container,
         "--gpus", "all", "--ipc", "host",
@@ -572,6 +574,7 @@ def main():
                         f"tps={row['request_tps']}")
                     time.sleep(COOLDOWN)
         else:  # sessions
+            osl_sessions = bench["output_length"].get("sessions", 64)
             for m in arms:
                 arm, url, container, model_name = _arm_info(m)
                 for cache in (False, True):
@@ -585,7 +588,7 @@ def main():
                     out_dir = suite_root / arm / isl
                     out_dir.mkdir(parents=True, exist_ok=True)
                     row = run_sessions_cell(arm, model_name, url, container, 1,
-                                            str(out_dir), osl_default, seed,
+                                            str(out_dir), osl_sessions, seed,
                                             cache, isl=isl)
                     if row is None:
                         log(f"FAIL serve {arm}")
