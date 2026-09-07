@@ -1,0 +1,4 @@
+arm	repeat	ready_ms	first_token_ms	cold_start_ms
+spark_llama	1	4329.6	335.9	4665.4
+spark_llama	2	3049.7	341.5	3391.2
+spark_llama	3	2537.1	329.9	2867.0

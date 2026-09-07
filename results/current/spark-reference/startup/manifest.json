@@ -1,0 +1,49 @@
+{
+  "suite": "startup",
+  "cohort": "spark_reference",
+  "git_commit": "13a7d9993f9f960d7f35524a68b13c32317b1068",
+  "aiperf_version": "0.12.0",
+  "engine": "xhtoken_llama_cpp",
+  "engine_source": "XHToken/llama.cpp",
+  "engine_commit": "4a3635c32fc9f044c2bde9ebeabf50c7e1ec5991",
+  "image": "spark-x25-llama:cuda13",
+  "gpu": "NVIDIA GeForce RTX 3060 Laptop GPU, 610.74, 6144",
+  "serving_flags": [
+    "--ctx-size",
+    "4096",
+    "--parallel",
+    "2",
+    "--cont-batching",
+    "--metrics",
+    "--n-gpu-layers",
+    "999"
+  ],
+  "quantization": "IQ4_XS",
+  "workload_sha256": "294866ca6a5c118b52f34d0e97a7facc625d2e1b5cfb859fa7a8e348bae91263",
+  "config": {
+    "concurrency": null,
+    "repeats": 3,
+    "requests_per_cell": 1,
+    "output_tokens": 128,
+    "seed": 42,
+    "temperature": 0,
+    "ignore_eos": true,
+    "cache_prompt": false,
+    "connection_reuse": "never",
+    "ctx_size": 4096,
+    "parallel": 2,
+    "n_gpu_layers": "999"
+  },
+  "models": {
+    "Spark-X2.5-4B-IQ4_XS.gguf": {
+      "display_name": "Spark-X2.5-4B",
+      "actual_parameter_count": 4112079360,
+      "sha256": "e164454ef60b72af5f2dd544fafd754f2e30f6133cbab0506b925cc863070b38",
+      "quantization": "IQ4_XS",
+      "gguf_source": null,
+      "upstream_repo": "XHToken/Spark-X2.5-4B",
+      "license": null
+    }
+  },
+  "generated_at": "2026-09-07T12:50:04.167349+00:00"
+}
