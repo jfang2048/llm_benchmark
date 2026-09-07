@@ -9,7 +9,7 @@
     "spark_reference": {
       "description": "Spark-X2.5-4B fixed-hardware reference baseline (cross-cohort; not size-matched)",
       "engine": "xhtoken_llama_cpp",
-      "quantization": "Q4_K_M"
+      "quantization": "IQ4_XS"
     },
     "historical_4b": {
       "description": "Historical ~4B cohort (Qwen3-4B/Phi-4/Gemma 3), preserved for reproduction",
@@ -29,14 +29,14 @@
       "architecture": "dense, hybrid attention (1 full + 3 sliding-window)",
       "context_length": 9216,
       "license": null,
-      "gguf_filename": "Spark-X2.5-4B-Q4_K_M.gguf",
-      "quantization": "Q4_K_M",
-      "sha256": "7934660bfc5b9bf04be0a0ac6179a1d16e1d4331b448857c86b8b2801b3ef72c",
+      "gguf_filename": "Spark-X2.5-4B-IQ4_XS.gguf",
+      "quantization": "IQ4_XS",
+      "sha256": "e164454ef60b72af5f2dd544fafd754f2e30f6133cbab0506b925cc863070b38",
       "chat_template": "none",
       "enabled": true,
       "primary": false,
       "port": 8100,
-      "notes": "Fixed-hardware reference baseline. Served via the pinned XHToken/llama.cpp fork (Spark-X2.5 architecture). 4B class, Q4_K_M - not size-matched to the 8-9B primary cohort; never ranked against them as a size-matched winner. Transport-unreliable at input >= 256 tokens (fork characteristic).",
+      "notes": "Fixed-hardware reference baseline. Served via the pinned XHToken/llama.cpp fork (Spark-X2.5 architecture). 4B class, Q4_K_M - not size-matched to the 8-9B primary cohort; never ranked against them as a size-matched winner. Transport-unreliable at input >= 256 tokens (fork characteristic). Q4_K_M (sha256 7934660bfc5b9bf04be0a0ac6179a1d16e1d4331b448857c86b8b2801b3ef72c) kept as historical data; current reference is IQ4_XS.",
       "role": "reference",
       "visible": true
     },

@@ -88,9 +88,10 @@ results/v2/runs/
 
 # Current benchmark: commit only curated summary TSVs, not raw cell data
 # (AIPerf artifacts, GPU telemetry, per-request JSONL, server logs).
-# Structure: results/current/<cohort>/<suite>/{aggregate,repeats,manifest,...}.
-results/current/*/*/rows.jsonl
-results/current/*/*/*/
+# Layout: results/<top>/<cohort>/<suite>/{aggregate,repeats,manifest,...}; the
+# per-arm cell dirs and the resume journal are regenerated and never committed.
+results/*/*/*/rows.jsonl
+results/*/*/*/*/
 
 # =====================================================================
 # Superseded workspace layout (historical scripts/configs kept local;
