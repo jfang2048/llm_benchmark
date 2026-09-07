@@ -28,17 +28,24 @@ mv models/Qwen_Qwen3-8B-IQ4_XS.gguf models/Qwen3-8B-IQ4_XS.gguf
 A helper that downloads all four and verifies SHA256 is available in the
 onboarding tooling (`.agent/download_ggufs.py`).
 
-## Historical cohort (4B, Q4_K_M)
+## Reference model (Spark-X2.5-4B, Q4_K_M)
 
-The legacy 4B cohort is preserved as historical data and is no longer the
-primary cohort. Its weights were Qwen3-4B (official Qwen GGUF) and
-Spark-X2.5-4B (XHToken fork, see below).
+Spark-X2.5-4B is the current fixed-hardware reference baseline, served on the
+XHToken llama.cpp fork (`spark-x25-llama:cuda13`).
+
+| Model | File | SHA256 | Size (approx) |
+|---|---|---|---|
+| Spark-X2.5-4B | `Spark-X2.5-4B-Q4_K_M.gguf` | `7934660bfc5b9bf04be0a0ac6179a1d16e1d4331b448857c86b8b2801b3ef72c` | ~2.4 GiB |
 
 Spark-X2.5-4B has no single canonical public GGUF URL; obtain it by copying an
-existing `Spark-X2.5-4B-Q4_K_M.gguf` and verifying against
-`7934660bfc5b9bf04be0a0ac6179a1d16e1d4331b448857c86b8b2801b3ef72c`, or convert
-from the official XHToken/Spark-X2.5-4B weights using the fork in
+existing `Spark-X2.5-4B-Q4_K_M.gguf` and verifying against the SHA256 above,
+or convert from the official XHToken/Spark-X2.5-4B weights using the fork in
 `docker/llama-cpp/`.
+
+## Historical cohort (4B, Q4_K_M)
+
+The earlier ~4B comparison (Qwen3-4B, Phi-4-mini, Gemma-3-4B) is preserved as
+historical data and is no longer part of the current benchmark.
 
 ## License
 
