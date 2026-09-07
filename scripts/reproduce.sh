@@ -27,22 +27,18 @@ step "1/6 preflight"
 
 if [[ "$MODE" == "smoke" ]]; then
   step "smoke: admission (mainstream 8-9B + Spark reference)"
-  "$ROOT/scripts/admit_8b9b.sh"
-  # Spark reference: serve + smoke against the pinned XHToken fork.
-  python3 -m bench.runner --cohort spark_reference --suite capacity --dry-run >/dev/null
-  echo "Spark reference admission is covered by its capacity first cell;"
-  echo "run 'make spark' to execute it."
+  "$ROOT/scripts/admit.sh"
   step "smoke: report"
   python3 scripts/generate_current_report.py
   echo "Smoke complete."
   exit 0
 fi
 
-step "2/6 download models"
-"$ROOT/scripts/download_models.sh"
-
-step "3/6 build images"
+step "2/6 build images"
 "$ROOT/scripts/build.sh"
+
+step "3/6 download models"
+"$ROOT/scripts/download_models.sh"
 
 step "4/6 benchmark (both cohorts, all suites)"
 RUNNER --cohort mainstream_8_9b --suite capacity

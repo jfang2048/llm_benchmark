@@ -43,11 +43,12 @@ Two engine profiles are pinned in `configs/models.json`:
 
 | Model | File | SHA256 | Quantization |
 |---|---|---|---|
-| Spark-X2.5-4B | `Spark-X2.5-4B-Q4_K_M.gguf` | `7934660b…` | Q4_K_M |
+| Spark-X2.5-4B | `Spark-X2.5-4B-IQ4_XS.gguf` | `e164454e…` | IQ4_XS |
 
 Full SHA256 values and GGUF sources are in `configs/models.json`. The 8-9B
-GGUFs come from a single uniform source (bartowski, IQ4_XS); the Spark GGUF
-is the project's Q4_K_M artifact.
+GGUFs are IQ4_XS artifacts from the same GGUF publisher (bartowski), each
+pinned by SHA256; the Spark IQ4_XS is quantized locally from the official FP16
+GGUF with the pinned XHToken fork.
 
 ## Serving configuration (llama.cpp)
 
@@ -65,12 +66,12 @@ regardless of engine profile:
 1. WSL2 + Ubuntu 24.04 with the NVIDIA Windows driver and the NVIDIA Container
    Toolkit inside the distro.
 2. Docker with GPU passthrough (`docker run --rm --gpus all … nvidia-smi`).
-3. Acquire the four IQ4_XS GGUFs into `models/` (see `models/README.md`).
-4. Build the upstream image:
-   `docker build -t llama-cpp-upstream:v0.4.0 -f docker/llama-cpp-upstream/Dockerfile docker/llama-cpp-upstream/`
-5. Run `./scripts/admit_8b9b.sh` to verify 8-9B admission before benchmarking;
-   the Spark reference is served by the `spark-x25-llama:cuda13` fork image
-   (run `make spark` to admit and benchmark it).
+3. `make setup` — builds both engine images (`scripts/build.sh`) and acquires
+   the current models (`scripts/download_models.sh`: the four IQ4_XS GGUFs plus
+   the Spark reference, quantized from the official FP16).
+4. `make smoke` — runs `scripts/admit.sh`, the registry-driven admission gate
+   for both cohorts (healthcheck, `/v1/models`, generation, 20-request smoke,
+   VRAM/OOM).
 
 Run `./scripts/preflight.sh` to validate a new machine against these
 requirements.

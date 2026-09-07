@@ -34,11 +34,11 @@ against the upstream-served 8-9B cohort.
 The whole cohort uses a single common quantization: **IQ4_XS**, the smallest
 "good" quant, which is what lets 8-9B models fit the 6 GiB envelope.
 
-The GGUFs are pre-quantized IQ4_XS from a single uniform source (bartowski),
-with SHA256 recorded per model in `configs/models.json`. IQ4_XS's importance
-matrix affects generation quality, not the serving metrics this benchmark
-measures (latency, throughput, VRAM), so the provenance choice does not bias
-the ranking.
+The GGUFs are pre-quantized IQ4_XS artifacts from the same GGUF publisher
+(bartowski), each pinned by SHA256 in `configs/models.json`. IQ4_XS's
+importance matrix affects generation quality, not the serving metrics this
+benchmark measures (latency, throughput, VRAM), so the provenance choice does
+not bias the ranking.
 
 ## Serving policy (identical across models)
 

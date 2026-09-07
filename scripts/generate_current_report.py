@@ -430,6 +430,13 @@ def sessions_table(meta):
 
 def build_html(meta, manifest):
     cells = capacity_view(meta)
+    # Derive cohort metadata from the registry (no hardcoded quantization).
+    cohorts = config.cohorts()
+    main_quant = cohorts.get("mainstream_8_9b", {}).get("quantization", "IQ4_XS")
+    spark_quant = cohorts.get("spark_reference", {}).get("quantization", "IQ4_XS")
+    spark_m = next((m for m in config.models() if m.get("role") == "reference"), {})
+    spark_name = spark_m.get("display_name", "Spark reference")
+    spark_b = f"{(spark_m.get('actual_parameter_count') or 0) / 1e9:.2f}B"
     return f"""<!doctype html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -454,9 +461,9 @@ td:first-child, th:first-child {{ text-align: left; }}
 <h1>Local LLM Inference Benchmark</h1>
 <p class="meta">Fixed-hardware deployment benchmark on RTX 3060 Laptop (6 GiB).
 Primary cohort: 4 mainstream 8-9B models, same pinned upstream llama.cpp,
-IQ4_XS, identical serving policy. <span class="badge">REFERENCE / 4B</span>
-marks Spark-X2.5-4B, a fixed-hardware reference baseline served on the
-XHToken llama.cpp fork (Q4_K_M); it is never ranked against the 8-9B cohort.</p>
+{main_quant}, identical serving policy. <span class="badge">REFERENCE</span>
+marks {spark_name} ({spark_b}, {spark_quant}, XHToken llama.cpp fork), a
+fixed-hardware reference baseline; it is never ranked against the 8-9B cohort.</p>
 <div class="filter">Cohort:
 <select id="cohortFilter" onchange="applyFilter()">
 <option value="all">All</option>

@@ -21,7 +21,7 @@ runner does this by default). A cell that still fails is reported as
 
 ## 2. Container starts but never becomes API-ready
 
-**Symptom** — `admit_8b9b.sh` or the runner logs that the container never
+**Symptom** — `admit.sh` or the runner logs that the container never
 became ready.
 
 **Cause** — Model load exceeds VRAM (OOM at startup), the GGUF path is wrong,

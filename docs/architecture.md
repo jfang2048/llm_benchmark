@@ -14,7 +14,7 @@ flowchart TD
     A[bench/runner.py<br/>registry-driven orchestrator] -->|docker run| B[llama.cpp server]
     A -->|AIPerf profile| B
     B --> C[upstream_llama_cpp<br/>llama-cpp-upstream:v0.4.0<br/>8-9B cohort, IQ4_XS]
-    B --> D[xhtoken_llama_cpp<br/>spark-x25-llama:cuda13<br/>Spark-X2.5-4B, Q4_K_M]
+    B --> D[xhtoken_llama_cpp<br/>spark-x25-llama:cuda13<br/>Spark-X2.5-4B, IQ4_XS]
     C --> E[CUDA GPU<br/>RTX 3060 Laptop 6 GiB]
     D --> E
     A --> F[per-request JSONL + summary JSON]
@@ -43,8 +43,9 @@ flowchart TD
     Wilson-95% reliability summary, error classification.
   - `stats.py` — mean/median/stddev, percentiles, Wilson interval.
   - `llama_bench.py` — raw-engine microbenchmark (upstream binary).
-- **`scripts/admit_8b9b.sh`** — per-model admission gate (healthcheck,
-  generation, 20-request smoke, VRAM/OOM) before a model enters the benchmark.
+- **`scripts/admit.sh`** — registry-driven per-model admission gate
+  (healthcheck, `/v1/models`, generation, 20-request smoke, VRAM/OOM) for the
+  current cohorts (mainstream + Spark reference).
 - **`scripts/generate_current_report.py`** — reads `results/current/` + registry
   and renders `docs/index.html` (self-contained, no CDN).
 - **`docker/llama-cpp-upstream/Dockerfile`** — builds llama.cpp from upstream

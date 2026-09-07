@@ -28,7 +28,7 @@ not marketing names. All four models are MIT or Apache-2.0 and ungated.
 
 ## Reference model
 
-- **Spark-X2.5-4B** (4.11B params, Q4_K_M, XHToken llama.cpp fork) is a
+- **Spark-X2.5-4B** (4.11B params, IQ4_XS, XHToken llama.cpp fork) is a
   fixed-hardware cross-cohort reference baseline. It is not part of the
   size-matched 8-9B ranking: it differs in parameter count, serving fork, and
   quantization. It is reported alongside the cohort for hardware-efficiency

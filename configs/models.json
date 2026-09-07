@@ -28,7 +28,7 @@
       "actual_parameter_count": 4112079360,
       "architecture": "dense, hybrid attention (1 full + 3 sliding-window)",
       "context_length": 9216,
-      "license": null,
+      "license": "Apache-2.0",
       "gguf_filename": "Spark-X2.5-4B-IQ4_XS.gguf",
       "quantization": "IQ4_XS",
       "sha256": "e164454ef60b72af5f2dd544fafd754f2e30f6133cbab0506b925cc863070b38",
@@ -36,9 +36,12 @@
       "enabled": true,
       "primary": false,
       "port": 8100,
-      "notes": "Fixed-hardware reference baseline. Served via the pinned XHToken/llama.cpp fork (Spark-X2.5 architecture). 4B class, Q4_K_M - not size-matched to the 8-9B primary cohort; never ranked against them as a size-matched winner. Transport-unreliable at input >= 256 tokens (fork characteristic). Q4_K_M (sha256 7934660bfc5b9bf04be0a0ac6179a1d16e1d4331b448857c86b8b2801b3ef72c) kept as historical data; current reference is IQ4_XS.",
+      "notes": "Fixed-hardware reference baseline (4.11B), served via the pinned XHToken/llama.cpp fork. IQ4_XS, quantized locally from the official FP16 GGUF. Not size-matched to the 8-9B cohort; never ranked against it. Transport-unreliable at input >= 256 tokens (fork characteristic). The earlier Q4_K_M run (sha256 7934660b...) is historical only.",
       "role": "reference",
-      "visible": true
+      "visible": true,
+      "gguf_source": "XHToken/Spark-X2.5-4B-GGUF",
+      "gguf_source_file": "Spark-X2.5-4B.gguf",
+      "quantize_from_f16": true
     },
     {
       "id": "qwen3_4b",
@@ -119,7 +122,8 @@
       "primary": true,
       "port": 8200,
       "notes": "IQ4_XS GGUF from bartowski/Qwen_Qwen3-8B-GGUF (SHA256 recorded). Primary cohort, served via pinned upstream llama.cpp v0.4.0.",
-      "gguf_source": "bartowski/Qwen_Qwen3-8B-GGUF"
+      "gguf_source": "bartowski/Qwen_Qwen3-8B-GGUF",
+      "gguf_source_file": "Qwen_Qwen3-8B-IQ4_XS.gguf"
     },
     {
       "id": "deepseek_r1_distill_llama_8b",
@@ -140,7 +144,8 @@
       "primary": true,
       "port": 8201,
       "notes": "IQ4_XS GGUF from bartowski/DeepSeek-R1-Distill-Llama-8B-GGUF (SHA256 recorded). Primary cohort. Base is Llama 3.1 8B; never describe as DeepSeek-V3/R1 MoE.",
-      "gguf_source": "bartowski/DeepSeek-R1-Distill-Llama-8B-GGUF"
+      "gguf_source": "bartowski/DeepSeek-R1-Distill-Llama-8B-GGUF",
+      "gguf_source_file": "DeepSeek-R1-Distill-Llama-8B-IQ4_XS.gguf"
     },
     {
       "id": "glm4_9b_0414",
@@ -161,7 +166,8 @@
       "primary": true,
       "port": 8202,
       "notes": "IQ4_XS GGUF from bartowski/THUDM_GLM-4-9B-0414-GGUF (SHA256 recorded). Primary cohort. 9.40B is the largest of the cohort; watch VRAM.",
-      "gguf_source": "bartowski/THUDM_GLM-4-9B-0414-GGUF"
+      "gguf_source": "bartowski/THUDM_GLM-4-9B-0414-GGUF",
+      "gguf_source_file": "THUDM_GLM-4-9B-0414-IQ4_XS.gguf"
     },
     {
       "id": "yi_15_9b_chat",
@@ -182,7 +188,8 @@
       "primary": true,
       "port": 8203,
       "notes": "IQ4_XS GGUF from bartowski/Yi-1.5-9B-Chat-GGUF (SHA256 recorded). Primary cohort. Yi loads as llama arch; 4K native context.",
-      "gguf_source": "bartowski/Yi-1.5-9B-Chat-GGUF"
+      "gguf_source": "bartowski/Yi-1.5-9B-Chat-GGUF",
+      "gguf_source_file": "Yi-1.5-9B-Chat-IQ4_XS.gguf"
     }
   ],
   "engine_comparison_arms": [

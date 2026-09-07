@@ -48,19 +48,20 @@ sampling policy, same metric definitions, same reliability methodology, same
 SLO definitions, and same result schema**. It is reported as a
 **fixed-hardware cross-cohort reference**, not as a competitor.
 
-Spark differs from the cohort in three ways, each of which rules out an
-apples-to-apples model comparison:
+Spark differs from the cohort in parameter count, serving fork, and
+quantization provenance, each of which rules out an apples-to-apples model
+comparison:
 
 | Variable | Mainstream 8-9B | Spark reference |
 |---|---|---|
 | Parameter count | 8.0-9.4B | 4.11B |
 | Engine | ggml-org/llama.cpp v0.4.0 | XHToken llama.cpp fork (pinned commit) |
-| Quantization | IQ4_XS | Q4_K_M |
+| Quantization | IQ4_XS (Bartowski-published) | IQ4_XS (locally quantized from official FP16) |
 
-Because the engine and quantization differ, Spark-vs-8B results are **not a
-pure model comparison** — they are a fixed-hardware reference point. The
-dashboard labels Spark as `REFERENCE / 4B` and never computes a size-matched
-winner across the two cohorts.
+Because the engine and quantization provenance differ, Spark-vs-8B results are
+**not a pure model comparison** — they are a fixed-hardware reference point.
+The dashboard labels Spark as `REFERENCE / 4B` and never computes a
+size-matched winner across the two cohorts.
 
 ## Workload
 

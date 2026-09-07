@@ -25,8 +25,8 @@ huggingface-cli download bartowski/Qwen_Qwen3-8B-GGUF Qwen_Qwen3-8B-IQ4_XS.gguf 
 mv models/Qwen_Qwen3-8B-IQ4_XS.gguf models/Qwen3-8B-IQ4_XS.gguf
 ```
 
-A helper that downloads all four and verifies SHA256 is available in the
-onboarding tooling (`.agent/download_ggufs.py`).
+A registry-driven downloader that fetches all four and verifies SHA256 is
+`scripts/download_models.sh` (run via `make setup`).
 
 ## Reference model (Spark-X2.5-4B, IQ4_XS)
 

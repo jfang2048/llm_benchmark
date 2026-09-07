@@ -7,7 +7,7 @@ only the summary TSVs and manifests below are committed.
 ```
 results/current/
   mainstream-8-9b/    # primary 8-9B cohort (IQ4_XS, upstream llama.cpp)
-  spark-reference/    # Spark-X2.5-4B reference (Q4_K_M, XHToken fork)
+  spark-reference/    # Spark-X2.5-4B reference (IQ4_XS, XHToken fork)
 ```
 
 Each suite directory contains:

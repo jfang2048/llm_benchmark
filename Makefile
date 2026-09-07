@@ -3,7 +3,7 @@
 # Registry-driven cohorts (see configs/models.json):
 #   mainstream_8_9b   Qwen3-8B, DeepSeek-R1-Distill-Llama-8B, GLM-4-9B-0414,
 #                     Yi-1.5-9B-Chat  (IQ4_XS, upstream llama.cpp)
-#   spark_reference   Spark-X2.5-4B    (Q4_K_M, XHToken llama.cpp fork)
+#   spark_reference   Spark-X2.5-4B    (IQ4_XS, XHToken llama.cpp fork)
 #
 # Primary targets:
 #   make setup        Download models and build serving images
@@ -58,11 +58,11 @@ help:
 	  "Historical: make benchmark-v1"
 
 setup:
-	./scripts/download_models.sh
 	./scripts/build.sh
+	./scripts/download_models.sh
 
 smoke:
-	./scripts/admit_8b9b.sh
+	./scripts/admit.sh
 
 benchmark:
 	$(RUNNER) --cohort mainstream_8_9b --suite capacity

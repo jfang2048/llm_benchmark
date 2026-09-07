@@ -22,9 +22,9 @@ td:first-child, th:first-child { text-align: left; }
 <h1>Local LLM Inference Benchmark</h1>
 <p class="meta">Fixed-hardware deployment benchmark on RTX 3060 Laptop (6 GiB).
 Primary cohort: 4 mainstream 8-9B models, same pinned upstream llama.cpp,
-IQ4_XS, identical serving policy. <span class="badge">REFERENCE / 4B</span>
-marks Spark-X2.5-4B, a fixed-hardware reference baseline served on the
-XHToken llama.cpp fork (Q4_K_M); it is never ranked against the 8-9B cohort.</p>
+IQ4_XS, identical serving policy. <span class="badge">REFERENCE</span>
+marks Spark-X2.5-4B (4.11B, IQ4_XS, XHToken llama.cpp fork), a
+fixed-hardware reference baseline; it is never ranked against the 8-9B cohort.</p>
 <div class="filter">Cohort:
 <select id="cohortFilter" onchange="applyFilter()">
 <option value="all">All</option>
@@ -35,7 +35,7 @@ XHToken llama.cpp fork (Q4_K_M); it is never ranked against the 8-9B cohort.</p>
     <h2>Models</h2>
     <table><thead><tr><th>Model</th><th>Role</th><th>Upstream</th><th>Params</th>
     <th>Quant</th><th>License</th></tr></thead><tbody>
-    <tr class="ref" data-cohort="spark"><td>Spark-X2.5-4B</td><td>Reference (4B)</td><td>XHToken/Spark-X2.5-4B</td><td>4.11B</td><td>IQ4_XS</td><td></td></tr><tr data-cohort="mainstream"><td>Qwen3-8B</td><td>Primary (8-9B)</td><td>Qwen/Qwen3-8B</td><td>8.19B</td><td>IQ4_XS</td><td>Apache-2.0</td></tr><tr data-cohort="mainstream"><td>DeepSeek-R1-Distill-Llama-8B</td><td>Primary (8-9B)</td><td>deepseek-ai/DeepSeek-R1-Distill-Llama-8B</td><td>8.03B</td><td>IQ4_XS</td><td>MIT</td></tr><tr data-cohort="mainstream"><td>GLM-4-9B-0414</td><td>Primary (8-9B)</td><td>zai-org/GLM-4-9B-0414</td><td>9.40B</td><td>IQ4_XS</td><td>MIT</td></tr><tr data-cohort="mainstream"><td>Yi-1.5-9B-Chat</td><td>Primary (8-9B)</td><td>01-ai/Yi-1.5-9B-Chat</td><td>8.83B</td><td>IQ4_XS</td><td>Apache-2.0</td></tr></tbody></table>
+    <tr class="ref" data-cohort="spark"><td>Spark-X2.5-4B</td><td>Reference (4B)</td><td>XHToken/Spark-X2.5-4B</td><td>4.11B</td><td>IQ4_XS</td><td>Apache-2.0</td></tr><tr data-cohort="mainstream"><td>Qwen3-8B</td><td>Primary (8-9B)</td><td>Qwen/Qwen3-8B</td><td>8.19B</td><td>IQ4_XS</td><td>Apache-2.0</td></tr><tr data-cohort="mainstream"><td>DeepSeek-R1-Distill-Llama-8B</td><td>Primary (8-9B)</td><td>deepseek-ai/DeepSeek-R1-Distill-Llama-8B</td><td>8.03B</td><td>IQ4_XS</td><td>MIT</td></tr><tr data-cohort="mainstream"><td>GLM-4-9B-0414</td><td>Primary (8-9B)</td><td>zai-org/GLM-4-9B-0414</td><td>9.40B</td><td>IQ4_XS</td><td>MIT</td></tr><tr data-cohort="mainstream"><td>Yi-1.5-9B-Chat</td><td>Primary (8-9B)</td><td>01-ai/Yi-1.5-9B-Chat</td><td>8.83B</td><td>IQ4_XS</td><td>Apache-2.0</td></tr></tbody></table>
     <p class="meta">Engine: ggml-org/llama.cpp v0.4.0 (pinned) &middot; GPU: NVIDIA GeForce RTX 3060 Laptop GPU, 610.74, 6144</p>
     
 <h2>Capacity &mdash; TTFT p50 (ms) vs concurrency</h2><table><thead><tr><th>Model</th><th>c=1</th><th>c=2</th><th>c=4</th><th>c=6</th><th>c=8</th></tr></thead><tbody><tr data-cohort="mainstream"><td>DeepSeek-R1-Distill-Llama-8B</td><td>91.3 ms</td><td>141.5 ms</td><td>2509.5 ms</td><td>4906.0 ms</td><td>7293.5 ms</td></tr><tr data-cohort="mainstream"><td>GLM-4-9B-0414</td><td>54.6 ms</td><td>102.5 ms</td><td>2880.3 ms</td><td>5675.9 ms</td><td>8501.8 ms</td></tr><tr data-cohort="mainstream"><td>Qwen3-8B</td><td>104.1 ms</td><td>161.9 ms</td><td>2617.1 ms</td><td>5103.0 ms</td><td>7601.3 ms</td></tr><tr data-cohort="spark"><td>Spark-X2.5-4B (REFERENCE / 4B)</td><td>114.7 ms</td><td>186.8 ms</td><td>2465.1 ms</td><td>4742.0 ms</td><td>7085.3 ms</td></tr><tr data-cohort="mainstream"><td>Yi-1.5-9B-Chat</td><td>68.6 ms</td><td>132.7 ms</td><td>2800.3 ms</td><td>5498.8 ms</td><td>8205.7 ms</td></tr></tbody></table>

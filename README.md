@@ -7,7 +7,7 @@ consumer GPU (NVIDIA RTX 3060 Laptop, 6 GiB VRAM).
   8-9B models in IQ4_XS quantization, all served by the same pinned upstream
   llama.cpp build under an identical resource policy and workload.
 - **Reference baseline — Spark-X2.5-4B:** a 4B model served on the XHToken
-  llama.cpp fork (Q4_K_M). It is shown alongside the cohort as a fixed-hardware
+  llama.cpp fork (IQ4_XS). It is shown alongside the cohort as a fixed-hardware
   cross-cohort reference, never as a size-matched competitor.
 
 > **Dashboard:** https://jfang2048.github.io/llm_benchmark/
@@ -41,16 +41,17 @@ consumer GPU (NVIDIA RTX 3060 Laptop, 6 GiB VRAM).
 | GLM-4-9B-0414 | 9.40B | IQ4_XS | MIT |
 | Yi-1.5-9B-Chat | 8.83B | IQ4_XS | Apache-2.0 |
 
-All four are served as IQ4_XS GGUF (single uniform source, SHA256 recorded in
-`configs/models.json`) by the same pinned upstream `ggml-org/llama.cpp`
-build. `DeepSeek-R1-Distill-Llama-8B` is a DeepSeek-distilled Llama-3.1-8B
+All four are served as IQ4_XS GGUF artifacts from the same GGUF publisher
+(bartowski), each pinned by SHA256 in `configs/models.json`, by the same
+pinned upstream `ggml-org/llama.cpp` build. `DeepSeek-R1-Distill-Llama-8B` is
+a DeepSeek-distilled Llama-3.1-8B
 dense model — not the DeepSeek-R1/V3 MoE architecture.
 
 ### Reference baseline: Spark-X2.5-4B
 
 | Model | Parameters | Quantization | Engine |
 |---|---|---|---|
-| Spark-X2.5-4B | 4.11B | Q4_K_M | XHToken llama.cpp fork |
+| Spark-X2.5-4B | 4.11B | IQ4_XS | XHToken llama.cpp fork |
 
 Spark differs from the cohort in parameter count, serving fork, and
 quantization, so it is reported as a fixed-hardware reference — not ranked
@@ -74,8 +75,8 @@ against the 8-9B models. Its engine profile and commit are pinned in
 ```bash
 git clone https://github.com/jfang2048/llm_benchmark.git
 cd llm_benchmark
-make setup                 # preflight + download models + build images
-make smoke                 # admission sanity check (serve + smoke + VRAM)
+make setup                 # build both engine images + download/quantize models
+make smoke                 # admission gate for both cohorts (serve + smoke + VRAM)
 make benchmark             # mainstream 8-9B capacity sweep
 make spark                 # Spark reference capacity sweep
 make report                # rebuild the current dashboard
@@ -97,7 +98,7 @@ Run via the registry-driven harness (`bench/runner.py`); `make` targets wrap it.
 - `make llama-bench` — raw-engine microbenchmark (pp512/tg128) with the same
   upstream binary; kept separate from the AIPerf end-to-end serving numbers.
 
-Serving is gated on a per-model admission test (`scripts/admit_8b9b.sh`):
+Serving is gated on a per-model admission test (`scripts/admit.sh`):
 healthcheck, a generation request, a 20-request smoke test, and a VRAM/OOM
 check before a model enters the benchmark. Capacity results with `FAILED` or
 `UNSTABLE` cells are never presented as valid ranking points.
