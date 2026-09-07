@@ -84,6 +84,7 @@ function buildShell() {
     `<span class="chip ${mm.is_reference ? "ref" : ""}" id="chip-${mm.arm}" data-arm="${mm.arm}">` +
     `<span class="dot" style="background:${mm.color}"></span>${mm.display_name}</span>`).join("");
   document.getElementById("app").innerHTML = `
+  <div class="sticky-header">
   <div class="topbar">
     <h1>Local LLM Inference Benchmark</h1>
     <nav>${nav}</nav>
@@ -101,6 +102,7 @@ function buildShell() {
       <select id="f-pct"><option value="p50">p50</option><option value="p95">p95</option></select></span>
     <button id="f-reset">Reset</button>
   </div>
+  </div>
   <main>
     <section id="overview"></section>
     <section id="capacity"></section>
@@ -113,7 +115,7 @@ function buildShell() {
     <section id="startup"></section>
     <section id="llamabench"></section>
     <section id="data"></section>
-    <footer>Generated from results/current/ &middot; GPU-side energy is an estimate, not full-system power.</footer>
+    <footer>Generated from results/current/ &middot; Plotly ${D.meta.plotly_version} (sha256 ${D.meta.plotly_sha256.slice(0, 12)}&hellip;) &middot; GPU-side energy is an estimate, not full-system power.</footer>
   </main>`;
   document.getElementById("f-cohort").addEventListener("change", (e) => { state.cohort = e.target.value; refresh(); });
   document.getElementById("f-pct").addEventListener("change", (e) => { state.percentile = e.target.value; refresh(); });
@@ -176,7 +178,7 @@ function renderOverview() {
       <div class="row"><span class="k">TTFT p50 @ c=1</span><span>${fmt(c1.ttft_p50)} ms</span></div>
       <div class="row"><span class="k">Peak output tok/s</span><span>${fmt(peak.output_tps)}</span></div>
       <div class="row"><span class="k">Peak VRAM</span><span>${fmt(peak.peak_vram_mib)} MiB</span></div>
-      <div class="row"><span class="k">Reliability</span><span>${relOk ? "stable" : "see below"}</span></div>
+      <div class="row"><span class="k">Reliability gate</span><span>${relOk ? "PASS" : "FAIL"}</span></div>
     </div>`;
   }).join("");
   document.getElementById("overview").innerHTML =
@@ -184,7 +186,7 @@ function renderOverview() {
 }
 
 // ---- Capacity --------------------------------------------------------------
-function capSeries(metric, aggField, useCI) {
+function capSeries(metric, aggField) {
   // metric in {output_tps, request_tps, ttft_p50, ttft_p95, latency_p50, latency_p95}
   const traces = [];
   D.models.forEach((mm) => {
@@ -197,12 +199,12 @@ function capSeries(metric, aggField, useCI) {
     if (valid.length) {
       const xs = valid.map((c) => c.concurrency);
       const ys = valid.map((c) => c[aggField]);
-      const errs = valid.map((c) => (c[aggField + "_ci"] || 0));
+      const errs = valid.map((c) => (c[aggField + "_ci"] != null ? c[aggField + "_ci"] : null));
       traces.push({
         type: "scatter", mode: "lines+markers", name: name(mm.arm),
         x: xs, y: ys, line: { color: mm.color, dash: dashFor(mm.arm), width: 2 },
         marker: { color: mm.color, symbol: markerFor(mm.arm), size: 8 },
-        error_y: useCI ? { type: "data", array: errs, visible: true, thickness: 1, color: mm.color } : undefined,
+        error_y: { type: "data", array: errs, visible: true, thickness: 1, color: mm.color },
         hovertemplate: `<b>${name(mm.arm)}</b><br>c=%{x}<br>${aggField.replace("_", " ")}: %{y:.2f}<extra></extra>`,
       });
     }
@@ -244,35 +246,32 @@ function renderCapacity() {
     ["cap-lat", `E2E latency ${p} vs concurrency`, `latency_${p}`, "E2E latency (ms)"],
   ];
   host.innerHTML = `<h2>Capacity</h2>
-    <p class="note">Aggregate line with 95% CI band; smaller open markers are the 3 raw repeats. Invalid (UNSTABLE/FAIL) cells are marked with &times;, not connected.</p>
+    <p class="note">Mean with 95% CI error bars; open points show the individual repeats. Invalid (UNSTABLE/FAIL) cells are marked with &times;, not connected.</p>
     <div class="grid2">${items.map(([id, t, m, y]) => `<div id="${id}"></div>`).join("")}</div>`;
   items.forEach(([id, t, metric, y]) => {
-    plot(id, capSeries(metric, metric === "output_tps" ? "output_tps"
-      : metric === "request_tps" ? "request_tps"
-      : metric === "ttft_p50" ? "ttft_p50" : metric === "ttft_p95" ? "ttft_p95"
-      : metric === "latency_p50" ? "latency_p50" : "latency_p95",
-      metric === "output_tps"),
-      baseLayout(t, "concurrency", y));
+    plot(id, capSeries(metric, metric), baseLayout(t, "concurrency", y));
   });
 }
 
 // ---- Trade-off -------------------------------------------------------------
 function paretoFrontier(points) {
-  // points: [{x,y}]; returns the lower-left Pareto set (minimize x? no — x is throughput, maximize; y is latency, minimize).
-  // For "better = higher x AND lower y", the frontier keeps points not dominated by any
-  // point with (x >= this.x AND y <= this.y).
-  const pts = points.slice().sort((a, b) => a.x - b.x);
-  const kept = [];
+  // Pareto-optimal set where "better" = higher x (throughput) AND lower y (latency).
+  // A dominates B iff A.x >= B.x AND A.y <= B.y, with at least one strict inequality.
+  const pts = points.slice().sort((a, b) => a.x - b.x || b.y - a.y);
+  const frontier = [];
   pts.forEach((p) => {
-    const dominated = kept.some((k) => k.x >= p.x && k.y <= p.y);
+    const dominated = frontier.some((f) =>
+      f.x >= p.x && f.y <= p.y && (f.x > p.x || f.y < p.y));
     if (!dominated) {
-      const filtered = kept.filter((k) => !(p.x >= k.x && p.y <= k.y));
+      const filtered = frontier.filter((f) =>
+        !(p.x >= f.x && p.y <= f.y && (p.x > f.x || p.y < f.y)));
       filtered.push(p);
-      kept.length = 0; kept.push(...filtered);
+      frontier.length = 0;
+      frontier.push(...filtered);
     }
   });
-  kept.sort((a, b) => a.x - b.x);
-  return kept;
+  frontier.sort((a, b) => a.x - b.x);
+  return frontier;
 }
 
 function renderTradeoff() {
@@ -307,11 +306,11 @@ function renderTradeoff() {
       });
     }
   });
-  const lay = baseLayout("TTFT p50 vs request throughput (lower-left = lower latency at higher throughput)",
+  const lay = baseLayout("TTFT p50 vs request throughput (further right = higher throughput; lower = lower latency)",
     "request throughput (req/s)", "TTFT p50 (ms)");
   const host2 = document.createElement("div"); host2.innerHTML =
     `<h2>Latency / throughput trade-off</h2>
-    <p class="note">Each point is one concurrency level. Lower-left is better (higher throughput, lower TTFT). Dotted line: Pareto frontier of the 8-9B cohort only — Spark is excluded from size-matched ranking and shown as an open/dashed reference.</p>
+    <p class="note">Each point is one concurrency level. Further right = higher throughput; lower = lower latency. Dotted line: Pareto frontier of the 8-9B cohort only — Spark is excluded from size-matched ranking and shown as an open/dashed reference.</p>
     <div id="tradeoff-ttft"></div>`;
   host.innerHTML = host2.innerHTML;
   plot("tradeoff-ttft", traces, lay);
@@ -320,9 +319,12 @@ function renderTradeoff() {
 // ---- Open-loop -------------------------------------------------------------
 function renderOpenloop() {
   const host = document.getElementById("openloop");
-  host.innerHTML = `<h2>Open-loop / goodput</h2>
-    <p class="note">Offered Poisson load vs achieved throughput. y=x is ideal. Achieved below the offer near/above 1.0 shows saturation.</p>
-    <div class="grid2"><div id="ol-offered"></div><div id="ol-goodput"></div></div>
+  const hasSLO = Object.keys(D.config.slo_profiles || {}).length > 0;
+  const sloNote = hasSLO ? ""
+    : "No SLO profiles are configured, so these show transport-level request throughput and transport success rate (not SLO goodput).";
+  host.innerHTML = `<h2>Open-loop</h2>
+    <p class="note">Offered Poisson load vs achieved request throughput. y=x is ideal. Achieved below the offer near/above 1.0 shows saturation. ${sloNote}</p>
+    <div class="grid2"><div id="ol-offered"></div><div id="ol-achieved"></div></div>
     <div class="grid2"><div id="ol-frac"></div><div id="ol-ttft"></div></div>`;
   const ol = D.open_loop || [];
   const traces1 = [], traces2 = [], traces3 = [], traces4 = [];
@@ -360,10 +362,10 @@ function renderOpenloop() {
   const ideal = { type: "scatter", mode: "lines", name: "ideal (y=x)",
     x: [0, maxx], y: [0, maxx], line: { color: "#9ca3af", dash: "dot", width: 1 },
     hoverinfo: "skip" };
-  const l1 = baseLayout("Offered vs achieved RPS", "offered RPS", "achieved RPS");
+  const l1 = baseLayout("Offered vs achieved request throughput", "offered RPS", "achieved RPS");
   plot("ol-offered", [ideal, ...traces1], l1);
-  plot("ol-goodput", traces2, baseLayout("Achieved goodput vs load fraction", "load fraction (x capacity)", "achieved RPS"));
-  const l3 = baseLayout("Good-request fraction vs offered load", "load fraction", "good requests (%)");
+  plot("ol-achieved", traces2, baseLayout("Achieved request throughput vs load fraction", "load fraction (x capacity)", "achieved RPS"));
+  const l3 = baseLayout("Transport success rate vs offered load", "load fraction", "transport success (%)");
   l3.yaxis.range = [0, 105];
   plot("ol-frac", traces3, l3);
   plot("ol-ttft", traces4, baseLayout("TTFT p95 vs offered load", "load fraction", "TTFT p95 (ms)"));
@@ -372,8 +374,10 @@ function renderOpenloop() {
 // ---- Workload shape --------------------------------------------------------
 function renderShape() {
   const host = document.getElementById("shape");
+  const concs = [...new Set((D.shape || []).map((r) => r.concurrency))].sort((a, b) => a - b);
+  const cOptions = concs.map((c) => `<option value="${c}">c=${c}</option>`).join("");
   host.innerHTML = `<h2>Workload shape</h2>
-    <p class="note">Heatmap of metric by workload profile. Invalid cells (UNSTABLE/TIMEOUT/FAIL, e.g. Spark at ISL &ge; 256) are overlaid with their status symbol.</p>
+    <p class="note">Heatmap of metric by workload profile at one concurrency level. Invalid cells (UNSTABLE/TIMEOUT/FAIL, e.g. Spark at ISL &ge; 256) are overlaid with their status symbol.</p>
     <p>
       <label>Metric</label>
       <select id="shape-metric">
@@ -383,11 +387,7 @@ function renderShape() {
         <option value="peak_vram_mib">Peak VRAM (MiB)</option>
       </select>
       <label style="margin-left:1rem">Concurrency</label>
-      <select id="shape-c">
-        <option value="all">all</option>
-        <option value="1">c=1</option>
-        <option value="4">c=4</option>
-      </select>
+      <select id="shape-c">${cOptions}</select>
     </p>
     <div id="shape-heat"></div>`;
   const draw = () => {
@@ -396,52 +396,45 @@ function renderShape() {
     const arms = D.models.filter((mm) => visible(mm.arm)).map((mm) => mm.arm);
     const profOrder = Object.keys(D.config.shape_profiles || {});
     const rows = (D.shape || []).filter((r) => arms.includes(r.arm)
-      && (c === "all" || String(r.concurrency) === c));
+      && String(r.concurrency) === c);
     if (!rows.length) { document.getElementById("shape-heat").innerHTML = '<div class="note">No data.</div>'; return; }
-    // aggregate by arm+profile (mean over concurrency when c=all)
+    // one cell = one (arm, profile, concurrency); no averaging.
     const cell = {};
     rows.forEach((r) => {
-      const key = r.arm + "|" + r.profile;
-      if (!cell[key]) cell[key] = { arm: r.arm, profile: r.profile, vals: [], statuses: [] };
-      cell[key].vals.push(r[metric]);
-      cell[key].statuses.push(r.status);
+      cell[r.arm + "|" + r.profile] = { v: r[metric], st: r.status };
     });
+    const yLabels = arms.map((a) => name(a));
     const z = [], text = [], status = [];
-    const rowArms = arms;
-    rowArms.forEach((arm) => {
+    arms.forEach((arm) => {
       const zr = [], tr = [], sr = [];
       profOrder.forEach((prof) => {
-        const k = arm + "|" + prof;
-        const cc = cell[k];
-        if (!cc) { zr.push(null); tr.push(""); sr.push(""); return; }
-        const vals = cc.vals.filter((v) => v != null);
-        const v = vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : null;
-        zr.push(v);
-        const st = cc.statuses.includes("FAIL") || cc.statuses.includes("TIMEOUT") ? "FAIL"
-          : cc.statuses.includes("UNSTABLE") ? "UNSTABLE" : "PASS";
-        tr.push(`${name(arm)}<br>${prof} (ISL ${D.config.shape_profiles[prof].isl}/OSL ${D.config.shape_profiles[prof].osl})<br>${metric}: ${fmt(v)}<br>status: ${st}`);
-        sr.push(st);
+        const cc = cell[arm + "|" + prof];
+        if (!cc) { zr.push(null); tr.push(""); sr.push(null); return; }
+        zr.push(cc.v);
+        tr.push(`${name(arm)}<br>${prof} (ISL ${D.config.shape_profiles[prof].isl}/OSL ${D.config.shape_profiles[prof].osl})<br>c=${c}<br>${metric}: ${fmt(cc.v)}<br>status: ${cc.st}`);
+        sr.push(cc.st);
       });
       z.push(zr); text.push(tr); status.push(sr);
     });
-    const invalidMarkers = [];
-    rowArms.forEach((arm, i) => profOrder.forEach((prof, j) => {
+    // invalid-cell overlays use categorical profile + model names (no index coords).
+    const ix = [], iy = [], isym = [], icol = [];
+    arms.forEach((arm, i) => profOrder.forEach((prof, j) => {
       const st = status[i][j];
       if (st && st !== "PASS") {
-        invalidMarkers.push({ x: j, y: i, status: st });
+        ix.push(prof); iy.push(name(arm));
+        isym.push(STATUS_SYMBOL[st] || "x"); icol.push(STATUS_COLOR[st] || "#c62828");
       }
     }));
     const traces = [{
-      type: "heatmap", z, x: profOrder, y: rowArms.map(name), text,
+      type: "heatmap", z, x: profOrder, y: yLabels, text,
       hoverinfo: "text", colorscale: "YlGnBu", showscale: true,
       colorbar: { title: { text: metric } },
     }];
-    if (invalidMarkers.length) {
+    if (ix.length) {
       traces.push({
         type: "scatter", mode: "markers",
-        x: invalidMarkers.map((p) => p.x), y: invalidMarkers.map((p) => p.y),
-        marker: { color: invalidMarkers.map((p) => STATUS_COLOR[p.status]),
-          symbol: invalidMarkers.map((p) => STATUS_SYMBOL[p.status]), size: 13,
+        x: ix, y: iy,
+        marker: { color: icol, symbol: isym, size: 13,
           line: { color: "#fff", width: 1 } },
         showlegend: false, hoverinfo: "skip",
       });
@@ -452,6 +445,7 @@ function renderShape() {
   };
   document.getElementById("shape-metric").addEventListener("change", draw);
   document.getElementById("shape-c").addEventListener("change", draw);
+  document.getElementById("shape-c").value = String(concs[0]);
   draw();
 }
 
@@ -517,7 +511,9 @@ function renderResources() {
     const rows = cap.filter((c) => c.arm === mm.arm && c.status === "PASS");
     if (!rows.length) return;
     const peak = rows.reduce((b, c) => ((c.output_tps || 0) > (b.output_tps || 0) ? c : b));
-    effRows.push({ arm: mm.arm, vram: peak.peak_vram_mib, tps: peak.output_tps });
+    effRows.push({ arm: mm.arm, vram: peak.peak_vram_mib, tps: peak.output_tps,
+      concurrency: peak.concurrency, params_b: mm.params_b, quantization: mm.quantization,
+      role: mm.is_reference ? "reference (4B)" : "primary (8-9B)" });
   });
   const effTrace = {
     type: "scatter", mode: "markers+text", textposition: "top center",
@@ -525,7 +521,8 @@ function renderResources() {
     text: effRows.map((r) => shortName(r.arm)),
     marker: { color: effRows.map((r) => color(r.arm)),
       symbol: effRows.map((r) => markerFor(r.arm)), size: 13 },
-    hovertemplate: `<b>%{text}</b><br>VRAM %{x:.0f} MiB<br>output %{y:.1f} tok/s<extra></extra>`,
+    customdata: effRows.map((r) => [r.params_b, r.concurrency, r.quantization, r.role]),
+    hovertemplate: `<b>${"%{text}"}</b><br>VRAM %{x:.0f} MiB<br>output %{y:.1f} tok/s @ c=%{customdata[1]}<br>params %{customdata[0]}B · %{customdata[2]} · %{customdata[3]}<extra></extra>`,
   };
   plot("res-eff", [effTrace], baseLayout("Output tok/s vs peak VRAM (efficiency)", "VRAM (MiB)", "output tokens/s"));
 

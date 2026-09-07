@@ -34,8 +34,16 @@ FIG_DIR = DOCS / "assets" / "figures"
 COHORT_DIRS = [("mainstream-8-9b", "mainstream_8_9b"),
                ("spark-reference", "spark_reference")]
 
-# Colorblind-safe palette (Okabe-Ito, desaturated for a light background).
-PALETTE = ["#0072B2", "#E69F00", "#009E73", "#CC79A7", "#56B4E9", "#D55E00"]
+# Colorblind-safe palette (Okabe-Ito). One stable, unique color per model arm.
+MODEL_COLOR = {
+    "qwen3_8b": "#0072B2",
+    "deepseek_r1_8b": "#D55E00",
+    "glm4_9b": "#009E73",
+    "yi_15_9b": "#E69F00",
+    "spark_llama": "#CC79A7",
+}
+# Fallback palette for any model not in MODEL_COLOR.
+_FALLBACK = ["#0072B2", "#D55E00", "#009E73", "#E69F00", "#CC79A7", "#56B4E9"]
 STATUS_COLOR = {
     "PASS": "#2e7d32",
     "UNSTABLE": "#f9a825",
@@ -93,10 +101,11 @@ def models_meta():
         if m.get("cohort") not in ("mainstream_8_9b", "spark_reference"):
             continue
         pc = m.get("actual_parameter_count")
+        arm = m.get("arm")
         out.append({
-            "arm": m.get("arm"),
+            "arm": arm,
             "id": m.get("id"),
-            "display_name": m.get("display_name", m.get("arm")),
+            "display_name": m.get("display_name", arm),
             "params_b": round((pc or 0) / 1e9, 2),
             "quantization": m.get("quantization"),
             "cohort": m.get("cohort"),
@@ -104,7 +113,7 @@ def models_meta():
             "is_reference": m.get("role") == "reference",
             "license": m.get("license"),
             "upstream_repo": m.get("upstream_repo"),
-            "color": PALETTE[i % len(PALETTE)],
+            "color": MODEL_COLOR.get(arm, _FALLBACK[i % len(_FALLBACK)]),
         })
     return out
 
@@ -135,9 +144,13 @@ def capacity():
             "ttft_p50": fnum(r.get("ttft_p50_ms_mean")),
             "ttft_p50_ci": fnum(r.get("ttft_p50_ms_ci95")),
             "ttft_p95": fnum(r.get("ttft_p95_ms_mean")),
+            "ttft_p95_ci": fnum(r.get("ttft_p95_ms_ci95")),
             "latency_p50": fnum(r.get("latency_p50_ms_mean")),
+            "latency_p50_ci": fnum(r.get("latency_p50_ms_ci95")),
             "latency_p95": fnum(r.get("latency_p95_ms_mean")),
+            "latency_p95_ci": fnum(r.get("latency_p95_ms_ci95")),
             "request_tps": fnum(r.get("request_tps_mean")),
+            "request_tps_ci": fnum(r.get("request_tps_ci95")),
             "output_tps": fnum(r.get("output_tps_mean")),
             "output_tps_ci": fnum(r.get("output_tps_ci95")),
             "peak_vram_mib": fnum(r.get("peak_vram_mib_mean")),
@@ -385,6 +398,22 @@ def readme_figures(models, cap):
 # --------------------------------------------------------------------------
 # Main
 # --------------------------------------------------------------------------
+def _plotly_meta():
+    """Record the vendored Plotly bundle version + SHA256 for provenance."""
+    import hashlib
+    import re
+    p = DOCS / "assets" / "plotly.min.js"
+    sha = ""
+    version = ""
+    if p.exists():
+        raw = p.read_bytes()
+        sha = hashlib.sha256(raw).hexdigest()
+        m = re.search(rb"plotly\.js v([\d.]+)", raw[:400])
+        version = m.group(1).decode() if m else ""
+    return {"plotly_version": version, "plotly_sha256": sha,
+            "plotly_file": "assets/plotly.min.js"}
+
+
 def build_data():
     m = manifest()
     models = models_meta()
@@ -404,11 +433,13 @@ def build_data():
             "parallel": 2,
             "git_commit": m.get("git_commit", ""),
             "generated_at": "",
+            **_plotly_meta(),
         },
         "config": {
             "reliability_threshold_pct": bench.get("reliability", {}).get("min_success_pct", 99.5),
             "shape_profiles": profiles,
             "concurrency_capacity": bench.get("concurrency", {}).get("capacity", [1, 2, 4, 6, 8]),
+            "slo_profiles": bench.get("slo", bench.get("goodput", {})) or {},
         },
         "models": models,
         "capacity": cap,

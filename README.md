@@ -94,7 +94,7 @@ Run via the registry-driven harness (`bench/runner.py`); `make` targets wrap it.
 - `make reliability` — transport-reliability gate (≥200 requests, Wilson 95%
   CI on success rate, error classification).
 - `make shape` — token-controlled ISL/OSL workload sweep.
-- `make open-loop` — Poisson load + SLO/goodput sweep.
+- `make open-loop` — Poisson load + achieved-throughput sweep.
 - `make startup` / `make soak` / `make sessions` — cold-start latency,
   sustained-load thermal degradation, multi-turn latency.
 - `make llama-bench` — raw-engine microbenchmark (pp512/tg128) with the same
@@ -126,7 +126,7 @@ REPRODUCE_MODE=smoke make reproduce   # fast admission path
 ## Methodology
 
 See [docs/methodology.md](docs/methodology.md) for metric definitions (TTFT,
-ITL, E2E latency, throughput, goodput), aggregation, and limitations. This is
+ITL, E2E latency, throughput), aggregation, and limitations. This is
 a fixed-hardware deployment benchmark: numbers are representative of this
 exact GPU/engine/quantization envelope, not a general model ranking.
 

@@ -44,8 +44,8 @@ to reduce temporal/thermal order bias.
 
 In addition to the size-matched 8-9B cohort, Spark-X2.5-4B is benchmarked with
 the **same machine, same AIPerf version, same semantic prompt dataset, same
-sampling policy, same metric definitions, same reliability methodology, same
-SLO definitions, and same result schema**. It is reported as a
+sampling policy, same metric definitions, same reliability methodology, and
+same result schema**. It is reported as a
 **fixed-hardware cross-cohort reference**, not as a competitor.
 
 Spark differs from the cohort in parameter count, serving fork, and
@@ -120,7 +120,7 @@ Runs are classified explicitly, and a parsed-but-unstable run is never called
 | `reliability` | Is transport stable enough to measure? | success rate, Wilson CI, error classification |
 | `capacity` | What throughput does the model sustain vs concurrency? | request throughput, error rate, latency |
 | `shape` | How does the model behave under controlled ISL/OSL? | TTFT/ITL vs token shape |
-| `open-loop` | How much Poisson load stays SLO-compliant? | goodput, SLO compliance |
+| `open-loop` | How much Poisson load is achieved before saturation? | achieved request throughput, transport success rate |
 | `startup` | How long does process cold start take? | container start, model ready, first token |
 | `soak` | Does sustained load cause thermal degradation? | GPU temp/power/util, SM clock |
 | `sessions` | How does latency grow with conversation context? | TTFT by turn index |

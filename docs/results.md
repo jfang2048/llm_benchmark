@@ -71,7 +71,7 @@ Raw-engine numbers, kept separate from the AIPerf end-to-end serving numbers.
 All four models ran 600 s without errors and without thermal throttle: GPU
 ~77 C, power ~81-85 W, 0% error rate.
 
-### Open-loop (Poisson goodput, c=8)
+### Open-loop (Poisson load, c=8)
 
 Achieved throughput tracks the offered load up to ~90-100% then flattens;
 no request errors at any load fraction.
@@ -117,7 +117,8 @@ Cold start 4.7 s (first) / ~2.9 s (warm).
 
 ### Open-loop
 
-Poisson 0.5-1.1 x capacity: 0% error, achieved goodput 0.42-0.82 req/s.
+Poisson 0.5-1.1 x capacity: 0% transport error, achieved request throughput
+0.42-0.82 req/s.
 
 ### Sessions
 
