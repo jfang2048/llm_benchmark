@@ -363,7 +363,7 @@ def run_rate_cell(arm, model_name, url, container, conc, rep, out_dir,
 
 
 def run_sessions_cell(arm, model_name, url, container, rep, out_dir, osl,
-                      seed, cache, isl="raw"):
+                      seed, cache, isl="raw", turns=3):
     served = _serve(arm, model_name, url, container, out_dir)
     if served is None:
         return None
@@ -376,7 +376,7 @@ def run_sessions_cell(arm, model_name, url, container, rep, out_dir, osl,
               "--osl", str(osl),
               "--extra-inputs",
               '{"temperature":0,"ignore_eos":true,"cache_prompt":' + cache_v + '}',
-              "--conversation-num", "20", "--conversation-turn-mean", "4",
+              "--conversation-num", "20", "--conversation-turn-mean", str(turns),
               "--conversation-turn-delay-mean", "0", "--tokenizer", "builtin"])
     return _finish_cell(cmd, arm, "sessions", isl, 1, rep, out_dir, artifact,
                         gpu_csv, container, CELL_TIMEOUT)
@@ -575,6 +575,7 @@ def main():
                     time.sleep(COOLDOWN)
         else:  # sessions
             osl_sessions = bench["output_length"].get("sessions", 64)
+            turns = bench["sessions"].get("turns", 3)
             for m in arms:
                 arm, url, container, model_name = _arm_info(m)
                 for cache in (False, True):
@@ -589,7 +590,7 @@ def main():
                     out_dir.mkdir(parents=True, exist_ok=True)
                     row = run_sessions_cell(arm, model_name, url, container, 1,
                                             str(out_dir), osl_sessions, seed,
-                                            cache, isl=isl)
+                                            cache, isl=isl, turns=turns)
                     if row is None:
                         log(f"FAIL serve {arm}")
                         continue

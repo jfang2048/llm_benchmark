@@ -76,7 +76,7 @@
   },
   "sessions": {
     "conversations": 20,
-    "turns": 4
+    "turns": 3
   },
   "sampling": {
     "temperature": 0,
