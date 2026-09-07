@@ -51,9 +51,13 @@ echo "== Secret token / password patterns in tracked content =="
 pat='(Authorization:[[:space:]]*Bearer|HF_TOKEN=[^[:space:]]|HUGGING_FACE_HUB_TOKEN=[^[:space:]]|GITHUB_TOKEN=[^[:space:]]|OPENAI_API_KEY=[^[:space:]]|API_KEY=[^[:space:]]|PASSWORD=[^[:space:]]|SECRET=[^[:space:]]|BEGIN (OPENSSH|RSA|EC|DSA) PRIVATE KEY|ghp_[A-Za-z0-9]{20,}|hf_[A-Za-z0-9]{20,}|sk-[A-Za-z0-9]{20,})'
 hits=""
 SELF="scripts/security_check.sh"
+# Vendored third-party minified bundles contain long alphanumeric runs and
+# path-like strings that false-positive the secret / home-path scans below.
+is_vendor(){ [[ "$1" == docs/assets/plotly.min.js ]]; }
 while IFS= read -r f; do
   [[ -f "$f" ]] || continue
   [[ "$f" == "$SELF" ]] && continue   # the checker contains its own pattern text
+  is_vendor "$f" && continue
   if grep -rniE "$pat" "$f" >/dev/null 2>&1; then hits="$hits $f"; fi
 done <<< "$FILES"
 [[ -z "$hits" ]] && ok "no token/password patterns" || { fail "token/password pattern in: $hits"; }
@@ -62,6 +66,7 @@ echo "== Private home paths / machine identifiers =="
 hits2=""
 while IFS= read -r f; do
   [[ -f "$f" ]] || continue
+  is_vendor "$f" && continue
   if grep -rniE '/home/[a-z_][a-z0-9_]*|/Users/[a-zA-Z0-9_]+' "$f" >/dev/null 2>&1; then hits2="$hits2 $f"; fi
 done <<< "$FILES"
 [[ -z "$hits2" ]] && ok "no private home paths" || { fail "private home path in: $hits2"; }
