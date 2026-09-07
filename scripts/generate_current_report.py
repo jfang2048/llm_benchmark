@@ -307,6 +307,77 @@ def shape_table(rows):
             f"streams at ISL 768.</p>")
 
 
+def startup_table(meta):
+    rows = load_tsv(RESULT_ROOT / "startup" / "startup.tsv")
+    if not rows:
+        return ""
+    by_arm = {}
+    for r in rows:
+        v = _num(r.get("cold_start_ms"))
+        if v is not None:
+            by_arm.setdefault(r["arm"], []).append(v)
+    body = []
+    for arm, vals in sorted(by_arm.items()):
+        mean = sum(vals) / len(vals)
+        name = meta.get(arm, {}).get("display_name", arm)
+        body.append(f"<tr><td>{html_escape(name)}</td>"
+                    f"<td>{min(vals):.0f}</td><td>{mean:.0f}</td>"
+                    f"<td>{max(vals):.0f}</td></tr>")
+    return (f"<h2>Startup &mdash; cold start to first token (ms)</h2>"
+            f"<table><thead><tr><th>Model</th><th>min</th><th>mean</th>"
+            f"<th>max</th></tr></thead><tbody>{''.join(body)}</tbody></table>"
+            f"<p class='meta'>First repeat is slower (cold CUDA graph compile).</p>")
+
+
+def openloop_table(meta):
+    rows = load_tsv(RESULT_ROOT / "open-loop" / "aggregate.tsv")
+    if not rows:
+        return ""
+    arms = sorted({r["arm"] for r in rows})
+    fracs = sorted({r["isl"] for r in rows}, key=lambda x: float(x))
+    head = "".join(f"<th>{f}</th>" for f in fracs)
+    body = []
+    for arm in arms:
+        name = meta.get(arm, {}).get("display_name", arm)
+        tds = []
+        for f in fracs:
+            r = next((x for x in rows if x["arm"] == arm and x["isl"] == f), None)
+            if r:
+                tds.append(f"<td>{_num(r.get('request_tps_mean')):.2f}</td>")
+            else:
+                tds.append("<td>-</td>")
+        body.append(f"<tr><td>{html_escape(name)}</td>{''.join(tds)}</tr>")
+    return (f"<h2>Open-loop &mdash; achieved goodput (req/s) vs load fraction</h2>"
+            f"<table><thead><tr><th>Model</th><th>load fraction x capacity</th></tr>"
+            f"<tr><th></th>{head}</tr></thead><tbody>{''.join(body)}</tbody>"
+            f"</table><p class='meta'>Offered Poisson load as a fraction of each "
+            f"model's measured stable capacity; achieved throughput below the "
+            f"fraction near/above 1.0 shows saturation.</p>")
+
+
+def sessions_table(meta):
+    rows = load_tsv(RESULT_ROOT / "sessions" / "aggregate.tsv")
+    if not rows:
+        return ""
+    body = []
+    for arm in sorted({r["arm"] for r in rows}):
+        name = meta.get(arm, {}).get("display_name", arm)
+        nc = next((r for r in rows if r["arm"] == arm and r["isl"] == "nocache"), None)
+        ca = next((r for r in rows if r["arm"] == arm and r["isl"] == "cache"), None)
+        body.append(
+            f"<tr><td>{html_escape(name)}</td>"
+            f"<td>{_num(nc['ttft_p50_ms_mean']) if nc else ''}</td>"
+            f"<td>{_num(ca['ttft_p50_ms_mean']) if ca else ''}</td>"
+            f"<td>{_num(nc['itl_p50_ms_mean']) if nc else ''}</td>"
+            f"<td>{_num(ca['itl_p50_ms_mean']) if ca else ''}</td></tr>")
+    return (f"<h2>Sessions &mdash; multi-turn TTFT/ITL p50 (ms), 3 turns</h2>"
+            f"<table><thead><tr><th>Model</th><th>TTFT nocache</th>"
+            f"<th>TTFT cache</th><th>ITL nocache</th><th>ITL cache</th></tr>"
+            f"</thead><tbody>{''.join(body)}</tbody></table>"
+            f"<p class='meta'>cache_prompt=true avoids re-prefilling the "
+            f"conversation history, reducing per-turn TTFT.</p>")
+
+
 def build_html(meta, manifest):
     cells = capacity_view(meta)
     return f"""<!doctype html>
@@ -335,6 +406,9 @@ llama.cpp pinned upstream, IQ4_XS, identical serving policy across models.</p>
 {capacity_chart(cells)}
 {repeats_table(repeats_view())}
 {shape_table(shape_view())}
+{openloop_table(meta)}
+{startup_table(meta)}
+{sessions_table(meta)}
 {reliability_table(reliability_view())}
 </body></html>"""
 
