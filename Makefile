@@ -1,130 +1,104 @@
 # Local LLM Inference Benchmark
 #
+# Registry-driven cohorts (see configs/models.json):
+#   mainstream_8_9b   Qwen3-8B, DeepSeek-R1-Distill-Llama-8B, GLM-4-9B-0414,
+#                     Yi-1.5-9B-Chat  (IQ4_XS, upstream llama.cpp)
+#   spark_reference   Spark-X2.5-4B    (Q4_K_M, XHToken llama.cpp fork)
+#
 # Primary targets:
-#   make setup            Download models and build serving images
-#   make smoke            Fast sanity benchmark
-#   make benchmark        Run the current primary benchmark (capacity sweep)
-#   make report           Rebuild the current dashboard
-#   make reproduce        One-command end-to-end reproduction
-#   make clean            Tear down benchmark containers
+#   make setup        Download models and build serving images
+#   make smoke        Fast admission sanity check (serve + smoke)
+#   make benchmark    Mainstream 8-9B capacity sweep
+#   make spark        Spark reference capacity sweep
+#   make reliability  Transport-reliability gate (both cohorts)
+#   make shape        Token-controlled ISL/OSL workload sweep (both cohorts)
+#   make open-loop    Poisson load + SLO/goodput sweep (both cohorts)
+#   make startup      Cold-start latency (both cohorts)
+#   make soak         Sustained load + thermal degradation (both cohorts)
+#   make sessions     Multi-turn latency (both cohorts)
+#   make llama-bench  Microbenchmark with the pinned llama.cpp binary
+#   make report       Rebuild the current dashboard
+#   make reproduce    End-to-end reproduction (both cohorts + dashboard)
+#   make clean        Tear down benchmark containers
 #
-# Suites:
-#   make capacity         Closed-loop throughput/error sweep vs concurrency
-#   make shape            Token-controlled ISL/OSL workload sweep
-#   make open-loop        Poisson load + SLO/goodput sweep
-#   make startup          Process cold-start latency
-#   make soak             Sustained load + thermal degradation
-#   make sessions         Multi-turn latency by turn
-#   make backend          Engine A/B (llama.cpp vs vLLM+GGUF)
-#   make reliability      Transport-reliability gate
-#
-# Historical:
-#   make benchmark-v1     Run the historical v1 model comparison (diagnostic)
+# Historical: make benchmark-v1 (old Spark-vs-Qwen3-4B shell comparison)
 
 SHELL := /bin/bash
-SCRIPTS := scripts
+ROOT  := $(shell pwd)
 
-.PHONY: help setup smoke benchmark benchmark-8b9b reliability-8b9b shape-8b9b \
-	llama-bench benchmark-v1 capacity shape open-loop startup \
-	soak sessions backend reliability report report-current report-v1 reproduce security clean \
-	preflight deploy healthcheck
+# AIPerf CLI; override with `make AIPERF=aiperf` if it is already on your PATH.
+AIPERF ?= $(HOME)/venvs/aiperf/bin/aiperf
+RUNNER  = AIPERF="$(AIPERF)" python3 -m bench.runner
+COHORTS = mainstream_8_9b spark_reference
+
+.PHONY: help setup smoke benchmark spark reliability shape open-loop startup \
+	soak sessions llama-bench report reproduce clean benchmark-v1
 
 help:
 	@printf '%s\n' \
 	  "Local LLM Inference Benchmark" \
 	  "" \
-	  "  make setup        Download models and build serving images" \
-	  "  make smoke        Fast sanity benchmark" \
-	  "  make benchmark    Current primary benchmark (capacity sweep)" \
-	  "  make report       Rebuild the current dashboard" \
-	  "  make reproduce    One-command end-to-end reproduction" \
-	  "  make clean        Tear down benchmark containers" \
+	  "Primary cohorts: mainstream_8_9b (8-9B) + spark_reference (Spark-X2.5-4B)" \
 	  "" \
-	  "Suites:" \
-	  "  make capacity / shape / open-loop / startup / soak / sessions / backend" \
-	  "  make reliability  Transport-reliability gate" \
+	  "  make setup        Download models and build serving images" \
+	  "  make smoke        Fast admission sanity check" \
+	  "  make benchmark    Mainstream 8-9B capacity sweep" \
+	  "  make spark        Spark reference capacity sweep" \
+	  "  make reliability  Transport-reliability gate (both cohorts)" \
+	  "  make shape        ISL/OSL workload sweep (both cohorts)" \
+	  "  make open-loop    Poisson load + goodput sweep (both cohorts)" \
+	  "  make startup      Cold-start latency (both cohorts)" \
+	  "  make soak         Sustained load + thermal degradation (both cohorts)" \
+	  "  make sessions     Multi-turn latency (both cohorts)" \
+	  "  make llama-bench  llama.cpp microbenchmark" \
+	  "  make report       Rebuild the current dashboard" \
+	  "  make reproduce    End-to-end reproduction" \
+	  "  make clean        Tear down benchmark containers" \
 	  "" \
 	  "Historical: make benchmark-v1"
 
-preflight:
-	./$(SCRIPTS)/preflight.sh
-
 setup:
-	./$(SCRIPTS)/download_models.sh
-	./$(SCRIPTS)/build.sh
-
-deploy:
-	./$(SCRIPTS)/deploy.sh
-
-healthcheck:
-	./$(SCRIPTS)/healthcheck.sh
+	./scripts/download_models.sh
+	./scripts/build.sh
 
 smoke:
-	MODE=smoke ./$(SCRIPTS)/benchmark.sh
+	./scripts/admit_8b9b.sh
 
 benchmark:
-	MODE=capacity ./$(SCRIPTS)/benchmark.sh
+	$(RUNNER) --cohort mainstream_8_9b --suite capacity
 
-# Mainstream 8-9B cohort (current primary): registry-driven runner.
-benchmark-8b9b:
-	python3 -m bench.runner
+spark:
+	$(RUNNER) --cohort spark_reference --suite capacity
 
-reliability-8b9b:
-	python3 -m bench.runner --suite reliability
+reliability:
+	@for c in $(COHORTS); do $(RUNNER) --cohort $$c --suite reliability || exit 1; done
 
-shape-8b9b:
-	python3 -m bench.runner --suite shape
+shape:
+	@for c in $(COHORTS); do $(RUNNER) --cohort $$c --suite shape || exit 1; done
+
+open-loop:
+	@for c in $(COHORTS); do $(RUNNER) --cohort $$c --suite open-loop || exit 1; done
+
+startup:
+	@for c in $(COHORTS); do $(RUNNER) --cohort $$c --suite startup || exit 1; done
+
+soak:
+	@for c in $(COHORTS); do $(RUNNER) --cohort $$c --suite soak || exit 1; done
+
+sessions:
+	@for c in $(COHORTS); do $(RUNNER) --cohort $$c --suite sessions || exit 1; done
 
 llama-bench:
 	python3 -m bench.llama_bench
 
-benchmark-v1:
-	MODE=final ./$(SCRIPTS)/benchmark.sh
-
-capacity:
-	MODE=capacity ./$(SCRIPTS)/benchmark.sh
-
-shape:
-	MODE=shape ./$(SCRIPTS)/benchmark.sh
-
-open-loop:
-	MODE=open-loop ./$(SCRIPTS)/benchmark.sh
-
-startup:
-	MODE=startup ./$(SCRIPTS)/benchmark.sh
-
-soak:
-	MODE=soak ./$(SCRIPTS)/benchmark.sh
-
-sessions:
-	MODE=sessions ./$(SCRIPTS)/benchmark.sh
-
-backend:
-	MODE=backend ./$(SCRIPTS)/benchmark.sh
-
-reliability:
-	MODE=reliability ./$(SCRIPTS)/benchmark.sh
-
 report:
-	@if [ -x .venv/bin/python ]; then .venv/bin/python $(SCRIPTS)/generate_v2_report.py; \
-	else python3 $(SCRIPTS)/generate_v2_report.py; fi
-
-report-current:
-	python3 $(SCRIPTS)/generate_current_report.py
-
-report-v1:
-	@if [ -x .venv/bin/python ]; then .venv/bin/python $(SCRIPTS)/generate_report.py; \
-	else python3 $(SCRIPTS)/generate_report.py; fi
+	python3 scripts/generate_current_report.py
 
 reproduce:
-	./$(SCRIPTS)/reproduce.sh
-
-curate-v2:
-	@if [ -x .venv/bin/python ]; then .venv/bin/python $(SCRIPTS)/curate_v2_final.py; \
-	else python3 $(SCRIPTS)/curate_v2_final.py; fi
-
-security:
-	./$(SCRIPTS)/security_check.sh
+	./scripts/reproduce.sh
 
 clean:
-	./$(SCRIPTS)/cleanup.sh
+	./scripts/cleanup.sh
+
+benchmark-v1:
+	MODE=final ./scripts/benchmark.sh

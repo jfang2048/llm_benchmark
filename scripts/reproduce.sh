@@ -1,47 +1,77 @@
 #!/usr/bin/env bash
-# One-command end-to-end reproduction.
+# One-command end-to-end reproduction of the current benchmark.
 #
-#   ./scripts/reproduce.sh                       # current benchmark (capacity)
-#   REPRODUCE_MODE=smoke ./scripts/reproduce.sh  # fast validation path
+#   ./scripts/reproduce.sh                       # full: both cohorts + dashboard
+#   REPRODUCE_MODE=smoke ./scripts/reproduce.sh  # fast admission sanity path
 #
 # Idempotent: existing models and images are reused, not re-downloaded/rebuilt.
-# Fails early with actionable messages via the preflight checker.
+# The runner skips already-completed cells, so a resumed run continues where it
+# left off.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-MODE="${REPRODUCE_MODE:-capacity}"
+MODE="${REPRODUCE_MODE:-full}"
+
+# AIPerf CLI; override with AIPERF=/path/to/aiperf if not in $HOME/venvs/aiperf.
+AIPERF="${AIPERF:-$HOME/venvs/aiperf/bin/aiperf}"
+export AIPERF
+
+RUNNER() { python3 -m bench.runner "$@"; }
 
 step(){ printf '\n===== %s =====\n' "$*"; }
 
-step "1/7 preflight"
+cd "$ROOT"
+
+step "1/6 preflight"
 "$ROOT/scripts/preflight.sh"
 
-step "2/7 download models"
+if [[ "$MODE" == "smoke" ]]; then
+  step "smoke: admission (mainstream 8-9B + Spark reference)"
+  "$ROOT/scripts/admit_8b9b.sh"
+  # Spark reference: serve + smoke against the pinned XHToken fork.
+  python3 -m bench.runner --cohort spark_reference --suite capacity --dry-run >/dev/null
+  echo "Spark reference admission is covered by its capacity first cell;"
+  echo "run 'make spark' to execute it."
+  step "smoke: report"
+  python3 scripts/generate_current_report.py
+  echo "Smoke complete."
+  exit 0
+fi
+
+step "2/6 download models"
 "$ROOT/scripts/download_models.sh"
 
-step "3/7 build images"
+step "3/6 build images"
 "$ROOT/scripts/build.sh"
 
-step "4/7 deploy benchmark containers"
-"$ROOT/scripts/deploy.sh"
+step "4/6 benchmark (both cohorts, all suites)"
+RUNNER --cohort mainstream_8_9b --suite capacity
+RUNNER --cohort spark_reference --suite capacity
+RUNNER --cohort mainstream_8_9b --suite reliability
+RUNNER --cohort spark_reference --suite reliability
+RUNNER --cohort mainstream_8_9b --suite shape
+RUNNER --cohort spark_reference --suite shape
+RUNNER --cohort mainstream_8_9b --suite startup
+RUNNER --cohort spark_reference --suite startup
+RUNNER --cohort mainstream_8_9b --suite soak
+RUNNER --cohort spark_reference --suite soak
+RUNNER --cohort mainstream_8_9b --suite open-loop
+RUNNER --cohort spark_reference --suite open-loop
+RUNNER --cohort mainstream_8_9b --suite sessions
+RUNNER --cohort spark_reference --suite sessions
+python3 -m bench.llama_bench
 
-step "5/7 startup healthcheck"
-"$ROOT/scripts/healthcheck.sh"
+step "5/6 report"
+python3 scripts/generate_current_report.py
 
-step "6/7 benchmark (mode=$MODE)"
-MODE="$MODE" "$ROOT/scripts/benchmark.sh"
-
-step "7/7 generate report"
-if [ -x "$ROOT/.venv/bin/python" ]; then
-  "$ROOT/.venv/bin/python" "$ROOT/scripts/generate_v2_report.py"
-else
-  python3 "$ROOT/scripts/generate_v2_report.py"
-fi
+step "6/6 validate"
+python3 scripts/validate_config.py
+"$ROOT/scripts/security_check.sh"
 
 echo
 echo "Reproduction complete. Artifacts:"
-echo "  results/v2/runs/          (new benchmark run)"
-echo "  results/v2/final/         (curated public dataset)"
-echo "  docs/v2/index.html        (current dashboard)"
+echo "  results/current/mainstream-8-9b/   curated 8-9B cohort results"
+echo "  results/current/spark-reference/    curated Spark reference results"
+echo "  docs/index.html                     current dashboard"
 echo
-echo "To curate the new run into results/v2/final/: make curate-v2"
+echo "Commit the curated TSVs and publish with: make report && git push"
