@@ -1,15 +1,19 @@
 #!/usr/bin/env python3
 """Current-benchmark dashboard generator.
 
-Reads the 8-9B cohort registry (configs/models.json) plus the curated results
-under results/current/ and renders a single self-contained HTML dashboard with
-no external CDN dependencies. Model names, parameter counts, quantization and
-licenses come from the registry; suite tables come from the machine-readable
-TSVs. FAILED / UNSTABLE cells are marked explicitly and never presented as
-valid ranking points.
+Reads configs/models.json + configs/benchmark.json + the curated results under
+results/current/ and produces:
+
+  docs/data/current.json   - one normalized dashboard dataset (all charts read it)
+  docs/index.html          - static shell that loads plotly.min.js + dashboard.js
+  docs/assets/figures/*.svg - 2 static summary figures for the README
+
+Every rendered number comes from the machine-readable data above; nothing is
+hand-authored. The interactive rendering lives in docs/assets/dashboard.js
+(Plotly, static GitHub Pages, no server).
 
 Usage:
-    python3 scripts/generate_current_report.py [--out docs/current/index.html]
+    python3 scripts/generate_current_report.py [--out docs/index.html]
 """
 import argparse
 import csv
@@ -22,17 +26,23 @@ sys.path.insert(0, str(ROOT))
 from bench import config  # noqa: E402
 
 RESULT_ROOT = ROOT / "results" / "current"
+DOCS = ROOT / "docs"
+DATA_PATH = DOCS / "data" / "current.json"
+FIG_DIR = DOCS / "assets" / "figures"
+
 # (filesystem dir, registry cohort) for the current cohorts.
-COHORTS = [("mainstream-8-9b", "mainstream_8_9b"),
-           ("spark-reference", "spark_reference")]
-PALETTE = ["#3a7bd5", "#e07b39", "#2fa36b", "#8e44ad", "#c0392b", "#16a085"]
+COHORT_DIRS = [("mainstream-8-9b", "mainstream_8_9b"),
+               ("spark-reference", "spark_reference")]
 
-
-def _num(s):
-    try:
-        return float(s)
-    except (TypeError, ValueError):
-        return None
+# Colorblind-safe palette (Okabe-Ito, desaturated for a light background).
+PALETTE = ["#0072B2", "#E69F00", "#009E73", "#CC79A7", "#56B4E9", "#D55E00"]
+STATUS_COLOR = {
+    "PASS": "#2e7d32",
+    "UNSTABLE": "#f9a825",
+    "FAIL": "#c62828",
+    "TIMEOUT": "#c62828",
+    "EXCLUDED": "#9e9e9e",
+}
 
 
 def load_tsv(path):
@@ -42,50 +52,60 @@ def load_tsv(path):
         return list(csv.DictReader(f, delimiter="\t"))
 
 
-def registry_meta():
-    meta = {}
-    for m in config.models():
-        if m.get("enabled") and m.get("cohort") in ("mainstream_8_9b", "spark_reference"):
-            meta[m["arm"]] = m
-    return meta
-
-
-def is_reference(meta, arm):
-    return meta.get(arm, {}).get("role") == "reference"
-
-
-def disp(meta, arm):
-    """Display name; the Spark reference is labeled, never ranked as 8-9B."""
-    m = meta.get(arm, {})
-    name = m.get("display_name", arm)
-    if m.get("role") == "reference":
-        return name + " (REFERENCE / 4B)"
-    return name
-
-
-def cohort_of(arm):
-    for m in config.models():
-        if m.get("arm") == arm:
-            return "spark" if m.get("role") == "reference" else "mainstream"
-    return "mainstream"
-
-
-def _cohort_attr(cohort):
-    return f' data-cohort="{cohort}"'
+def fnum(s):
+    try:
+        return float(s)
+    except (TypeError, ValueError):
+        return None
 
 
 def load_suite(suite, *globs):
-    """Load TSV rows from a suite across cohorts, tagged with cohort + role."""
-    out = []
-    for cohort_dir, cohort_name in COHORTS:
-        base = RESULT_ROOT / cohort_dir / suite
+    rows = []
+    for cdir, cname in COHORT_DIRS:
+        base = RESULT_ROOT / cdir / suite
         for g in globs:
             for p in base.glob(g):
                 for r in load_tsv(p):
                     r = dict(r)
-                    r["_cohort_dir"] = cohort_dir
-                    r["_cohort"] = cohort_name
-                    out.append(r)
+                    r["_cohort"] = cname
+                    rows.append(r)
+    return rows
+
+
+def cell_status(r):
+    if int(r.get("failed_runs") or 0) > 0:
+        return "FAIL"
+    if int(r.get("unstable_runs") or 0) > 0:
+        return "UNSTABLE"
+    if int(r.get("pass_runs") or 0) == 0:
+        return "EXCLUDED"
+    return "PASS"
+
+
+# --------------------------------------------------------------------------
+# Model metadata
+# --------------------------------------------------------------------------
+def models_meta():
+    out = []
+    for i, m in enumerate(config.models()):
+        if not m.get("enabled"):
+            continue
+        if m.get("cohort") not in ("mainstream_8_9b", "spark_reference"):
+            continue
+        pc = m.get("actual_parameter_count")
+        out.append({
+            "arm": m.get("arm"),
+            "id": m.get("id"),
+            "display_name": m.get("display_name", m.get("arm")),
+            "params_b": round((pc or 0) / 1e9, 2),
+            "quantization": m.get("quantization"),
+            "cohort": m.get("cohort"),
+            "role": m.get("role"),
+            "is_reference": m.get("role") == "reference",
+            "license": m.get("license"),
+            "upstream_repo": m.get("upstream_repo"),
+            "color": PALETTE[i % len(PALETTE)],
+        })
     return out
 
 
@@ -99,408 +119,353 @@ def manifest():
         return {}
 
 
-def html_escape(s):
-    return (str(s).replace("&", "&amp;").replace("<", "&lt;")
-            .replace(">", "&gt;").replace('"', "&quot;"))
-
-
-def capacity_view(meta):
-    rows = load_suite("capacity", "aggregate.tsv")
-    out = []
-    for r in rows:
-        if r.get("suite") != "capacity":
-            continue
-        arm = r["arm"]
-        out.append({
-            "model": disp(meta, arm),
-            "cohort": cohort_of(arm),
-            "concurrency": int(r["concurrency"]),
-            "ttft_p50": _num(r.get("ttft_p50_ms_mean")),
-            "lat_p50": _num(r.get("latency_p50_ms_mean")),
-            "lat_p95": _num(r.get("latency_p95_ms_mean")),
-            "output_tps": _num(r.get("output_tps_mean")),
-            "vram": _num(r.get("peak_vram_mib_mean")),
+# --------------------------------------------------------------------------
+# Suite normalizers
+# --------------------------------------------------------------------------
+def capacity():
+    agg = [r for r in load_suite("capacity", "aggregate.tsv")
+           if r.get("suite") == "capacity"]
+    rep = [r for r in load_suite("capacity", "repeats.tsv")
+           if r.get("suite") == "capacity"]
+    agg_out = []
+    for r in agg:
+        agg_out.append({
+            "arm": r["arm"], "concurrency": int(r["concurrency"]),
+            "status": cell_status(r),
+            "ttft_p50": fnum(r.get("ttft_p50_ms_mean")),
+            "ttft_p50_ci": fnum(r.get("ttft_p50_ms_ci95")),
+            "ttft_p95": fnum(r.get("ttft_p95_ms_mean")),
+            "latency_p50": fnum(r.get("latency_p50_ms_mean")),
+            "latency_p95": fnum(r.get("latency_p95_ms_mean")),
+            "request_tps": fnum(r.get("request_tps_mean")),
+            "output_tps": fnum(r.get("output_tps_mean")),
+            "output_tps_ci": fnum(r.get("output_tps_ci95")),
+            "peak_vram_mib": fnum(r.get("peak_vram_mib_mean")),
+            "peak_power_w": fnum(r.get("peak_power_w_mean")),
+            "error_rate_pct": fnum(r.get("error_rate_pct_mean")),
             "pass_runs": int(r.get("pass_runs") or 0),
             "unstable_runs": int(r.get("unstable_runs") or 0),
             "failed_runs": int(r.get("failed_runs") or 0),
         })
-    return out
+    rep_out = []
+    for r in rep:
+        rep_out.append({
+            "arm": r["arm"], "concurrency": int(r["concurrency"]),
+            "repeat": int(r["repeat"]), "status": r.get("status"),
+            "ttft_p50": fnum(r.get("ttft_p50_ms")),
+            "ttft_p95": fnum(r.get("ttft_p95_ms")),
+            "latency_p50": fnum(r.get("latency_p50_ms")),
+            "latency_p95": fnum(r.get("latency_p95_ms")),
+            "request_tps": fnum(r.get("request_tps")),
+            "output_tps": fnum(r.get("output_tps")),
+            "peak_vram_mib": fnum(r.get("peak_vram_mib")),
+            "peak_power_w": fnum(r.get("peak_power_w")),
+            "avg_gpu_util_pct": fnum(r.get("avg_gpu_util_pct")),
+            "peak_temp_c": fnum(r.get("peak_temp_c")),
+            "gpu_energy_j": fnum(r.get("gpu_energy_j")),
+            "gpu_j_per_request": fnum(r.get("gpu_j_per_request")),
+            "gpu_j_per_output_token": fnum(r.get("gpu_j_per_output_token")),
+        })
+    return {"aggregate": agg_out, "repeats": rep_out}
 
 
-def repeats_view():
-    return load_suite("capacity", "repeats.tsv")
-
-
-def reliability_view():
-    return load_suite("reliability", "reliability.tsv")
-
-
-def model_table(meta, manifest):
-    rows = []
-    for arm, m in sorted(meta.items(), key=lambda kv: kv[1].get("port", 0)):
-        pc = m.get("actual_parameter_count")
-        role = "Reference (4B)" if m.get("role") == "reference" else "Primary (8-9B)"
-        cls = ' class="ref"' if m.get("role") == "reference" else ""
-        cohort = "spark" if m.get("role") == "reference" else "mainstream"
-        rows.append(
-            f"<tr{cls}{_cohort_attr(cohort)}><td>{html_escape(m.get('display_name', arm))}</td>"
-            f"<td>{role}</td>"
-            f"<td>{html_escape(m.get('upstream_repo', ''))}</td>"
-            f"<td>{pc / 1e9:.2f}B</td>"
-            f"<td>{html_escape(m.get('quantization', ''))}</td>"
-            f"<td>{html_escape(m.get('license', '') or '')}</td></tr>"
-        )
-    engine = manifest.get("engine", "")
-    gpu = manifest.get("gpu", "")
-    return f"""
-    <h2>Models</h2>
-    <table><thead><tr><th>Model</th><th>Role</th><th>Upstream</th><th>Params</th>
-    <th>Quant</th><th>License</th></tr></thead><tbody>
-    {''.join(rows)}</tbody></table>
-    <p class="meta">Engine: {html_escape(engine)} &middot; GPU: {html_escape(gpu)}</p>
-    """
-
-
-def capacity_table(cells):
-    if not cells:
-        return "<h2>Capacity</h2><p>No capacity data yet.</p>"
-    models = sorted({c["model"] for c in cells})
-    concs = sorted({c["concurrency"] for c in cells})
-    model_cohort = {c["model"]: c["cohort"] for c in cells}
-    head = "".join(f"<th>c={c}</th>" for c in concs)
-    body = []
-    for model in models:
-        tts = []
-        for c in concs:
-            cell = next((x for x in cells
-                         if x["model"] == model and x["concurrency"] == c), None)
-            if cell is None:
-                tts.append("<td>-</td>")
-                continue
-            if cell["failed_runs"] > 0:
-                tts.append('<td class="fail">FAIL</td>')
-            elif cell["unstable_runs"] > 0:
-                tts.append('<td class="unstable">UNSTABLE</td>')
-            elif cell["pass_runs"] == 0:
-                tts.append('<td class="excluded">EXCLUDED</td>')
-            else:
-                tts.append(f"<td>{cell['ttft_p50']:.1f} ms</td>")
-        body.append(f"<tr{_cohort_attr(model_cohort.get(model, 'mainstream'))}>"
-                    f"<td>{html_escape(model)}</td>{''.join(tts)}</tr>")
-    return (f"<h2>Capacity &mdash; TTFT p50 (ms) vs concurrency</h2>"
-            f"<table><thead><tr><th>Model</th>{head}</tr></thead><tbody>"
-            f"{''.join(body)}</tbody></table>")
-
-
-def output_tps_table(cells):
-    if not cells:
-        return ""
-    models = sorted({c["model"] for c in cells})
-    concs = sorted({c["concurrency"] for c in cells})
-    model_cohort = {c["model"]: c["cohort"] for c in cells}
-    head = "".join(f"<th>c={c}</th>" for c in concs)
-    body = []
-    for model in models:
-        tds = []
-        for c in concs:
-            cell = next((x for x in cells
-                         if x["model"] == model and x["concurrency"] == c), None)
-            if cell and cell["output_tps"] is not None and cell["failed_runs"] == 0:
-                tds.append(f"<td>{cell['output_tps']:.1f}</td>")
-            else:
-                tds.append('<td class="fail">-</td>')
-        body.append(f"<tr{_cohort_attr(model_cohort.get(model, 'mainstream'))}>"
-                    f"<td>{html_escape(model)}</td>{''.join(tds)}</tr>")
-    return (f"<h2>Capacity &mdash; output tokens/s vs concurrency</h2>"
-            f"<table><thead><tr><th>Model</th>{head}</tr></thead><tbody>"
-            f"{''.join(body)}</tbody></table>")
-
-
-def capacity_chart(cells):
-    if not cells:
-        return ""
-    models = sorted({c["model"] for c in cells})
-    concs = sorted({c["concurrency"] for c in cells})
-    max_tps = max((c["output_tps"] for c in cells
-                   if c["output_tps"] is not None), default=1) or 1
-    w, h = 720, 360
-    px = lambda c: 60 + (c - concs[0]) / max(concs[-1] - concs[0], 1) * (w - 100)
-    py = lambda v: h - 40 - (v / max_tps) * (h - 70)
-    polylines = []
-    for i, model in enumerate(models):
-        pts = []
-        for c in concs:
-            cell = next((x for x in cells
-                         if x["model"] == model and x["concurrency"] == c), None)
-            if cell and cell["output_tps"] is not None:
-                pts.append(f"{px(c):.0f},{py(cell['output_tps']):.0f}")
-        if pts:
-            polylines.append(
-                f'<polyline fill="none" stroke="{PALETTE[i % len(PALETTE)]}" '
-                f'stroke-width="2" points="{" ".join(pts)}"/>')
-    xlabels = "".join(
-        f'<text x="{px(c):.0f}" y="{h - 12}" font-size="11" text-anchor="middle">{c}</text>'
-        for c in concs)
-    legend = "".join(
-        f'<text x="80" y="{20 + i * 16}" font-size="11" fill="{PALETTE[i % len(PALETTE)]}">{html_escape(m)}</text>'
-        for i, m in enumerate(models))
-    return (f'<h2>Capacity &mdash; throughput curve</h2>'
-            f'<svg viewBox="0 0 {w} {h}" style="max-width:760px">'
-            f'<line x1="60" y1="{h - 40}" x2="{w - 40}" y2="{h - 40}" stroke="#666"/>'
-            f'<line x1="60" y1="30" x2="60" y2="{h - 40}" stroke="#666"/>'
-            f'{xlabels}{legend}{"".join(polylines)}</svg>')
-
-
-def reliability_table(rows, meta):
-    if not rows:
-        return "<h2>Reliability</h2><p>No reliability data yet.</p>"
-    body = []
-    for r in rows:
-        body.append(
-            f"<tr{_cohort_attr(cohort_of(r['arm']))}><td>{html_escape(disp(meta, r['arm']))}</td><td>{r['concurrency']}</td>"
-            f"<td>{r['attempted']}</td><td>{r['successful']}</td>"
-            f"<td>{r['failed']}</td><td>{r['success_rate_pct']}%</td>"
-            f"<td>[{r['wilson_low_pct']}, {r['wilson_high_pct']}]</td>"
-            f"<td>{html_escape(r.get('error_types', ''))}</td></tr>")
-    return (f"<h2>Reliability (Wilson 95% CI)</h2>"
-            f"<table><thead><tr><th>Model</th><th>Concurrency</th>"
-            f"<th>Attempted</th><th>Successful</th><th>Failed</th>"
-            f"<th>Success %</th><th>Wilson 95% CI</th><th>Errors</th>"
-            f"</tr></thead><tbody>{''.join(body)}</tbody></table>")
-
-
-def repeats_table(rows, meta):
-    if not rows:
-        return ""
-    body = []
-    for r in rows:
-        cls = ""
-        if r.get("status") == "FAIL_AIPERF":
-            cls = ' class="fail"'
-        elif r.get("status") == "UNSTABLE":
-            cls = ' class="unstable"'
-        body.append(
-            f"<tr{cls}{_cohort_attr(cohort_of(r.get('arm')))}><td>{html_escape(disp(meta, r.get('arm'))) }</td>"
-            f"<td>{r.get('concurrency')}</td><td>{r.get('repeat')}</td>"
-            f"<td>{r.get('status')}</td>"
-            f"<td>{r.get('ttft_p50_ms') or '-'}</td>"
-            f"<td>{r.get('latency_p50_ms') or '-'}</td>"
-            f"<td>{r.get('output_tps') or '-'}</td>"
-            f"<td>{r.get('peak_vram_mib') or '-'}</td>"
-            f"<td>{r.get('successful_requests')}/{r.get('attempted_requests')}</td></tr>")
-    return (f"<h2>Capacity &mdash; raw repeats</h2>"
-            f"<table><thead><tr><th>Model</th><th>c</th><th>rep</th>"
-            f"<th>status</th><th>TTFT p50</th><th>lat p50</th><th>out t/s</th>"
-            f"<th>VRAM</th><th>ok/total</th></tr></thead><tbody>"
-            f"{''.join(body)}</tbody></table>")
-
-
-def shape_view():
-    rows = load_suite("shape", "aggregate.tsv")
+def reliability():
     out = []
-    for r in rows:
-        if not r.get("suite", "").startswith("shape_"):
-            continue
-        profile = r["suite"][len("shape_"):]
-        failed = int(r.get("failed_runs") or 0)
-        unstable = int(r.get("unstable_runs") or 0)
-        passed = int(r.get("pass_runs") or 0)
-        if failed > 0:
-            status = "FAIL"
-        elif unstable > 0:
-            status = "UNSTABLE"
-        elif passed == 0:
-            status = "EXCLUDED"
-        else:
-            status = "PASS"
+    for r in load_suite("reliability", "reliability.tsv"):
         out.append({
-            "profile": profile, "arm": r["arm"],
-            "concurrency": r["concurrency"], "status": status,
-            "ttft_p50": _num(r.get("ttft_p50_ms_mean")),
-            "lat_p50": _num(r.get("latency_p50_ms_mean")),
-            "output_tps": _num(r.get("output_tps_mean")),
+            "arm": r["arm"], "concurrency": int(r["concurrency"]),
+            "attempted": int(r["attempted"]), "successful": int(r["successful"]),
+            "failed": int(r["failed"]),
+            "success_rate_pct": fnum(r["success_rate_pct"]),
+            "wilson_low": fnum(r["wilson_low_pct"]),
+            "wilson_high": fnum(r["wilson_high_pct"]),
+            "error_types": r.get("error_types", ""),
         })
     return out
 
 
-def shape_table(rows, meta):
-    if not rows:
-        return "<h2>Workload shape</h2><p>No shape data yet.</p>"
-    order = config.shape_order()
-    profiles = [p for p in order if any(r["profile"] == p for r in rows)]
-    profiles += sorted({r["profile"] for r in rows if r["profile"] not in order})
-    arms = sorted({r["arm"] for r in rows})
-    body = []
-    for arm in arms:
-        name = disp(meta, arm)
-        for c in sorted({r["concurrency"] for r in rows}):
-            cells = []
-            for p in profiles:
-                cell = next((x for x in rows
-                             if x["arm"] == arm and x["profile"] == p
-                             and x["concurrency"] == c), None)
-                if cell is None:
-                    cells.append("<td>-</td>")
-                elif cell["status"] == "PASS":
-                    cells.append(f"<td>{cell['ttft_p50']:.0f} ms</td>")
-                else:
-                    cells.append(f'<td class="fail">{cell["status"]}</td>')
-            body.append(f"<tr{_cohort_attr(cohort_of(arm))}><td>{html_escape(name)}</td><td>c={c}</td>"
-                        f"{''.join(cells)}</tr>")
-    head = "".join(f"<th>{html_escape(p)}</th>" for p in profiles)
-    return (f"<h2>Workload shape &mdash; TTFT p50 (ms) by ISL/OSL profile</h2>"
-            f"<table><thead><tr><th>Model</th><th>Concurrency</th>{head}</tr>"
-            f"</thead><tbody>{''.join(body)}</tbody></table>"
-            f"<p class='meta'>Profiles: short_chat 128/128, balanced 256/256, "
-            f"summarization 512/128, rag_medium 768/128, generation 128/512. "
-            f"rag_medium is marked UNSTABLE/TIMEOUT for models that dropped "
-            f"streams at ISL 768.</p>")
+def open_loop(cap_agg):
+    # base rate per arm = max achieved request throughput at capacity.
+    base = {}
+    for r in cap_agg:
+        tps = r.get("request_tps")
+        if tps is not None:
+            base[r["arm"]] = max(base.get(r["arm"], 0.0), tps)
+    out = []
+    for r in load_suite("open-loop", "aggregate.tsv"):
+        if r.get("suite") != "openloop":
+            continue
+        frac = fnum(r.get("isl"))
+        out.append({
+            "arm": r["arm"], "load_fraction": frac,
+            "concurrency": int(r["concurrency"]),
+            "status": cell_status(r),
+            "offered_rps": round(base.get(r["arm"], 0.0) * frac, 4) if frac else None,
+            "achieved_rps": fnum(r.get("request_tps_mean")),
+            "error_rate_pct": fnum(r.get("error_rate_pct_mean")),
+            "ttft_p50": fnum(r.get("ttft_p50_ms_mean")),
+            "ttft_p95": fnum(r.get("ttft_p95_ms_mean")),
+            "output_tps": fnum(r.get("output_tps_mean")),
+        })
+    return out
 
 
-def startup_table(meta):
-    rows = load_suite("startup", "startup.tsv")
-    if not rows:
+def shape(profiles):
+    out = []
+    for r in load_suite("shape", "aggregate.tsv"):
+        suite = r.get("suite", "")
+        if not suite.startswith("shape_"):
+            continue
+        profile = suite[len("shape_"):]
+        p = profiles.get(profile, {})
+        out.append({
+            "arm": r["arm"], "profile": profile,
+            "isl": int(fnum(r.get("isl")) or p.get("isl", 0)),
+            "osl": p.get("osl", 0),
+            "concurrency": int(r["concurrency"]),
+            "status": cell_status(r),
+            "ttft_p50": fnum(r.get("ttft_p50_ms_mean")),
+            "output_tps": fnum(r.get("output_tps_mean")),
+            "latency_p50": fnum(r.get("latency_p50_ms_mean")),
+            "peak_vram_mib": fnum(r.get("peak_vram_mib_mean")),
+            "error_rate_pct": fnum(r.get("error_rate_pct_mean")),
+        })
+    return out
+
+
+def sessions():
+    out = []
+    for r in load_suite("sessions", "aggregate.tsv"):
+        if r.get("suite") != "sessions":
+            continue
+        out.append({
+            "arm": r["arm"], "cache_mode": r["isl"],
+            "ttft_p50": fnum(r.get("ttft_p50_ms_mean")),
+            "itl_p50": fnum(r.get("itl_p50_ms_mean")),
+        })
+    return out
+
+
+def startup():
+    out = []
+    for r in load_suite("startup", "startup.tsv"):
+        out.append({
+            "arm": r["arm"], "repeat": int(r["repeat"]),
+            "ready_ms": fnum(r["ready_ms"]),
+            "first_token_ms": fnum(r["first_token_ms"]),
+            "cold_start_ms": fnum(r["cold_start_ms"]),
+        })
+    return out
+
+
+def soak():
+    agg = [r for r in load_suite("soak", "aggregate.tsv") if r.get("suite") == "soak"]
+    rep = [r for r in load_suite("soak", "repeats.tsv") if r.get("suite") == "soak"]
+    temps = {}
+    for r in rep:
+        t = fnum(r.get("peak_temp_c"))
+        if t is not None:
+            temps[r["arm"]] = t
+    out = []
+    for r in agg:
+        out.append({
+            "arm": r["arm"],
+            "status": cell_status(r),
+            "ttft_p50": fnum(r.get("ttft_p50_ms_mean")),
+            "request_tps": fnum(r.get("request_tps_mean")),
+            "output_tps": fnum(r.get("output_tps_mean")),
+            "error_rate_pct": fnum(r.get("error_rate_pct_mean")),
+            "peak_vram_mib": fnum(r.get("peak_vram_mib_mean")),
+            "peak_power_w": fnum(r.get("peak_power_w_mean")),
+            "peak_temp_c": temps.get(r["arm"]),
+        })
+    return out
+
+
+def llama_bench(id_to_arm):
+    out = []
+    for cdir, _cname in COHORT_DIRS:
+        base = RESULT_ROOT / cdir / "llama-bench"
+        for p in base.glob("*.txt"):
+            arm = id_to_arm.get(p.stem, p.stem)
+            pp = tg = None
+            for line in p.read_text(encoding="utf-8", errors="ignore").splitlines():
+                if "pp512" in line:
+                    tok = line.split("|")[-2].strip().split()[0]
+                    pp = fnum(tok)
+                elif "tg128" in line:
+                    tok = line.split("|")[-2].strip().split()[0]
+                    tg = fnum(tok)
+            out.append({"arm": arm, "pp512": pp, "tg128": tg})
+    return out
+
+
+# --------------------------------------------------------------------------
+# Static summary figures (README)
+# --------------------------------------------------------------------------
+def _svg_line(title, series, xlabel, ylabel, w=760, h=380, yfmt="{:.0f}"):
+    """Minimal clean line chart. series = list of (label, color, [(x,y),...], dashed)."""
+    pad_l, pad_r, pad_t, pad_b = 60, 20, 40, 50
+    xs = [p[0] for _l, _c, pts, _d in series for p in pts if p[1] is not None]
+    ys = [p[1] for _l, _c, pts, _d in series for p in pts if p[1] is not None]
+    if not xs or not ys:
         return ""
-    by_arm = {}
-    for r in rows:
-        v = _num(r.get("cold_start_ms"))
-        if v is not None:
-            by_arm.setdefault(r["arm"], []).append(v)
-    body = []
-    for arm, vals in sorted(by_arm.items()):
-        mean = sum(vals) / len(vals)
-        name = disp(meta, arm)
-        body.append(f"<tr{_cohort_attr(cohort_of(arm))}><td>{html_escape(name)}</td>"
-                    f"<td>{min(vals):.0f}</td><td>{mean:.0f}</td>"
-                    f"<td>{max(vals):.0f}</td></tr>")
-    return (f"<h2>Startup &mdash; cold start to first token (ms)</h2>"
-            f"<table><thead><tr><th>Model</th><th>min</th><th>mean</th>"
-            f"<th>max</th></tr></thead><tbody>{''.join(body)}</tbody></table>"
-            f"<p class='meta'>First repeat is slower (cold CUDA graph compile).</p>")
+    xmin, xmax = min(xs), max(xs)
+    ymin, ymax = min(ys), max(ys)
+    xspan = (xmax - xmin) or 1.0
+    yspan = (ymax - ymin) or 1.0
+    xmin, xmax = xmin - 0.05 * xspan, xmax + 0.05 * xspan
+    ymin, ymax = ymin - 0.08 * yspan, ymax + 0.08 * yspan
+    px = lambda v: pad_l + (v - xmin) / (xmax - xmin) * (w - pad_l - pad_r)
+    py = lambda v: h - pad_b - (v - ymin) / (ymax - ymin) * (h - pad_t - pad_b)
+    parts = []
+    parts.append(f'<svg xmlns="http://www.w3.org/2000/svg" width="{w}" height="{h}" '
+                 f'viewBox="0 0 {w} {h}" font-family="-apple-system,Segoe UI,Roboto,sans-serif">')
+    parts.append(f'<rect width="{w}" height="{h}" fill="#ffffff"/>')
+    parts.append(f'<text x="{pad_l}" y="24" font-size="14" font-weight="600" fill="#222">{title}</text>')
+    # grid + axes
+    for i in range(6):
+        gy = pad_t + (h - pad_t - pad_b) * i / 5
+        parts.append(f'<line x1="{pad_l}" y1="{gy:.1f}" x2="{w-pad_r}" y2="{gy:.1f}" stroke="#ececec"/>')
+        parts.append(f'<text x="{pad_l-8}" y="{gy+4:.1f}" font-size="10" text-anchor="end" fill="#777">{yfmt.format(ymax-(ymax-ymin)*i/5)}</text>')
+    for i in range(6):
+        gx = pad_l + (w - pad_l - pad_r) * i / 5
+        parts.append(f'<line x1="{gx:.1f}" y1="{pad_t}" x2="{gx:.1f}" y2="{h-pad_b}" stroke="#f2f2f2"/>')
+        parts.append(f'<text x="{gx:.1f}" y="{h-pad_b+16}" font-size="10" text-anchor="middle" fill="#777">{xmin+(xmax-xmin)*i/5:.0f}</text>')
+    parts.append(f'<text x="{w/2}" y="{h-8}" font-size="11" text-anchor="middle" fill="#555">{xlabel}</text>')
+    parts.append(f'<text x="16" y="{h/2}" font-size="11" fill="#555" transform="rotate(-90 16 {h/2})" text-anchor="middle">{ylabel}</text>')
+    for label, color, pts, dashed in series:
+        pts = [p for p in pts if p[1] is not None]
+        if not pts:
+            continue
+        d = " ".join(f"{px(x):.1f},{py(y):.1f}" for x, y in pts)
+        dash = ' stroke-dasharray="6 4"' if dashed else ""
+        parts.append(f'<polyline points="{d}" fill="none" stroke="{color}" stroke-width="2"{dash}/>')
+        for x, y in pts:
+            parts.append(f'<circle cx="{px(x):.1f}" cy="{py(y):.1f}" r="3" fill="{color}"/>')
+    # legend
+    lx = pad_l
+    for label, color, _pts, dashed in series:
+        dash = ' stroke-dasharray="6 4"' if dashed else ""
+        parts.append(f'<line x1="{lx}" y1="{h-34}" x2="{lx+16}" y2="{h-34}" stroke="{color}" stroke-width="2"{dash}/>')
+        parts.append(f'<text x="{lx+20}" y="{h-30}" font-size="10" fill="#444">{label}</text>')
+        lx += 20 + len(label) * 6.2 + 24
+    parts.append("</svg>")
+    return "".join(parts)
 
 
-def openloop_table(meta):
-    rows = load_suite("open-loop", "aggregate.tsv")
-    if not rows:
-        return ""
-    arms = sorted({r["arm"] for r in rows})
-    fracs = sorted({r["isl"] for r in rows}, key=lambda x: float(x))
-    head = "".join(f"<th>{f}</th>" for f in fracs)
-    body = []
-    for arm in arms:
-        name = disp(meta, arm)
-        tds = []
-        for f in fracs:
-            r = next((x for x in rows if x["arm"] == arm and x["isl"] == f), None)
-            if r:
-                tds.append(f"<td>{_num(r.get('request_tps_mean')):.2f}</td>")
-            else:
-                tds.append("<td>-</td>")
-        body.append(f"<tr{_cohort_attr(cohort_of(arm))}><td>{html_escape(name)}</td>{''.join(tds)}</tr>")
-    return (f"<h2>Open-loop &mdash; achieved goodput (req/s) vs load fraction</h2>"
-            f"<table><thead><tr><th>Model</th><th>load fraction x capacity</th></tr>"
-            f"<tr><th></th>{head}</tr></thead><tbody>{''.join(body)}</tbody>"
-            f"</table><p class='meta'>Offered Poisson load as a fraction of each "
-            f"model's measured stable capacity; achieved throughput below the "
-            f"fraction near/above 1.0 shows saturation.</p>")
+def readme_figures(models, cap):
+    # 1. Output tok/s vs concurrency (primary cohort only, aggregate line).
+    series = []
+    for m in models:
+        if m["is_reference"]:
+            continue
+        pts = [(c["concurrency"], c["output_tps"])
+               for c in sorted(cap["aggregate"], key=lambda x: x["concurrency"])
+               if c["arm"] == m["arm"] and c["output_tps"] is not None]
+        if pts:
+            series.append((m["display_name"], m["color"], pts, False))
+    fig1 = _svg_line("Output throughput vs concurrency (IQ4_XS, upstream llama.cpp)",
+                     series, "concurrency", "output tokens/s", yfmt="{:.0f}")
+
+    # 2. TTFT p50 vs request throughput trade-off (scatter, one point per c).
+    series = []
+    for m in models:
+        pts = [(c["request_tps"], c["ttft_p50"])
+               for c in sorted(cap["aggregate"], key=lambda x: x["concurrency"])
+               if c["arm"] == m["arm"] and c["request_tps"] is not None and c["ttft_p50"] is not None]
+        if pts:
+            series.append((m["display_name"] + (" (reference)" if m["is_reference"] else ""),
+                           m["color"], pts, m["is_reference"]))
+    fig2 = _svg_line("TTFT p50 vs request throughput trade-off",
+                     series, "request throughput (req/s)", "TTFT p50 (ms)", yfmt="{:.0f}")
+    return fig1, fig2
 
 
-def sessions_table(meta):
-    rows = load_suite("sessions", "aggregate.tsv")
-    if not rows:
-        return ""
-    body = []
-    for arm in sorted({r["arm"] for r in rows}):
-        name = disp(meta, arm)
-        nc = next((r for r in rows if r["arm"] == arm and r["isl"] == "nocache"), None)
-        ca = next((r for r in rows if r["arm"] == arm and r["isl"] == "cache"), None)
-        body.append(
-            f"<tr{_cohort_attr(cohort_of(arm))}><td>{html_escape(name)}</td>"
-            f"<td>{_num(nc['ttft_p50_ms_mean']) if nc else ''}</td>"
-            f"<td>{_num(ca['ttft_p50_ms_mean']) if ca else ''}</td>"
-            f"<td>{_num(nc['itl_p50_ms_mean']) if nc else ''}</td>"
-            f"<td>{_num(ca['itl_p50_ms_mean']) if ca else ''}</td></tr>")
-    return (f"<h2>Sessions &mdash; multi-turn TTFT/ITL p50 (ms), 3 turns</h2>"
-            f"<table><thead><tr><th>Model</th><th>TTFT nocache</th>"
-            f"<th>TTFT cache</th><th>ITL nocache</th><th>ITL cache</th></tr>"
-            f"</thead><tbody>{''.join(body)}</tbody></table>"
-            f"<p class='meta'>cache_prompt=true avoids re-prefilling the "
-            f"conversation history, reducing per-turn TTFT.</p>")
+# --------------------------------------------------------------------------
+# Main
+# --------------------------------------------------------------------------
+def build_data():
+    m = manifest()
+    models = models_meta()
+    id_to_arm = {mm["id"]: mm["arm"] for mm in models}
+    bench = config.load_benchmark()
+    profiles = bench.get("shape_profiles", {}).get("profiles", {})
+    cap = capacity()
+    data = {
+        "meta": {
+            "gpu": m.get("gpu", ""),
+            "engine": m.get("engine", ""),
+            "image": m.get("image", ""),
+            "quantization": m.get("quantization", "IQ4_XS"),
+            "aiperf_version": m.get("aiperf_version", ""),
+            "serving_flags": m.get("serving_flags", []),
+            "context": 4096,
+            "parallel": 2,
+            "git_commit": m.get("git_commit", ""),
+            "generated_at": "",
+        },
+        "config": {
+            "reliability_threshold_pct": bench.get("reliability", {}).get("min_success_pct", 99.5),
+            "shape_profiles": profiles,
+            "concurrency_capacity": bench.get("concurrency", {}).get("capacity", [1, 2, 4, 6, 8]),
+        },
+        "models": models,
+        "capacity": cap,
+        "reliability": reliability(),
+        "open_loop": open_loop(cap["aggregate"]),
+        "shape": shape(profiles),
+        "sessions": sessions(),
+        "startup": startup(),
+        "soak": soak(),
+        "llama_bench": llama_bench(id_to_arm),
+    }
+    return data, models, cap
 
 
-def build_html(meta, manifest):
-    cells = capacity_view(meta)
-    # Derive cohort metadata from the registry (no hardcoded quantization).
-    cohorts = config.cohorts()
-    main_quant = cohorts.get("mainstream_8_9b", {}).get("quantization", "IQ4_XS")
-    spark_quant = cohorts.get("spark_reference", {}).get("quantization", "IQ4_XS")
-    spark_m = next((m for m in config.models() if m.get("role") == "reference"), {})
-    spark_name = spark_m.get("display_name", "Spark reference")
-    spark_b = f"{(spark_m.get('actual_parameter_count') or 0) / 1e9:.2f}B"
+def render_html(data):
+    payload = json.dumps(data, ensure_ascii=False)
     return f"""<!doctype html>
-<html lang="en"><head><meta charset="utf-8">
+<html lang="en">
+<head>
+<meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Local LLM Inference Benchmark</title>
-<style>
-body {{ font-family: -apple-system, Segoe UI, Roboto, sans-serif; margin: 2rem; color: #222; }}
-h1 {{ border-bottom: 2px solid #333; padding-bottom: .3rem; }}
-h2 {{ margin-top: 2rem; }}
-table {{ border-collapse: collapse; margin: .5rem 0 1.5rem; font-size: .9rem; }}
-th, td {{ border: 1px solid #ccc; padding: .35rem .6rem; text-align: right; }}
-th {{ background: #f2f2f2; }}
-td:first-child, th:first-child {{ text-align: left; }}
-.fail {{ background: #fdecea; color: #b3261e; font-weight: 600; }}
-.unstable {{ background: #fff4e5; color: #b26a00; font-weight: 600; }}
-.excluded {{ background: #eee; color: #777; }}
-.ref {{ background: #f3f6fb; }}
-.badge {{ display: inline-block; font-size: .72rem; padding: .1rem .45rem;
-         border-radius: 3px; background: #3a7bd5; color: #fff; vertical-align: middle; }}
-.meta {{ color: #555; font-size: .85rem; }}
-.filter {{ margin: 1rem 0; font-size: .9rem; }}
-</style></head><body>
-<h1>Local LLM Inference Benchmark</h1>
-<p class="meta">Fixed-hardware deployment benchmark on RTX 3060 Laptop (6 GiB).
-Primary cohort: 4 mainstream 8-9B models, same pinned upstream llama.cpp,
-{main_quant}, identical serving policy. <span class="badge">REFERENCE</span>
-marks {spark_name} ({spark_b}, {spark_quant}, XHToken llama.cpp fork), a
-fixed-hardware reference baseline; it is never ranked against the 8-9B cohort.</p>
-<div class="filter">Cohort:
-<select id="cohortFilter" onchange="applyFilter()">
-<option value="all">All</option>
-<option value="mainstream">Mainstream 8-9B</option>
-<option value="spark">Spark reference</option>
-</select></div>
-{model_table(meta, manifest)}
-{capacity_table(cells)}
-{output_tps_table(cells)}
-{capacity_chart(cells)}
-{repeats_table(repeats_view(), meta)}
-{shape_table(shape_view(), meta)}
-{openloop_table(meta)}
-{startup_table(meta)}
-{sessions_table(meta)}
-{reliability_table(reliability_view(), meta)}
-<script>
-function applyFilter() {{
-  const v = document.getElementById('cohortFilter').value;
-  document.querySelectorAll('tr[data-cohort]').forEach(tr => {{
-    tr.style.display = (v === 'all' || tr.dataset.cohort === v) ? '' : 'none';
-  }});
-}}
-</script>
-</body></html>"""
+<link rel="stylesheet" href="assets/dashboard.css">
+<script src="assets/plotly.min.js"></script>
+</head>
+<body>
+<div id="app"><div class="loading">Loading benchmark data&hellip;</div></div>
+<script id="bench-data" type="application/json">{payload}</script>
+<script src="assets/dashboard.js"></script>
+</body>
+</html>
+"""
 
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--out", default=str(ROOT / "docs" / "index.html"))
+    ap.add_argument("--out", default=str(DOCS / "index.html"))
     args = ap.parse_args()
-    meta = registry_meta()
-    html = build_html(meta, manifest())
+
+    data, models, cap = build_data()
+
+    DATA_PATH.parent.mkdir(parents=True, exist_ok=True)
+    DATA_PATH.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
+
     out = Path(args.out)
     out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text(html, encoding="utf-8")
-    print(f"wrote {out} ({len(html)} bytes, {len(meta)} models)")
+    out.write_text(render_html(data), encoding="utf-8")
+
+    # README static figures
+    FIG_DIR.mkdir(parents=True, exist_ok=True)
+    fig1, fig2 = readme_figures(models, cap)
+    (FIG_DIR / "throughput-vs-concurrency.svg").write_text(fig1, encoding="utf-8")
+    (FIG_DIR / "ttft-vs-throughput.svg").write_text(fig2, encoding="utf-8")
+
+    print(f"wrote {out} ({len(models)} models)")
+    print(f"wrote {DATA_PATH}")
+    print(f"wrote 2 README figures under {FIG_DIR}")
 
 
 if __name__ == "__main__":
