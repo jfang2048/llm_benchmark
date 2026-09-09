@@ -122,8 +122,7 @@ def agent_admission(arm, step_limit=20, ctx=8192):
     for f in ("calc.py", "test_calc.py", "README.md"):
         shutil.copy(src / f, Path(workdir) / f)
 
-    mini_bin = os.environ.get("MSWEA_BIN",
-                              str(Path.home() / "venvs" / "eval" / "bin" / "mini"))
+    mini_bin = os.environ.get("MSWEA_BIN", str(ROOT / ".venv-eval" / "bin" / "mini"))
     task = ("The add() function in calc.py has a bug: it returns a-b instead of "
             "a+b. Inspect the files, run the test, edit calc.py to fix the bug, "
             "and re-run the test to confirm it passes. Finish by issuing "

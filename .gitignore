@@ -120,3 +120,4 @@ vllm-qwen3/
 *.swp
 *.swo
 .agent/
+.venv-eval/

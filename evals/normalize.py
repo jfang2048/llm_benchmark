@@ -90,34 +90,70 @@ def engine_commit(arm):
     return data["engines"][eng].get("commit")
 
 
-def make_manifest(benchmark, model_arm, extra=None):
-    """Standard manifest for one model within one benchmark run."""
+def run_fingerprint(components):
+    """Deterministic protocol/run fingerprint from key run components."""
+    s = json.dumps(components, sort_keys=True, default=str)
+    return hashlib.sha256(s.encode()).hexdigest()[:16]
+
+
+def make_manifest(benchmark, model_arm, kind="direct", extra=None):
+    """One run's manifest. `kind` = 'direct' (coding) or 'agent' (SWE).
+
+    The two kinds record different, real values — never a serving-profile
+    default copied from the other suite.
+    """
     cfg = load_evals_cfg()
     m = model_info(model_arm)
     b = cfg["benchmarks"].get(benchmark, {})
-    man = {
-        "benchmark": benchmark,
-        "benchmark_version": b.get("version"),
-        "benchmark_commit": b.get("commit"),
-        "agent_scaffold": b.get("agent") or "none (direct coding)",
-        "agent_version": None,
+    msa = cfg["benchmarks"].get("mini_swe_agent", {})
+
+    if kind == "agent":
+        prof = cfg["agent_profile"]
+        base = {
+            "benchmark": benchmark,
+            "benchmark_version": b.get("version"),
+            "benchmark_commit": b.get("commit"),
+            "serving_profile": "agent_profile",
+            "agent": b.get("agent") or "mini-swe-agent",
+            "agent_commit": msa.get("commit"),
+            "agent_version": msa.get("version"),
+            "context": prof["ctx_size"],
+            "parallel": prof["parallel"],
+            "kv_cache_policy": prof["kv_cache_policy"],
+            "generation": prof["generation"],
+            "reasoning": "off",
+            "max_iterations": None,
+        }
+    else:
+        prof = cfg["direct_coding_profile"]
+        base = {
+            "benchmark": benchmark,
+            "benchmark_version": b.get("version"),
+            "benchmark_commit": b.get("commit"),
+            "serving_profile": "direct_coding_profile",
+            "agent": "none",
+            "context": prof["ctx_size"],
+            "parallel": prof["parallel"],
+            "generation": prof["generation"],
+            "reasoning": "off",
+            "max_output_tokens": None,
+            "prompt_protocol": "local chat protocol + official executor",
+        }
+
+    base.update({
         "model": model_arm,
         "display_name": m.get("display_name") if m else model_arm,
         "gguf": m.get("gguf_filename") if m else None,
         "gguf_sha256": m.get("sha256") if m else None,
         "quantization": m.get("quantization") if m else None,
-        "llama_cpp_commit": engine_commit(model_arm),
-        "agent_context": cfg["agent_profile"]["ctx_size"],
-        "kv_cache_policy": cfg["agent_profile"]["kv_cache_policy"],
-        "generation": cfg["direct_coding_profile"]["generation"],
-        "reasoning": "off",
+        "engine_commit": engine_commit(model_arm),
         "hardware": "RTX 3060 Laptop 6 GiB",
         "run_timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
         "project_git_commit": git_head(),
-    }
+    })
     if extra:
-        man.update(extra)
-    return man
+        base.update(extra)
+    return base
 
 
 def _read_tsv(path):
@@ -161,7 +197,34 @@ def write_tasks(bench, rows, columns, key_cols=None):
 
 
 def write_manifest(bench, manifest):
+    """Append one run to a multi-run manifest.json (Option A). Runs are keyed
+    by a deterministic fingerprint so a later model never overwrites an
+    earlier model's provenance."""
     p = CAP_RESULTS / bench
     p.mkdir(parents=True, exist_ok=True)
-    with open(p / "manifest.json", "w") as f:
-        json.dump(manifest, f, indent=2)
+    path = p / "manifest.json"
+    existing = {}
+    if path.exists():
+        try:
+            existing = json.loads(path.read_text())
+        except Exception:
+            existing = {}
+
+    fp = run_fingerprint({k: manifest.get(k) for k in (
+        "benchmark", "benchmark_commit", "model", "gguf_sha256",
+        "engine_commit", "agent_commit", "context", "generation",
+        "max_iterations", "max_output_tokens", "subset", "release")})
+    manifest["run_fingerprint"] = fp
+
+    runs = [r for r in existing.get("runs", []) if r.get("run_fingerprint") != fp]
+    runs.append(manifest)
+
+    out = {
+        "benchmark": manifest.get("benchmark"),
+        "benchmark_metadata": {
+            "version": manifest.get("benchmark_version"),
+            "commit": manifest.get("benchmark_commit"),
+        },
+        "runs": runs,
+    }
+    path.write_text(json.dumps(out, indent=2))

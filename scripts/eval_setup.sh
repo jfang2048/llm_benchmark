@@ -1,19 +1,45 @@
 #!/usr/bin/env bash
-# Clone/pin the external capability-evaluation benchmarks into .cache/evals/
-# at the exact commits recorded in evals/config.json. External repos are NOT
-# vendorized into this repository. Idempotent: skips repos already at the
-# pinned commit.
+# Reproducible capability-evaluation environment setup.
+#
+# 1. Creates/updates the project-owned .venv-eval/ and installs pinned deps
+#    (requirements-eval.txt) plus mini-swe-agent + swebench from their pinned
+#    git clones in .cache/evals/.
+# 2. Clones/pins external benchmark repos into .cache/evals/ at the exact
+#    commits recorded in evals/config.json (never vendorized into this repo).
+#
+# Idempotent: skips repos already at the pinned commit and reuses an existing
+# venv. Uses uv when available, else python -m venv.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
 PY="${PYTHON:-python3}"
+VENV="$ROOT/.venv-eval"
 CACHE="$ROOT/.cache/evals"
 mkdir -p "$CACHE"
 
-# Benchmark dir name -> config.json key. Only these get cloned; mini-swe-agent
-# and harbor are installed separately (python packages / git clone).
+# ---- 1. venv + pinned deps --------------------------------------------------
+if [ ! -x "$VENV/bin/python" ]; then
+  if command -v uv >/dev/null 2>&1; then
+    uv venv --python 3.12 "$VENV"
+  else
+    "$PY" -m venv "$VENV"
+  fi
+fi
+VPY="$VENV/bin/python"
+VPY -m pip install --quiet --upgrade pip
+VPY -m pip install --quiet -r "$ROOT/requirements-eval.txt"
+
+# mini-swe-agent + swebench from pinned clones (exact commits).
+for pkg in mini-swe-agent SWE-bench; do
+  src="$CACHE/$pkg"
+  if [ -d "$src" ]; then
+    VPY -m pip install --quiet -e "$src"
+  fi
+done
+
+# ---- 2. clone/pin external benchmarks --------------------------------------
 CLONE_MAP="$(
   "$PY" - "$ROOT/evals/config.json" <<'EOF'
 import json, sys
@@ -46,4 +72,4 @@ while IFS=$'\t' read -r key name repo commit; do
   fi
 done <<< "$CLONE_MAP"
 
-echo "All benchmarks pinned under $CACHE"
+echo "Capability environment ready: $VENV ; benchmarks under $CACHE"

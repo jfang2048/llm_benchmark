@@ -29,7 +29,7 @@ sys.path.insert(0, str(ROOT / "evals"))
 import normalize  # noqa: E402
 import runner  # noqa: E402
 
-EVAL_BIN = Path.home() / "venvs" / "eval" / "bin"
+EVAL_BIN = ROOT / ".venv-eval" / "bin"
 DATASET = "princeton-nlp/SWE-bench_Verified"
 SPLIT = "test"
 RUNS = ROOT / "results" / "capability" / "runs" / "swe-verified"
@@ -106,6 +106,24 @@ def collect_reports(arm, run_id):
     return reports
 
 
+def classify_report(r):
+    """Map an official SWE-bench report dict to a failure category.
+
+    Order matters: infra failures are reported separately from model failures.
+    """
+    if not r:
+        return "MISSING_REPORT"  # no report.json -> evaluation did not complete
+    if r.get("infra_failure"):
+        return "ENVIRONMENT_ERROR"
+    if r.get("resolved"):
+        return "RESOLVED"
+    if r.get("patch_is_None") or not r.get("patch_exists"):
+        return "NO_PATCH"
+    if not r.get("patch_successfully_applied"):
+        return "PATCH_INVALID"
+    return "TEST_FAILURE"
+
+
 def run(arm):
     subset = load_subset(ROOT / "evals" / "tasksets" / "swe_verified_local20.json")
     ids = subset["instance_ids"]
@@ -117,49 +135,65 @@ def run(arm):
     reports = collect_reports(arm, run_id)
 
     tasks = []
-    resolved = 0
-    n = 0
+    resolved = valid = infra = 0
     for iid in ids:
         r = reports.get(iid, {})
-        res = bool(r.get("resolved"))
-        n += 1
+        cat = classify_report(r)
+        res = cat == "RESOLVED"
+        valid += 1 if cat != "MISSING_REPORT" else 0
         resolved += res
-        f2p = r.get("f2p", {}) or {}
-        p2p = r.get("p2p", {}) or {}
-        f2p_pass = sum(1 for v in f2p.values() if v.get("success"))
-        p2p_pass = sum(1 for v in p2p.values() if v.get("success"))
+        infra += 1 if cat in ("ENVIRONMENT_ERROR",) else 0
+        ts = r.get("tests_status", {}) or {}
+        f2p = ts.get("FAIL_TO_PASS", {}) or {}
+        p2p = ts.get("PASS_TO_PASS", {}) or {}
         tasks.append({
-            "instance_id": iid,
-            "model": arm,
+            "instance_id": iid, "model": arm,
             "resolved": res,
-            "f2p_pass": f2p_pass, "f2p_total": len(f2p),
-            "p2p_pass": p2p_pass, "p2p_total": len(p2p),
-            "failure_category": "RESOLVED" if res else "TEST_FAILURE",
+            "patch_exists": bool(r.get("patch_exists")),
+            "patch_applied": bool(r.get("patch_successfully_applied")),
+            "f2p_pass": len(f2p.get("success", [])),
+            "f2p_total": len(f2p.get("success", [])) + len(f2p.get("failure", [])),
+            "p2p_pass": len(p2p.get("success", [])),
+            "p2p_total": len(p2p.get("success", [])) + len(p2p.get("failure", [])),
+            "evaluation_completed": cat != "MISSING_REPORT",
+            "failure_category": cat,
         })
 
-    lo, hi = normalize.wilson(n, resolved)
+    model_failures = len(tasks) - resolved - infra
+    lo, hi = normalize.wilson(valid, resolved)
     rows = [{
-        "model": arm, "resolved": resolved, "n": n,
-        "resolved_pct": normalize.pct(resolved, n),
-        "wilson_lo": round(lo * 100, 1), "wilson_hi": round(hi * 100, 1),
+        "model": arm,
+        "scheduled_tasks": len(ids),
+        "validly_evaluated_tasks": valid,
+        "resolved": resolved,
+        "model_failures": model_failures,
+        "infrastructure_failures": infra,
+        "resolved_pct": normalize.pct(resolved, valid),
+        "wilson_lo": round(lo * 100, 1),
+        "wilson_hi": round(hi * 100, 1),
+        "coverage_pct": normalize.pct(valid, len(ids)),
         "subset": "SWE-bench Verified Local-20",
         "task_ids_hash": subset["task_ids_hash"],
     }]
-    cols = ["model", "resolved", "n", "resolved_pct", "wilson_lo", "wilson_hi",
-            "subset", "task_ids_hash"]
+    cols = ["model", "scheduled_tasks", "validly_evaluated_tasks", "resolved",
+            "model_failures", "infrastructure_failures", "resolved_pct",
+            "wilson_lo", "wilson_hi", "coverage_pct", "subset", "task_ids_hash"]
     normalize.write_summary("swe-verified", rows, cols)
     normalize.write_tasks("swe-verified", tasks,
-                          ["instance_id", "model", "resolved", "f2p_pass",
-                           "f2p_total", "p2p_pass", "p2p_total",
+                          ["instance_id", "model", "resolved", "patch_exists",
+                           "patch_applied", "f2p_pass", "f2p_total", "p2p_pass",
+                           "p2p_total", "evaluation_completed",
                            "failure_category"])
-    man = normalize.make_manifest("swe_verified", arm, extra={
+    man = normalize.make_manifest("swe_verified", arm, kind="agent", extra={
         "subset": "SWE-bench Verified Local-20",
         "task_ids_hash": subset["task_ids_hash"],
-        "n": n, "agent_scaffold": "mini-swe-agent",
-        "agent_version": "2.4.6",
+        "scheduled_tasks": len(ids),
+        "max_iterations": 50,
     })
     normalize.write_manifest("swe-verified", man)
-    print(f"SUMMARY {arm}: resolved {resolved}/{n} ({normalize.pct(resolved, n)}%)")
+    print(f"SUMMARY {arm}: resolved {resolved}/{valid} valid "
+          f"({normalize.pct(resolved, valid)}%), infra {infra}, "
+          f"coverage {valid}/{len(ids)}")
 
 
 def main():

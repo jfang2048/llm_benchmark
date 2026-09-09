@@ -1,0 +1,12 @@
+# Capability-evaluation Python dependencies (pinned).
+#
+# Installed into the project-owned .venv-eval/ by scripts/eval_setup.sh.
+# mini-swe-agent and swebench are NOT listed here: they are installed from the
+# pinned git clones in .cache/evals/ (see eval_setup.sh) so their exact commit
+# is what runs, not a mutable PyPI release.
+#
+# Transitive deps (litellm, typer, rich, pydantic, etc.) are pulled in by the
+# `pip install -e` of those two packages.
+evalplus==0.3.1
+datasets>=2.19.0
+openai>=1.40.0

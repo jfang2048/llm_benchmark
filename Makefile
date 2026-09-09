@@ -31,8 +31,8 @@ AIPERF ?= $(HOME)/venvs/aiperf/bin/aiperf
 RUNNER  = AIPERF="$(AIPERF)" python3 -m bench.runner
 COHORTS = mainstream_8_9b spark_reference
 
-# Capability-evaluation python (has evalplus + mini-swe-agent).
-EVALPY ?= $(HOME)/venvs/aiperf/bin/python
+# Capability-evaluation python (.venv-eval/, created by eval-setup).
+EVALPY ?= .venv-eval/bin/python
 
 .PHONY: help setup smoke benchmark spark reliability shape open-loop startup \
 	soak sessions llama-bench report reproduce clean benchmark-v1 \

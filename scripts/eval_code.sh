@@ -7,7 +7,7 @@ set -uo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
-PY="${EVALPY:-$HOME/venvs/aiperf/bin/python}"
+PY="${EVALPY:-$ROOT/.venv-eval/bin/python}"
 LOG="$ROOT/.agent/eval_code.log"
 mkdir -p "$ROOT/.agent"
 
