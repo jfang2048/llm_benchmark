@@ -23,7 +23,8 @@ sys.path.insert(0, str(ROOT / "evals"))
 import normalize  # noqa: E402
 import swe  # noqa: E402
 
-DATASET = "microsoft/SWE-bench-Live"
+DATASET = "SWE-bench-Live/SWE-bench-Live"
+SPLIT = "verified"
 BENCH = "swe-bench-live"
 
 
@@ -38,8 +39,8 @@ def run(arm):
 
     swe.serve(arm)
     preds = swe.run_agent(arm, ids, ROOT / "results" / "capability" / "runs" / BENCH / arm,
-                          subset="SWE-bench-Live")
-    swe.run_evaluator(preds, ids, run_id, dataset=DATASET)
+                          subset="SWE-bench-Live/SWE-bench-Live", split="verified")
+    swe.run_evaluator(preds, ids, run_id, dataset=DATASET, split="verified")
     reports = swe.collect_reports(arm, run_id)
 
     tasks, resolved, valid, infra = [], 0, 0, 0

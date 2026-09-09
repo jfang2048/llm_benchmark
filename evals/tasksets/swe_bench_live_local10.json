@@ -1,0 +1,19 @@
+{
+  "benchmark": "swe-bench-live",
+  "source": "SWE-bench-Live/SWE-bench-Live (verified split)",
+  "seed": 42,
+  "size": 10,
+  "task_ids_hash": "8ca6567e40f2a6e0ee53a4b339975cf5f06b8e1981b69be58a478bd7a484f28b",
+  "instance_ids": [
+    "aws-cloudformation__cfn-lint-3855",
+    "bridgecrewio__checkov-6687",
+    "deepset-ai__haystack-8993",
+    "keras-team__keras-20120",
+    "pvlib__pvlib-python-2190",
+    "pydata__xarray-9369",
+    "pylint-dev__pylint-10044",
+    "pytorch__torchtune-2342",
+    "run-llama__llama_deploy-458",
+    "yt-dlp__yt-dlp-11425"
+  ]
+}
