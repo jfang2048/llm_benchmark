@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import subprocess
 import sys
 import time
@@ -100,6 +101,86 @@ def write_context_results(rows):
                             ["arm", "max_supported_ctx", "eligible_8192"])
 
 
+def agent_admission(arm, step_limit=20, ctx=8192):
+    """Run mini-swe-agent on the tiny admission repo and grade the 10 gates.
+
+    Returns a dict of gate outcomes + metrics."""
+    import shutil
+    import tempfile
+
+    m = runner.model_by_arm(arm)
+    if not m:
+        raise SystemExit(f"unknown arm {arm}")
+    if not runner.wait_ready(arm, timeout=5):
+        runner.serve(arm, ctx_size=ctx, parallel=1, reasoning="off")
+        if not runner.wait_ready(arm, timeout=300):
+            raise SystemExit(f"server for {arm} not ready")
+
+    base = f"http://127.0.0.1:{m['port']}/v1"
+    workdir = tempfile.mkdtemp(prefix="admit_")
+    src = ROOT / "evals" / "tasksets" / "admission"
+    for f in ("calc.py", "test_calc.py", "README.md"):
+        shutil.copy(src / f, Path(workdir) / f)
+
+    mini_bin = os.environ.get("MSWEA_BIN",
+                              str(Path.home() / "venvs" / "eval" / "bin" / "mini"))
+    task = ("The add() function in calc.py has a bug: it returns a-b instead of "
+            "a+b. Inspect the files, run the test, edit calc.py to fix the bug, "
+            "and re-run the test to confirm it passes. Finish by issuing "
+            "`echo COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT`.")
+    out = str(Path(workdir) / "traj.json")
+    t0 = time.time()
+    cmd = [mini_bin, "-m", arm, "-t", task, "-y", "-l", "0",
+           "-c", "mini.yaml",
+           "-c", "model.model_kwargs.custom_llm_provider=openai",
+           "-c", f"model.model_kwargs.api_base={base}",
+           "-c", f"agent.step_limit={step_limit}",
+           "-o", out, "--exit-immediately"]
+    try:
+        r = subprocess.run(cmd, cwd=workdir, capture_output=True, text=True,
+                           timeout=1800)
+    except subprocess.TimeoutExpired:
+        r = None
+    wall = time.time() - t0
+
+    # grade objectively: does the edited calc.py pass its own tests?
+    g = subprocess.run(["python3", "test_calc.py"], cwd=workdir,
+                       capture_output=True, text=True)
+    resolved = g.returncode == 0 and "all tests passed" in (g.stdout or "")
+
+    # parse trajectory for metrics
+    steps = tool_calls = invalid = in_tok = out_tok = None
+    if Path(out).exists():
+        try:
+            traj = json.load(open(out))
+            steps = len(traj.get("trajectory", traj.get("steps", [])))
+            tool_calls = steps
+        except Exception:
+            pass
+
+    vram = subprocess.run(
+        ["nvidia-smi", "--query-gpu=memory.used", "--format=csv,noheader,nounits"],
+        capture_output=True, text=True).stdout.strip()
+
+    result = {
+        "arm": arm,
+        "endpoint_ok": runner.wait_ready(arm, timeout=3),
+        "harness_connected": r is not None and r.returncode == 0,
+        "resolved": resolved,
+        "steps": steps, "tool_calls": tool_calls, "invalid_actions": invalid,
+        "wall_time_s": round(wall, 1),
+        "vram_mib": vram,
+        "admitted": bool(resolved),
+    }
+    return result
+
+
+def write_agent_results(rows):
+    cols = ["arm", "endpoint_ok", "harness_connected", "resolved", "steps",
+            "tool_calls", "invalid_actions", "wall_time_s", "vram_mib", "admitted"]
+    normalize.write_tasks("admission", rows, cols)
+
+
 def main():
     ap = argparse.ArgumentParser()
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -108,6 +189,7 @@ def main():
     p.add_argument("--kv-cache-quant", default=None, help="e.g. q8_0 or q4_0")
     p = sub.add_parser("agent")
     p.add_argument("arm")
+    p.add_argument("--step-limit", type=int, default=20)
     a = ap.parse_args()
 
     if a.cmd == "context":
@@ -117,7 +199,9 @@ def main():
                   f"vram={r['vram_mib']} ({r['reason']})")
         write_context_results(rows)
     elif a.cmd == "agent":
-        print("agent admission not yet wired (requires mini-swe-agent install)")
+        res = agent_admission(a.arm, a.step_limit)
+        print(json.dumps(res, indent=2))
+        write_agent_results([res])
 
 
 if __name__ == "__main__":
