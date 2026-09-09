@@ -1,7 +1,17 @@
 # Local LLM Inference Benchmark
 
-A reproducible benchmark for local LLM inference serving on a constrained
-consumer GPU (NVIDIA RTX 3060 Laptop, 6 GiB VRAM).
+A reproducible benchmark for local LLM inference on a constrained consumer GPU
+(NVIDIA RTX 3060 Laptop, 6 GiB VRAM). It measures **two separate things**:
+
+1. **Serving performance** — token throughput, TTFT, VRAM, and energy under a
+   controlled serving policy ([docs/methodology.md](docs/methodology.md)).
+2. **Coding / software-engineering capability** — direct coding (EvalPlus,
+   LiveCodeBench) and agentic SWE (SWE-bench Verified, DeepSWE, Multilingual,
+   Terminal-Bench) with mini-swe-agent
+   ([docs/capability-methodology.md](docs/capability-methodology.md)).
+
+The two layers use different serving profiles (parallel 2 vs parallel 1), are
+reported separately, and are **never** combined into one synthetic score.
 
 - **Current benchmark — mainstream 8-9B cohort:** four dense open-weight
   8-9B models in IQ4_XS quantization, all served by the same pinned upstream
@@ -11,6 +21,7 @@ consumer GPU (NVIDIA RTX 3060 Laptop, 6 GiB VRAM).
   cross-cohort reference, never as a size-matched competitor.
 
 > **Dashboard:** https://jfang2048.github.io/llm_benchmark/
+> **Capability results:** [docs/capability-results.md](docs/capability-results.md)
 
 ## What this repository does
 
