@@ -109,7 +109,8 @@ def build():
                                      "manifest": read_manifest(CAP / bench / "manifest.json")}
         for row in s:
             arm = row["model"]
-            n = int(row.get("n", row.get("attempted", 0)) or 0)
+            n = int(row.get("validly_evaluated_tasks",
+                            row.get("n", row.get("attempted", 0))) or 0)
             k = int(row.get("resolved", row.get("pass", 0)) or 0)
             val = (k / n * 100 if n else None)
             set_overview(arm, bench, val, n, metric_label,

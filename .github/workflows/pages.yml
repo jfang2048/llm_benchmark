@@ -8,11 +8,14 @@ on:
       - "results/final/**"
       - "results/v2/**"
       - "results/current/**"
+      - "results/capability/**"
+      - "evals/**"
       - "bench/**"
       - "configs/**"
       - "scripts/generate_report.py"
       - "scripts/generate_v2_report.py"
       - "scripts/generate_current_report.py"
+      - "scripts/eval_report.py"
       - "scripts/curate_v2_final.py"
       - "requirements-report.txt"
       - ".github/workflows/pages.yml"
@@ -46,6 +49,9 @@ jobs:
 
       - name: Regenerate v2 report artifacts
         run: python3 scripts/generate_v2_report.py || true
+
+      - name: Regenerate capability dataset (before the dashboard)
+        run: python3 scripts/eval_report.py
 
       - name: Regenerate current 8-9B report artifacts
         run: python3 scripts/generate_current_report.py

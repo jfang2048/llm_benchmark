@@ -24,7 +24,16 @@ jobs:
           echo "All shell scripts pass bash -n"
 
       - name: Python syntax check
-        run: python3 -m py_compile scripts/*.py bench/*.py
+        run: python3 -m py_compile scripts/*.py bench/*.py evals/*.py
+
+      - name: Capability unit tests (Wilson / merge / manifest / report parser)
+        run: python3 tests/test_capability.py
+
+      - name: Capability report generation
+        run: |
+          python3 scripts/eval_report.py
+          test -s docs/data/capability.json
+          echo "Capability dataset regenerated"
 
       - name: JSON validity check
         run: |
@@ -33,6 +42,9 @@ jobs:
           files = (glob.glob("docs/data/*.json") + glob.glob("docs/history/*/data/*.json")
                    + glob.glob("results/final/*.json")
                    + glob.glob("results/current/*/*/manifest.json")
+                   + glob.glob("results/capability/current/**/manifest*.json", recursive=True)
+                   + glob.glob("evals/config.json")
+                   + glob.glob("evals/tasksets/*.json")
                    + glob.glob("monitoring/grafana/dashboards/*.json"))
           for f in files:
               json.load(open(f, encoding="utf-8"))
