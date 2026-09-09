@@ -38,29 +38,25 @@ function renderCapOverview() {
   const host = document.getElementById("cap-overview");
   if (!host) return;
   const arms = capArms();
-  const benches = Object.keys(CAP.benchmarks || {});
-  if (!arms.length || !benches.length) {
+  const cols = CAP.overview_columns || [];
+  if (!arms.length || !cols.length) {
     host.innerHTML = `<h2>Capability overview</h2>${capNote("No capability results yet.")}`;
     return;
   }
   const rows = arms.map((arm) => {
-    const cells = benches.map((b) => {
-      const ov = (CAP.overview[arm] || {})[b];
+    const cells = cols.map(([key, label]) => {
+      const ov = (CAP.overview[arm] || {})[key];
       if (!ov || ov.value == null) {
-        const why = CAP.overview[arm] && CAP.overview[arm][b]
-          ? "not run" : "";
-        return `<td class="na" title="${why || "not run / N/A"}">N/A</td>`;
+        return `<td class="na" title="not run / N/A">N/A</td>`;
       }
-      const val = ov.value == null ? "—" : fmt(ov.value, 1);
-      let title = `${ov.metric}: ${val}% (n=${ov.n})`;
-      if (ov.wilson_lo != null) {
-        title = `${ov.metric}: ${val}% [${ov.wilson_lo}–${ov.wilson_hi}] (n=${ov.n})`;
-      }
-      return `<td title="${title}">${val}</td>`;
+      const val = fmt(ov.value, 1);
+      const ci = ov.wilson_lo != null
+        ? ` [${fmt(ov.wilson_lo, 1)}–${fmt(ov.wilson_hi, 1)}]` : "";
+      return `<td title="${label}: ${val}%${ci} (n=${ov.n})">${val}%</td>`;
     }).join("");
     return `<tr><th>${capName(arm)}</th>${cells}</tr>`;
   }).join("");
-  const head = benches.map((b) => `<th>${BENCH_LABEL[b] || b}</th>`).join("");
+  const head = cols.map(([, label]) => `<th>${label}</th>`).join("");
   host.innerHTML = `<h2>Capability overview</h2>
     ${capNote("Rows = models, columns = benchmarks. Cells show each benchmark's own metric; they are NOT averaged into any combined score. N/A = not run or ineligible.")}
     <div class="datatable-wrap"><table class="datatable"><thead><tr><th>Model</th>${head}</tr></thead><tbody>${rows}</tbody></table></div>`;

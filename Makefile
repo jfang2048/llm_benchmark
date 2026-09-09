@@ -109,7 +109,8 @@ eval-admit:
 
 eval-code:
 	@for a in qwen3_8b deepseek_r1_distill_llama_8b glm4_9b_0414 yi_15_9b_chat spark_x2_5_4b; do \
-		for d in humaneval mbpp; do $(EVALPY) evals/direct_code.py run $$a $$d || exit 1; done; done
+		for d in humaneval mbpp; do $(EVALPY) evals/direct_code.py run $$a $$d || exit 1; done; \
+		$(EVALPY) evals/runner.py stop $$a || true; done
 
 eval-swe:
 	@echo "SWE-bench Verified Local-20 (see evals/tasksets/ + scripts/eval_swe.sh)"

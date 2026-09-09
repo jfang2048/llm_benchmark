@@ -1,0 +1,2 @@
+model	dataset	base	plus	base_pass_at_1	plus_pass_at_1	base_wilson_lo	base_wilson_hi	plus_wilson_lo	plus_wilson_hi	n	drop_base_to_plus_pts
+qwen3_8b	humaneval	HumanEval	HumanEval+	84.1	79.3	77.8	88.9	72.4	84.8	164	4.9

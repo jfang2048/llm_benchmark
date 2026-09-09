@@ -88,8 +88,9 @@ def serve(arm, ctx_size=8192, parallel=1, n_gpu_layers=999, reasoning="off",
         "--cont-batching", "--metrics",
         "--n-gpu-layers", str(n_gpu_layers),
         "--reasoning", reasoning,
-        "--reasoning-format", "deepseek",
     ]
+    if reasoning != "off":
+        args += ["--reasoning-format", "deepseek"]
     if cache_type:
         args += ["--cache-type-k", cache_type, "--cache-type-v", cache_type]
     r = sh(*args)
@@ -118,7 +119,8 @@ def stop(arm):
     return sh("docker", "rm", "-f", container_name(arm)).returncode == 0
 
 
-def generate(arm, prompts, temperature=0.0, n=1, max_tokens=1024, is_chat=True):
+def generate(arm, prompts, temperature=0.0, n=1, max_tokens=1024, is_chat=True,
+             timeout=180):
     """prompts: list of prompt strings (chat user messages) or list of
     {role, content} message lists. Returns list of completion dicts."""
     m = model_by_arm(arm)
@@ -140,12 +142,12 @@ def generate(arm, prompts, temperature=0.0, n=1, max_tokens=1024, is_chat=True):
             endpoint, data=json.dumps(body).encode(),
             headers={"Content-Type": "application/json"})
         try:
-            with urllib.request.urlopen(req, timeout=600) as r:
+            with urllib.request.urlopen(req, timeout=timeout) as r:
                 resp = json.loads(r.read().decode())
         except urllib.error.HTTPError as e:
             resp = {"error": e.read().decode()[:400]}
         except Exception as e:
-            resp = {"error": str(e)}
+            resp = {"error": f"{type(e).__name__}: {e}"}
         out.append(resp)
     return out
 

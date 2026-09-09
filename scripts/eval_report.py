@@ -60,10 +60,27 @@ def build():
     data = {
         "models": models,
         "benchmarks": {},
-        "overview": {},       # arm -> {benchmark: {metric, value, n, note}}
+        "overview": {},       # arm -> {column_key: {metric, value, n, wilson_lo, wilson_hi}}
+        "overview_columns": [
+            ["humaneval_plus", "HumanEval+ pass@1"],
+            ["mbpp_plus", "MBPP+ pass@1"],
+            ["livecodebench", "LiveCodeBench pass@1"],
+            ["swe-verified", "SWE Verified resolved %"],
+            ["deepswe", "DeepSWE resolved %"],
+            ["swe-multilingual", "Multilingual resolved %"],
+            ["terminal-bench", "Terminal-Bench pass %"],
+            ["swe-pro", "SWE Pro resolved %"],
+            ["swe-evo", "SWE-EVO resolved %"],
+        ],
         "tasks": [],          # task-explorer rows
         "failure_taxonomy": {},  # arm -> {category: count}
     }
+
+    def set_overview(arm, key, value, n, metric, wilson_lo=None, wilson_hi=None):
+        data["overview"].setdefault(arm, {})[key] = {
+            "metric": metric, "value": value, "n": n,
+            "wilson_lo": wilson_lo, "wilson_hi": wilson_hi,
+        }
 
     # ---- evalplus ----
     eps = read_tsv(CAP / "evalplus" / "summary.tsv")
@@ -71,14 +88,11 @@ def build():
     data["benchmarks"]["evalplus"] = {"summary": eps, "tasks": ept}
     for row in eps:
         arm = row["model"]
-        data["overview"].setdefault(arm, {})
-        base = row["base"]
-        data["overview"][arm]["evalplus_" + base.lower()] = {
-            "metric": f"{base} pass@1",
-            "value": float(row["base_pass_at_1"]),
-            "plus_value": float(row["plus_pass_at_1"]),
-            "n": int(row["n"]),
-        }
+        n = int(row["n"])
+        base_name = "HumanEval" if row["dataset"] == "humaneval" else "MBPP"
+        set_overview(arm, f"{row['dataset']}_plus", float(row["plus_pass_at_1"]),
+                     n, f"{base_name}+ pass@1",
+                     float(row["plus_wilson_lo"]), float(row["plus_wilson_hi"]))
     for t in ept:
         data["tasks"].append({
             "benchmark": "evalplus", "task_id": t["task_id"], "model": t["model"],
@@ -95,15 +109,19 @@ def build():
                                      "manifest": read_manifest(CAP / bench / "manifest.json")}
         for row in s:
             arm = row["model"]
-            data["overview"].setdefault(arm, {})
             n = int(row.get("n", row.get("attempted", 0)) or 0)
             k = int(row.get("resolved", row.get("pass", 0)) or 0)
-            data["overview"][arm][bench] = {
-                "metric": metric_label, "value": (k / n * 100 if n else None),
-                "resolved": k, "n": n,
-                "wilson_lo": row.get("wilson_lo"),
-                "wilson_hi": row.get("wilson_hi"),
-            }
+            val = (k / n * 100 if n else None)
+            set_overview(arm, bench, val, n, metric_label,
+                         float(row["wilson_lo"]) if row.get("wilson_lo") not in (None, "") else None,
+                         float(row["wilson_hi"]) if row.get("wilson_hi") not in (None, "") else None)
+            # keep resolved/n for the per-benchmark section renderer
+            if bench not in data["benchmarks"]:
+                data["benchmarks"][bench] = {}
+            data["benchmarks"][bench].setdefault("summary_meta", []).append({
+                "model": arm, "resolved": k, "n": n,
+                "wilson_lo": row.get("wilson_lo"), "wilson_hi": row.get("wilson_hi"),
+            })
         for trow in t:
             cat = trow.get("failure_category", "")
             if cat:

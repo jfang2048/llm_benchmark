@@ -5,9 +5,9 @@ Protocol: temperature=0, n=1, reasoning off, official EvalPlus prompt format,
 official EvalPlus executor for grading. Generates completions against the
 local llama.cpp OpenAI-compatible endpoint, then grades with evalplus.
 
-Run with the aiperf venv python (has evalplus installed):
-    /home/jfang/venvs/aiperf/bin/python evals/direct_code.py gen qwen3_8b humaneval
-    /home/jfang/venvs/aiperf/bin/python evals/direct_code.py eval humaneval <samples.jsonl>
+Run with the eval venv python (has evalplus installed):
+    $HOME/venvs/aiperf/bin/python evals/direct_code.py gen qwen3_8b humaneval
+    $HOME/venvs/aiperf/bin/python evals/direct_code.py eval humaneval <samples.jsonl>
 """
 
 from __future__ import annotations
@@ -76,9 +76,21 @@ def gen(arm, dataset, max_tokens=768):
 
     with open(samples_path, "a") as f:
         for tid, p, m in msgs:
-            resp = runner.generate(arm, [m], temperature=0.0, n=1,
-                                   max_tokens=max_tokens)[0]
-            impl = runner.extract_text(resp)
+            impl = None
+            for attempt in range(2):
+                resp = runner.generate(arm, [m], temperature=0.0, n=1,
+                                       max_tokens=max_tokens, timeout=180)[0]
+                if "error" not in resp:
+                    impl = runner.extract_text(resp)
+                    break
+                # request failed/timed out: restart the server once and retry
+                print(f"  retry {tid} (attempt {attempt + 1}): "
+                      f"{resp.get('error', '')[:80]}")
+                runner.serve(arm, ctx_size=profile["ctx_size"],
+                             parallel=profile["parallel"], reasoning="off")
+                runner.wait_ready(arm, timeout=300)
+            if impl is None:
+                impl = ""
             sol = sanitize(impl, entrypoint=p["entry_point"])
             f.write(json.dumps({"task_id": tid, "solution": sol}) + "\n")
             f.flush()
@@ -87,6 +99,11 @@ def gen(arm, dataset, max_tokens=768):
 
 
 def eval_(dataset, samples):
+    results_path = samples.replace(".jsonl", "_eval_results.json")
+    # reuse existing eval results if present (idempotent re-run)
+    if Path(results_path).exists():
+        print(f"reusing existing eval results {results_path}")
+        return results_path
     r = subprocess.run(
         [sys.executable, "-m", "evalplus.evaluate",
          "--dataset", dataset, "--samples", samples, "--i-just-wanna-run"],
@@ -95,26 +112,28 @@ def eval_(dataset, samples):
     if r.returncode != 0:
         print(r.stderr[-2000:], file=sys.stderr)
         raise SystemExit("evalplus.evaluate failed")
-    return (samples.replace(".jsonl", "_eval_results.json"))
+    return results_path
 
 
 def parse_eval(results_path, dataset):
-    """Return per-task (base, plus) pass lists and summary."""
+    """Return (base_pass_count, plus_pass_count, n_tasks, task_rows).
+
+    evalplus v0.3.1 writes eval[tid] = [ {base_status, plus_status, ...}, ... ]
+    (one dict per sample). pass@1 uses the first sample of each task."""
     with open(results_path) as f:
         res = json.load(f)
     ev = res["eval"]
     base_ok = 0
     plus_ok = 0
-    n = 0
     tasks = []
-    for tid, (base, plus) in ev.items():
-        b = bool(base and base[0])
-        pp = bool(plus and plus[0])
+    for tid, samples in ev.items():
+        s = samples[0] if isinstance(samples, list) and samples else samples
+        b = s.get("base_status") == "pass"
+        pp = s.get("plus_status") == "pass"
         base_ok += b
         plus_ok += pp
-        n += 1
         tasks.append({"task_id": tid, "base_pass": b, "plus_pass": pp})
-    return base_ok, plus_ok, n, tasks
+    return base_ok, plus_ok, len(ev), tasks
 
 
 def run(arm, dataset):

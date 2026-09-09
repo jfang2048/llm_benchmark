@@ -43,12 +43,2537 @@
   ],
   "benchmarks": {
     "evalplus": {
-      "summary": [],
-      "tasks": []
+      "summary": [
+        {
+          "model": "qwen3_8b",
+          "dataset": "humaneval",
+          "base": "HumanEval",
+          "plus": "HumanEval+",
+          "base_pass_at_1": "84.1",
+          "plus_pass_at_1": "79.3",
+          "base_wilson_lo": "77.8",
+          "base_wilson_hi": "88.9",
+          "plus_wilson_lo": "72.4",
+          "plus_wilson_hi": "84.8",
+          "n": "164",
+          "drop_base_to_plus_pts": "4.9"
+        }
+      ],
+      "tasks": [
+        {
+          "task_id": "HumanEval/0",
+          "model": "qwen3_8b",
+          "base_pass": "True",
+          "plus_pass": "True"
+        },
+        {
+          "task_id": "HumanEval/1",
+          "model": "qwen3_8b",
+          "base_pass": "True",
+          "plus_pass": "True"
+        },
+        {
+          "task_id": "HumanEval/3",
+          "model": "qwen3_8b",
+          "base_pass": "True",
+          "plus_pass": "True"
+        },
+        {
+          "task_id": "HumanEval/6",
+          "model": "qwen3_8b",
+          "base_pass": "True",
+          "plus_pass": "True"
+        },
+        {
+          "task_id": "HumanEval/7",
+          "model": "qwen3_8b",
+          "base_pass": "True",
+          "plus_pass": "True"
+        },
+        {
+          "task_id": "HumanEval/5",
+          "model": "qwen3_8b",
+          "base_pass": "True",
+          "plus_pass": "True"
+        },
+        {
+          "task_id": "HumanEval/4",
+          "model": "qwen3_8b",
+          "base_pass": "True",
+          "plus_pass": "True"
+        },
+        {
+          "task_id": "HumanEval/2",
+          "model": "qwen3_8b",
+          "base_pass": "True",
+          "plus_pass": "True"
+        },
+        {
+          "task_id": "HumanEval/8",
+          "model": "qwen3_8b",
+          "base_pass": "True",
+          "plus_pass": "True"
+        },
+        {
+          "task_id": "HumanEval/12",
+          "model": "qwen3_8b",
+          "base_pass": "True",
+          "plus_pass": "True"
+        },
+        {
+          "task_id": "HumanEval/11",
+          "model": "qwen3_8b",
+          "base_pass": "True",
+          "plus_pass": "True"
+        },
+        {
+          "task_id": "HumanEval/9",
+          "model": "qwen3_8b",
+          "base_pass": "True",
+          "plus_pass": "True"
+        },
+        {
+          "task_id": "HumanEval/13",
+          "model": "qwen3_8b",
+          "base_pass": "True",
+          "plus_pass": "True"
+        },
+        {
+          "task_id": "HumanEval/10",
+          "model": "qwen3_8b",
+          "base_pass": "True",
+          "plus_pass": "True"
+        },
+        {
+          "task_id": "HumanEval/14",
+          "model": "qwen3_8b",
+          "base_pass": "True",
+          "plus_pass": "True"
+        },
+        {
+          "task_id": "HumanEval/17",
+          "model": "qwen3_8b",
+          "base_pass": "True",
+          "plus_pass": "True"
+        },
+        {
+          "task_id": "HumanEval/19",
+          "model": "qwen3_8b",
+          "base_pass": "True",
+          "plus_pass": "True"
+        },
+        {
+          "task_id": "HumanEval/23",
+          "model": "qwen3_8b",
+          "base_pass": "True",
+          "plus_pass": "True"
+        },
+        {
+          "task_id": "HumanEval/16",
+          "model": "qwen3_8b",
+          "base_pass": "True",
+          "plus_pass": "True"
+        },
+        {
+          "task_id": "HumanEval/20",
+          "model": "qwen3_8b",
+          "base_pass": "True",
+          "plus_pass": "True"
+        },
+        {
+          "task_id": "HumanEval/18",
+          "model": "qwen3_8b",
+          "base_pass": "True",
+          "plus_pass": "True"
+        },
+        {
+          "task_id": "HumanEval/22",
+          "model": "qwen3_8b",
+          "base_pass": "True",
+          "plus_pass": "False"
+        },
+        {
+          "task_id": "HumanEval/21",
+          "model": "qwen3_8b",
+          "base_pass": "True",
+          "plus_pass": "True"
+        },
+        {
+          "task_id": "HumanEval/26",
+          "model": "qwen3_8b",
+          "base_pass": "False",
+          "plus_pass": "False"
+        },
+        {
+          "task_id": "HumanEval/25",
+          "model": "qwen3_8b",
+          "base_pass": "True",
+          "plus_pass": "True"
+        },
+        {
+          "task_id": "HumanEval/27",
+          "model": "qwen3_8b",
+          "base_pass": "True",
+          "plus_pass": "True"
+        },
+        {
+          "task_id": "HumanEval/28",
+          "model": "qwen3_8b",
+          "base_pass": "True",
+          "plus_pass": "True"
+        },
+        {
+          "task_id": "HumanEval/29",
+          "model": "qwen3_8b",
+          "base_pass": "True",
+          "plus_pass": "True"
+        },
+        {
+          "task_id": "HumanEval/30",
+          "model": "qwen3_8b",
+          "base_pass": "True",
+          "plus_pass": "True"
+        },
+        {
+          "task_id": "HumanEval/31",
+          "model": "qwen3_8b",
+          "base_pass": "True",
+          "plus_pass": "True"
+        },
+        {
+          "task_id": "HumanEval/24",
+          "model": "qwen3_8b",
+          "base_pass": "True",
+          "plus_pass": "True"
+        },
+        {
+          "task_id": "HumanEval/33",
+          "model": "qwen3_8b",
+          "base_pass": "True",
+          "plus_pass": "True"
+        },
+        {
+          "task_id": "HumanEval/34",
+          "model": "qwen3_8b",
+          "base_pass": "True",
+          "plus_pass": "True"
+        },
+        {
+          "task_id": "HumanEval/35",
+          "model": "qwen3_8b",
+          "base_pass": "True",
+          "plus_pass": "True"
+        },
+        {
+          "task_id": "HumanEval/37",
+          "model": "qwen3_8b",
+          "base_pass": "True",
+          "plus_pass": "True"
+        },
+        {
+          "task_id": "HumanEval/32",
+          "model": "qwen3_8b",
+          "base_pass": "False",
+          "plus_pass": "False"
+        },
+        {
+          "task_id": "HumanEval/41",
+          "model": "qwen3_8b",
+          "base_pass": "True",
+          "plus_pass": "True"
+        },
+        {
+          "task_id": "HumanEval/40",
+          "model": "qwen3_8b",
+          "base_pass": "True",
+          "plus_pass": "True"
+        },
+        {
+          "task_id": "HumanEval/42",
+          "model": "qwen3_8b",
+          "base_pass": "True",
+          "plus_pass": "True"
+        },
+        {
+          "task_id": "HumanEval/44",
+          "model": "qwen3_8b",
+          "base_pass": "True",
+          "plus_pass": "True"
+        },
+        {
+          "task_id": "HumanEval/43",
+          "model": "qwen3_8b",
+          "base_pass": "True",
+          "plus_pass": "True"
+        },
+        {
+          "task_id": "HumanEval/45",
+          "model": "qwen3_8b",
+          "base_pass": "True",
+          "plus_pass": "True"
+        },
+        {
+          "task_id": "HumanEval/38",
+          "model": "qwen3_8b",
+          "base_pass": "True",
+          "plus_pass": "True"
+        },
+        {
+          "task_id": "HumanEval/46",
+          "model": "qwen3_8b",
+          "base_pass": "True",
+          "plus_pass": "True"
+        },
+        {
+          "task_id": "HumanEval/47",
+          "model": "qwen3_8b",
+          "base_pass": "True",
+          "plus_pass": "True"
+        },
+        {
+          "task_id": "HumanEval/48",
+          "model": "qwen3_8b",
+          "base_pass": "True",
+          "plus_pass": "True"
+        },
+        {
+          "task_id": "HumanEval/50",
+          "model": "qwen3_8b",
+          "base_pass": "True",
+          "plus_pass": "True"
+        },
+        {
+          "task_id": "HumanEval/51",
+          "model": "qwen3_8b",
+          "base_pass": "True",
+          "plus_pass": "True"
+        },
+        {
+          "task_id": "HumanEval/52",
+          "model": "qwen3_8b",
+          "base_pass": "True",
+          "plus_pass": "True"
+        },
+        {
+          "task_id": "HumanEval/53",
+          "model": "qwen3_8b",
+          "base_pass": "True",
+          "plus_pass": "True"
+        },
+        {
+          "task_id": "HumanEval/54",
+          "model": "qwen3_8b",
+          "base_pass": "False",
+          "plus_pass": "False"
+        },
+        {
+          "task_id": "HumanEval/55",
+          "model": "qwen3_8b",
+          "base_pass": "True",
+          "plus_pass": "False"
+        },
+        {
+          "task_id": "HumanEval/56",
+          "model": "qwen3_8b",
+          "base_pass": "True",
+          "plus_pass": "True"
+        },
+        {
+          "task_id": "HumanEval/57",
+          "model": "qwen3_8b",
+          "base_pass": "True",
+          "plus_pass": "True"
+        },
+        {
+          "task_id": "HumanEval/58",
+          "model": "qwen3_8b",
+          "base_pass": "True",
+          "plus_pass": "True"
+        },
+        {
+          "task_id": "HumanEval/59",
+          "model": "qwen3_8b",
+          "base_pass": "True",
+          "plus_pass": "True"
+        },
+        {
+          "task_id": "HumanEval/60",
+          "model": "qwen3_8b",
+          "base_pass": "True",
+          "plus_pass": "True"
+        },
+        {
+          "task_id": "HumanEval/61",
+          "model": "qwen3_8b",
+          "base_pass": "True",
+          "plus_pass": "True"
+        },
+        {
+          "task_id": "HumanEval/62",
+          "model": "qwen3_8b",
+          "base_pass": "True",
+          "plus_pass": "True"
+        },
+        {
+          "task_id": "HumanEval/63",
+          "model": "qwen3_8b",
+          "base_pass": "True",
+          "plus_pass": "True"
+        },
+        {
+          "task_id": "HumanEval/65",
+          "model": "qwen3_8b",
+          "base_pass": "False",
+          "plus_pass": "False"
+        },
+        {
+          "task_id": "HumanEval/64",
+          "model": "qwen3_8b",
+          "base_pass": "True",
+          "plus_pass": "True"
+        },
+        {
+          "task_id": "HumanEval/66",
+          "model": "qwen3_8b",
+          "base_pass": "True",
+          "plus_pass": "True"
+        },
+        {
+          "task_id": "HumanEval/67",
+          "model": "qwen3_8b",
+          "base_pass": "True",
+          "plus_pass": "True"
+        },
+        {
+          "task_id": "HumanEval/36",
+          "model": "qwen3_8b",
+          "base_pass": "True",
+          "plus_pass": "True"
+        },
+        {
+          "task_id": "HumanEval/68",
+          "model": "qwen3_8b",
+          "base_pass": "True",
+          "plus_pass": "True"
+        },
+        {
+          "task_id": "HumanEval/69",
+          "model": "qwen3_8b",
+          "base_pass": "True",
+          "plus_pass": "True"
+        },
+        {
+          "task_id": "HumanEval/71",
+          "model": "qwen3_8b",
+          "base_pass": "True",
+          "plus_pass": "True"
+        },
+        {
+          "task_id": "HumanEval/70",
+          "model": "qwen3_8b",
+          "base_pass": "True",
+          "plus_pass": "True"
+        },
+        {
+          "task_id": "HumanEval/72",
+          "model": "qwen3_8b",
+          "base_pass": "True",
+          "plus_pass": "True"
+        },
+        {
+          "task_id": "HumanEval/73",
+          "model": "qwen3_8b",
+          "base_pass": "True",
+          "plus_pass": "True"
+        },
+        {
+          "task_id": "HumanEval/74",
+          "model": "qwen3_8b",
+          "base_pass": "True",
+          "plus_pass": "True"
+        },
+        {
+          "task_id": "HumanEval/75",
+          "model": "qwen3_8b",
+          "base_pass": "True",
+          "plus_pass": "False"
+        },
+        {
+          "task_id": "HumanEval/76",
+          "model": "qwen3_8b",
+          "base_pass": "True",
+          "plus_pass": "False"
+        },
+        {
+          "task_id": "HumanEval/77",
+          "model": "qwen3_8b",
+          "base_pass": "False",
+          "plus_pass": "False"
+        },
+        {
+          "task_id": "HumanEval/78",
+          "model": "qwen3_8b",
+          "base_pass": "True",
+          "plus_pass": "True"
+        },
+        {
+          "task_id": "HumanEval/79",
+          "model": "qwen3_8b",
+          "base_pass": "True",
+          "plus_pass": "True"
+        },
+        {
+          "task_id": "HumanEval/81",
+          "model": "qwen3_8b",
+          "base_pass": "False",
+          "plus_pass": "False"
+        },
+        {
+          "task_id": "HumanEval/80",
+          "model": "qwen3_8b",
+          "base_pass": "True",
+          "plus_pass": "True"
+        },
+        {
+          "task_id": "HumanEval/82",
+          "model": "qwen3_8b",
+          "base_pass": "True",
+          "plus_pass": "True"
+        },
+        {
+          "task_id": "HumanEval/84",
+          "model": "qwen3_8b",
+          "base_pass": "True",
+          "plus_pass": "True"
+        },
+        {
+          "task_id": "HumanEval/86",
+          "model": "qwen3_8b",
+          "base_pass": "True",
+          "plus_pass": "True"
+        },
+        {
+          "task_id": "HumanEval/87",
+          "model": "qwen3_8b",
+          "base_pass": "True",
+          "plus_pass": "True"
+        },
+        {
+          "task_id": "HumanEval/85",
+          "model": "qwen3_8b",
+          "base_pass": "True",
+          "plus_pass": "True"
+        },
+        {
+          "task_id": "HumanEval/88",
+          "model": "qwen3_8b",
+          "base_pass": "True",
+          "plus_pass": "True"
+        },
+        {
+          "task_id": "HumanEval/91",
+          "model": "qwen3_8b",
+          "base_pass": "False",
+          "plus_pass": "False"
+        },
+        {
+          "task_id": "HumanEval/89",
+          "model": "qwen3_8b",
+          "base_pass": "False",
+          "plus_pass": "False"
+        },
+        {
+          "task_id": "HumanEval/90",
+          "model": "qwen3_8b",
+          "base_pass": "True",
+          "plus_pass": "True"
+        },
+        {
+          "task_id": "HumanEval/93",
+          "model": "qwen3_8b",
+          "base_pass": "False",
+          "plus_pass": "False"
+        },
+        {
+          "task_id": "HumanEval/92",
+          "model": "qwen3_8b",
+          "base_pass": "True",
+          "plus_pass": "True"
+        },
+        {
+          "task_id": "HumanEval/95",
+          "model": "qwen3_8b",
+          "base_pass": "True",
+          "plus_pass": "True"
+        },
+        {
+          "task_id": "HumanEval/97",
+          "model": "qwen3_8b",
+          "base_pass": "True",
+          "plus_pass": "False"
+        },
+        {
+          "task_id": "HumanEval/98",
+          "model": "qwen3_8b",
+          "base_pass": "True",
+          "plus_pass": "True"
+        },
+        {
+          "task_id": "HumanEval/99",
+          "model": "qwen3_8b",
+          "base_pass": "False",
+          "plus_pass": "False"
+        },
+        {
+          "task_id": "HumanEval/101",
+          "model": "qwen3_8b",
+          "base_pass": "True",
+          "plus_pass": "True"
+        },
+        {
+          "task_id": "HumanEval/96",
+          "model": "qwen3_8b",
+          "base_pass": "True",
+          "plus_pass": "True"
+        },
+        {
+          "task_id": "HumanEval/102",
+          "model": "qwen3_8b",
+          "base_pass": "False",
+          "plus_pass": "False"
+        },
+        {
+          "task_id": "HumanEval/100",
+          "model": "qwen3_8b",
+          "base_pass": "True",
+          "plus_pass": "True"
+        },
+        {
+          "task_id": "HumanEval/103",
+          "model": "qwen3_8b",
+          "base_pass": "False",
+          "plus_pass": "False"
+        },
+        {
+          "task_id": "HumanEval/104",
+          "model": "qwen3_8b",
+          "base_pass": "True",
+          "plus_pass": "True"
+        },
+        {
+          "task_id": "HumanEval/105",
+          "model": "qwen3_8b",
+          "base_pass": "True",
+          "plus_pass": "True"
+        },
+        {
+          "task_id": "HumanEval/106",
+          "model": "qwen3_8b",
+          "base_pass": "True",
+          "plus_pass": "True"
+        },
+        {
+          "task_id": "HumanEval/107",
+          "model": "qwen3_8b",
+          "base_pass": "True",
+          "plus_pass": "True"
+        },
+        {
+          "task_id": "HumanEval/109",
+          "model": "qwen3_8b",
+          "base_pass": "True",
+          "plus_pass": "True"
+        },
+        {
+          "task_id": "HumanEval/108",
+          "model": "qwen3_8b",
+          "base_pass": "True",
+          "plus_pass": "True"
+        },
+        {
+          "task_id": "HumanEval/39",
+          "model": "qwen3_8b",
+          "base_pass": "False",
+          "plus_pass": "False"
+        },
+        {
+          "task_id": "HumanEval/110",
+          "model": "qwen3_8b",
+          "base_pass": "True",
+          "plus_pass": "True"
+        },
+        {
+          "task_id": "HumanEval/111",
+          "model": "qwen3_8b",
+          "base_pass": "True",
+          "plus_pass": "True"
+        },
+        {
+          "task_id": "HumanEval/112",
+          "model": "qwen3_8b",
+          "base_pass": "True",
+          "plus_pass": "True"
+        },
+        {
+          "task_id": "HumanEval/114",
+          "model": "qwen3_8b",
+          "base_pass": "True",
+          "plus_pass": "True"
+        },
+        {
+          "task_id": "HumanEval/113",
+          "model": "qwen3_8b",
+          "base_pass": "True",
+          "plus_pass": "True"
+        },
+        {
+          "task_id": "HumanEval/115",
+          "model": "qwen3_8b",
+          "base_pass": "False",
+          "plus_pass": "False"
+        },
+        {
+          "task_id": "HumanEval/116",
+          "model": "qwen3_8b",
+          "base_pass": "True",
+          "plus_pass": "True"
+        },
+        {
+          "task_id": "HumanEval/117",
+          "model": "qwen3_8b",
+          "base_pass": "True",
+          "plus_pass": "True"
+        },
+        {
+          "task_id": "HumanEval/118",
+          "model": "qwen3_8b",
+          "base_pass": "False",
+          "plus_pass": "False"
+        },
+        {
+          "task_id": "HumanEval/119",
+          "model": "qwen3_8b",
+          "base_pass": "True",
+          "plus_pass": "True"
+        },
+        {
+          "task_id": "HumanEval/120",
+          "model": "qwen3_8b",
+          "base_pass": "True",
+          "plus_pass": "True"
+        },
+        {
+          "task_id": "HumanEval/121",
+          "model": "qwen3_8b",
+          "base_pass": "False",
+          "plus_pass": "False"
+        },
+        {
+          "task_id": "HumanEval/122",
+          "model": "qwen3_8b",
+          "base_pass": "True",
+          "plus_pass": "True"
+        },
+        {
+          "task_id": "HumanEval/123",
+          "model": "qwen3_8b",
+          "base_pass": "True",
+          "plus_pass": "True"
+        },
+        {
+          "task_id": "HumanEval/124",
+          "model": "qwen3_8b",
+          "base_pass": "True",
+          "plus_pass": "False"
+        },
+        {
+          "task_id": "HumanEval/126",
+          "model": "qwen3_8b",
+          "base_pass": "False",
+          "plus_pass": "False"
+        },
+        {
+          "task_id": "HumanEval/125",
+          "model": "qwen3_8b",
+          "base_pass": "True",
+          "plus_pass": "True"
+        },
+        {
+          "task_id": "HumanEval/127",
+          "model": "qwen3_8b",
+          "base_pass": "True",
+          "plus_pass": "True"
+        },
+        {
+          "task_id": "HumanEval/128",
+          "model": "qwen3_8b",
+          "base_pass": "True",
+          "plus_pass": "True"
+        },
+        {
+          "task_id": "HumanEval/129",
+          "model": "qwen3_8b",
+          "base_pass": "True",
+          "plus_pass": "True"
+        },
+        {
+          "task_id": "HumanEval/15",
+          "model": "qwen3_8b",
+          "base_pass": "True",
+          "plus_pass": "True"
+        },
+        {
+          "task_id": "HumanEval/132",
+          "model": "qwen3_8b",
+          "base_pass": "False",
+          "plus_pass": "False"
+        },
+        {
+          "task_id": "HumanEval/134",
+          "model": "qwen3_8b",
+          "base_pass": "False",
+          "plus_pass": "False"
+        },
+        {
+          "task_id": "HumanEval/131",
+          "model": "qwen3_8b",
+          "base_pass": "True",
+          "plus_pass": "True"
+        },
+        {
+          "task_id": "HumanEval/133",
+          "model": "qwen3_8b",
+          "base_pass": "True",
+          "plus_pass": "True"
+        },
+        {
+          "task_id": "HumanEval/135",
+          "model": "qwen3_8b",
+          "base_pass": "False",
+          "plus_pass": "False"
+        },
+        {
+          "task_id": "HumanEval/138",
+          "model": "qwen3_8b",
+          "base_pass": "True",
+          "plus_pass": "True"
+        },
+        {
+          "task_id": "HumanEval/136",
+          "model": "qwen3_8b",
+          "base_pass": "True",
+          "plus_pass": "True"
+        },
+        {
+          "task_id": "HumanEval/140",
+          "model": "qwen3_8b",
+          "base_pass": "True",
+          "plus_pass": "True"
+        },
+        {
+          "task_id": "HumanEval/137",
+          "model": "qwen3_8b",
+          "base_pass": "True",
+          "plus_pass": "True"
+        },
+        {
+          "task_id": "HumanEval/141",
+          "model": "qwen3_8b",
+          "base_pass": "True",
+          "plus_pass": "True"
+        },
+        {
+          "task_id": "HumanEval/142",
+          "model": "qwen3_8b",
+          "base_pass": "False",
+          "plus_pass": "False"
+        },
+        {
+          "task_id": "HumanEval/94",
+          "model": "qwen3_8b",
+          "base_pass": "True",
+          "plus_pass": "True"
+        },
+        {
+          "task_id": "HumanEval/144",
+          "model": "qwen3_8b",
+          "base_pass": "False",
+          "plus_pass": "False"
+        },
+        {
+          "task_id": "HumanEval/143",
+          "model": "qwen3_8b",
+          "base_pass": "True",
+          "plus_pass": "True"
+        },
+        {
+          "task_id": "HumanEval/145",
+          "model": "qwen3_8b",
+          "base_pass": "False",
+          "plus_pass": "False"
+        },
+        {
+          "task_id": "HumanEval/146",
+          "model": "qwen3_8b",
+          "base_pass": "True",
+          "plus_pass": "True"
+        },
+        {
+          "task_id": "HumanEval/130",
+          "model": "qwen3_8b",
+          "base_pass": "False",
+          "plus_pass": "False"
+        },
+        {
+          "task_id": "HumanEval/148",
+          "model": "qwen3_8b",
+          "base_pass": "True",
+          "plus_pass": "True"
+        },
+        {
+          "task_id": "HumanEval/149",
+          "model": "qwen3_8b",
+          "base_pass": "True",
+          "plus_pass": "True"
+        },
+        {
+          "task_id": "HumanEval/150",
+          "model": "qwen3_8b",
+          "base_pass": "True",
+          "plus_pass": "True"
+        },
+        {
+          "task_id": "HumanEval/151",
+          "model": "qwen3_8b",
+          "base_pass": "True",
+          "plus_pass": "True"
+        },
+        {
+          "task_id": "HumanEval/152",
+          "model": "qwen3_8b",
+          "base_pass": "True",
+          "plus_pass": "True"
+        },
+        {
+          "task_id": "HumanEval/153",
+          "model": "qwen3_8b",
+          "base_pass": "True",
+          "plus_pass": "True"
+        },
+        {
+          "task_id": "HumanEval/154",
+          "model": "qwen3_8b",
+          "base_pass": "True",
+          "plus_pass": "False"
+        },
+        {
+          "task_id": "HumanEval/155",
+          "model": "qwen3_8b",
+          "base_pass": "True",
+          "plus_pass": "True"
+        },
+        {
+          "task_id": "HumanEval/156",
+          "model": "qwen3_8b",
+          "base_pass": "True",
+          "plus_pass": "True"
+        },
+        {
+          "task_id": "HumanEval/157",
+          "model": "qwen3_8b",
+          "base_pass": "True",
+          "plus_pass": "True"
+        },
+        {
+          "task_id": "HumanEval/158",
+          "model": "qwen3_8b",
+          "base_pass": "True",
+          "plus_pass": "True"
+        },
+        {
+          "task_id": "HumanEval/159",
+          "model": "qwen3_8b",
+          "base_pass": "True",
+          "plus_pass": "True"
+        },
+        {
+          "task_id": "HumanEval/160",
+          "model": "qwen3_8b",
+          "base_pass": "False",
+          "plus_pass": "False"
+        },
+        {
+          "task_id": "HumanEval/161",
+          "model": "qwen3_8b",
+          "base_pass": "True",
+          "plus_pass": "True"
+        },
+        {
+          "task_id": "HumanEval/162",
+          "model": "qwen3_8b",
+          "base_pass": "True",
+          "plus_pass": "True"
+        },
+        {
+          "task_id": "HumanEval/163",
+          "model": "qwen3_8b",
+          "base_pass": "False",
+          "plus_pass": "False"
+        },
+        {
+          "task_id": "HumanEval/83",
+          "model": "qwen3_8b",
+          "base_pass": "True",
+          "plus_pass": "True"
+        },
+        {
+          "task_id": "HumanEval/147",
+          "model": "qwen3_8b",
+          "base_pass": "True",
+          "plus_pass": "True"
+        },
+        {
+          "task_id": "HumanEval/49",
+          "model": "qwen3_8b",
+          "base_pass": "True",
+          "plus_pass": "False"
+        },
+        {
+          "task_id": "HumanEval/139",
+          "model": "qwen3_8b",
+          "base_pass": "True",
+          "plus_pass": "True"
+        }
+      ]
     }
   },
-  "overview": {},
-  "tasks": [],
+  "overview": {
+    "qwen3_8b": {
+      "humaneval_plus": {
+        "metric": "HumanEval+ pass@1",
+        "value": 79.3,
+        "n": 164,
+        "wilson_lo": 72.4,
+        "wilson_hi": 84.8
+      }
+    }
+  },
+  "overview_columns": [
+    [
+      "humaneval_plus",
+      "HumanEval+ pass@1"
+    ],
+    [
+      "mbpp_plus",
+      "MBPP+ pass@1"
+    ],
+    [
+      "livecodebench",
+      "LiveCodeBench pass@1"
+    ],
+    [
+      "swe-verified",
+      "SWE Verified resolved %"
+    ],
+    [
+      "deepswe",
+      "DeepSWE resolved %"
+    ],
+    [
+      "swe-multilingual",
+      "Multilingual resolved %"
+    ],
+    [
+      "terminal-bench",
+      "Terminal-Bench pass %"
+    ],
+    [
+      "swe-pro",
+      "SWE Pro resolved %"
+    ],
+    [
+      "swe-evo",
+      "SWE-EVO resolved %"
+    ]
+  ],
+  "tasks": [
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/0",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": true,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/1",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": true,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/3",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": true,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/6",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": true,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/7",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": true,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/5",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": true,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/4",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": true,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/2",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": true,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/8",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": true,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/12",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": true,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/11",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": true,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/9",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": true,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/13",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": true,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/10",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": true,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/14",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": true,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/17",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": true,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/19",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": true,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/23",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": true,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/16",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": true,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/20",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": true,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/18",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": true,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/22",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": false,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/21",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": true,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/26",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": false,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/25",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": true,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/27",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": true,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/28",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": true,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/29",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": true,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/30",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": true,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/31",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": true,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/24",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": true,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/33",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": true,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/34",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": true,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/35",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": true,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/37",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": true,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/32",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": false,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/41",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": true,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/40",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": true,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/42",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": true,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/44",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": true,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/43",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": true,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/45",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": true,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/38",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": true,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/46",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": true,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/47",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": true,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/48",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": true,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/50",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": true,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/51",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": true,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/52",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": true,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/53",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": true,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/54",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": false,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/55",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": false,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/56",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": true,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/57",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": true,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/58",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": true,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/59",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": true,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/60",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": true,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/61",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": true,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/62",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": true,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/63",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": true,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/65",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": false,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/64",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": true,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/66",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": true,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/67",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": true,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/36",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": true,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/68",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": true,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/69",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": true,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/71",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": true,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/70",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": true,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/72",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": true,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/73",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": true,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/74",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": true,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/75",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": false,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/76",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": false,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/77",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": false,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/78",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": true,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/79",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": true,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/81",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": false,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/80",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": true,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/82",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": true,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/84",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": true,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/86",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": true,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/87",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": true,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/85",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": true,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/88",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": true,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/91",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": false,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/89",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": false,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/90",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": true,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/93",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": false,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/92",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": true,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/95",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": true,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/97",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": false,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/98",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": true,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/99",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": false,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/101",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": true,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/96",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": true,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/102",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": false,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/100",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": true,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/103",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": false,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/104",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": true,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/105",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": true,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/106",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": true,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/107",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": true,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/109",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": true,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/108",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": true,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/39",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": false,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/110",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": true,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/111",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": true,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/112",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": true,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/114",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": true,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/113",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": true,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/115",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": false,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/116",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": true,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/117",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": true,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/118",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": false,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/119",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": true,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/120",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": true,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/121",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": false,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/122",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": true,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/123",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": true,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/124",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": false,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/126",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": false,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/125",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": true,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/127",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": true,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/128",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": true,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/129",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": true,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/15",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": true,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/132",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": false,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/134",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": false,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/131",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": true,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/133",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": true,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/135",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": false,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/138",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": true,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/136",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": true,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/140",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": true,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/137",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": true,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/141",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": true,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/142",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": false,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/94",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": true,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/144",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": false,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/143",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": true,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/145",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": false,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/146",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": true,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/130",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": false,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/148",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": true,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/149",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": true,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/150",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": true,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/151",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": true,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/152",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": true,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/153",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": true,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/154",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": false,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/155",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": true,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/156",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": true,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/157",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": true,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/158",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": true,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/159",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": true,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/160",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": false,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/161",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": true,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/162",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": true,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/163",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": false,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/83",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": true,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/147",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": true,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/49",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": false,
+      "metric": "pass@1"
+    },
+    {
+      "benchmark": "evalplus",
+      "task_id": "HumanEval/139",
+      "model": "qwen3_8b",
+      "repo": "",
+      "language": "python",
+      "resolved": true,
+      "metric": "pass@1"
+    }
+  ],
   "failure_taxonomy": {},
-  "task_count": 0
+  "task_count": 164
 }

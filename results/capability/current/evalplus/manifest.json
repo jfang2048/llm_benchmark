@@ -1,0 +1,26 @@
+{
+  "benchmark": "evalplus",
+  "benchmark_version": "v0.3.1",
+  "benchmark_commit": "26d6d00bb1fd0fa37f39c99d5290da67891d1c5e",
+  "agent_scaffold": "none (direct coding)",
+  "agent_version": null,
+  "model": "qwen3_8b",
+  "display_name": "Qwen3-8B",
+  "gguf": "Qwen3-8B-IQ4_XS.gguf",
+  "gguf_sha256": "0f69fe02ca9764c93bcc12ac96509bee53488114d6a7fe47764f80990c28751a",
+  "quantization": "IQ4_XS",
+  "llama_cpp_commit": "5ac847190e979e0da7c4a21806630805f396d487",
+  "agent_context": 8192,
+  "kv_cache_policy": "none",
+  "generation": {
+    "temperature": 0,
+    "n": 1
+  },
+  "reasoning": "off",
+  "hardware": "RTX 3060 Laptop 6 GiB",
+  "run_timestamp": "2026-09-09T01:55:27.641082+00:00",
+  "project_git_commit": "958ce221165361336e98307fabd56ab805393ba3",
+  "dataset": "humaneval",
+  "n": 164,
+  "protocol": "temp=0, n=1, reasoning off"
+}
