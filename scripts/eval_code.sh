@@ -11,7 +11,7 @@ PY="${EVALPY:-$HOME/venvs/aiperf/bin/python}"
 LOG="$ROOT/.agent/eval_code.log"
 mkdir -p "$ROOT/.agent"
 
-MODELS="qwen3_8b deepseek_r1_distill_llama_8b glm4_9b_0414 yi_15_9b_chat spark_x2_5_4b"
+MODELS="qwen3_8b deepseek_r1_8b glm4_9b yi_15_9b spark_llama"
 DATASETS="humaneval mbpp"
 
 echo "[$(date +%F\ %T)] eval_code started (models: $MODELS)" >> "$LOG"

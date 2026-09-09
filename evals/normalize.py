@@ -120,23 +120,44 @@ def make_manifest(benchmark, model_arm, extra=None):
     return man
 
 
-def write_summary(bench, rows, columns):
-    """rows: list of dicts; columns: ordered keys to emit."""
-    p = CAP_RESULTS / bench
-    p.mkdir(parents=True, exist_ok=True)
-    with open(p / "summary.tsv", "w") as f:
+def _read_tsv(path):
+    import csv
+    if not path.exists():
+        return []
+    with open(path) as f:
+        return list(csv.DictReader(f, delimiter="\t"))
+
+
+def _merge_rows(path, rows, columns, key_cols):
+    """Upsert rows into a TSV by key_cols, preserving prior rows for other keys."""
+    existing = {}
+    for r in _read_tsv(path):
+        existing[tuple(str(r.get(c, "")) for c in key_cols)] = r
+    for r in rows:
+        existing[tuple(str(r.get(c, "")) for c in key_cols)] = r
+    with open(path, "w") as f:
         f.write("\t".join(columns) + "\n")
-        for r in rows:
+        for r in existing.values():
             f.write("\t".join(str(r.get(c, "")) for c in columns) + "\n")
 
 
-def write_tasks(bench, rows, columns):
+def write_summary(bench, rows, columns, key_cols=None):
+    """rows: list of dicts; columns: ordered keys to emit. Upserts by key_cols."""
     p = CAP_RESULTS / bench
     p.mkdir(parents=True, exist_ok=True)
-    with open(p / "tasks.tsv", "w") as f:
-        f.write("\t".join(columns) + "\n")
-        for r in rows:
-            f.write("\t".join(str(r.get(c, "")) for c in columns) + "\n")
+    _merge_rows(p / "summary.tsv", rows, columns, key_cols or [columns[0]])
+
+
+def write_tasks(bench, rows, columns, key_cols=None):
+    p = CAP_RESULTS / bench
+    p.mkdir(parents=True, exist_ok=True)
+    default_key = []
+    for cand in ("task_id", "instance_id"):
+        if cand in columns:
+            default_key.append(cand)
+            break
+    default_key.append("model")
+    _merge_rows(p / "tasks.tsv", rows, columns, key_cols or default_key)
 
 
 def write_manifest(bench, manifest):

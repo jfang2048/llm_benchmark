@@ -50,7 +50,10 @@ def current_models():
 
 
 def model_by_arm(arm):
-    return next((m for m in load_models()["models"] if m["arm"] == arm), None)
+    for m in load_models()["models"]:
+        if m["arm"] == arm or m.get("id") == arm:
+            return m
+    return None
 
 
 def engine_image_for(model):

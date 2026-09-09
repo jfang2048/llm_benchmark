@@ -104,7 +104,7 @@ eval-setup:
 	./scripts/eval_setup.sh
 
 eval-admit:
-	@for a in qwen3_8b deepseek_r1_distill_llama_8b glm4_9b_0414 yi_15_9b_chat spark_x2_5_4b; do \
+	@for a in qwen3_8b deepseek_r1_8b glm4_9b yi_15_9b spark_llama; do \
 		$(EVALPY) evals/admit.py context $$a || exit 1; done
 
 eval-code:

@@ -160,11 +160,11 @@ def run(arm, dataset):
     cols = ["model", "dataset", "base", "plus", "base_pass_at_1",
             "plus_pass_at_1", "base_wilson_lo", "base_wilson_hi",
             "plus_wilson_lo", "plus_wilson_hi", "n", "drop_base_to_plus_pts"]
-    normalize.write_summary("evalplus", rows, cols)
+    normalize.write_summary("evalplus", rows, cols, key_cols=["model", "dataset"])
 
     task_cols = ["task_id", "model", "base_pass", "plus_pass"]
     task_rows = [{**t, "model": arm} for t in tasks]
-    normalize.write_tasks("evalplus", task_rows, task_cols)
+    normalize.write_tasks("evalplus", task_rows, task_cols, key_cols=["task_id", "model"])
 
     man = normalize.make_manifest("evalplus", arm, extra={
         "dataset": dataset, "n": n, "protocol": "temp=0, n=1, reasoning off",
