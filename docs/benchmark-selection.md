@@ -52,6 +52,8 @@ evaluator. `max_workers=1`.
 - Tasks: 500 verified instances.
 - Local subset: **SWE-bench Verified Local-20** (seed 42, stratified by repo).
   This is **not** the official full 500-task score.
+- Caveat: a historical/standard SWE signal with known contamination/saturation
+  concerns; it is NOT the sole frontier coding metric (see SWE-bench-Live).
 
 ### DeepSWE v1.1
 
@@ -77,15 +79,38 @@ evaluator. `max_workers=1`.
 - Measures: terminal/agent work (Linux, CLI, build/debugging, systems).
 - Local subset: **Terminal-Bench Local-10** (seed 42, stratified by category).
 
-### Frontier pilots
+### SWE-bench-Live
 
-- **SWE-bench Pro** (`scaleapi/SWE-bench_Pro-os` @ `ca10a60`): 731 public
-  instances, far harder than Verified. Pilot: **Local-10**.
-- **SWE-EVO** (`SWE-EVO/SWE-EVO` @ `9b83d5a`): long-horizon software
-  evolution. Pilot: **Local-4** (very small, extremely difficult).
+- Repo: `microsoft/SWE-bench-Live` @ `a9c6b8a`.
+- Measures: continuously-updated, current SWE signal (contamination-resistant,
+  unlike static SWE-bench Verified).
+- Local subset: **SWE-bench-Live Local-10** (seed 42, deterministic snapshot).
+  Labeled LOCAL-N, not a leaderboard score.
 
-Frontier pilots are diagnostics, not full runs — running all 731 Pro or the
-full SWE-EVO set on this laptop is not tractable.
+### Senior SWE-Bench (pilot)
+
+- Repo: `snorkel-ai/senior-swe-bench-v2026.06` @ `1212f23` (Harbor).
+- Measures: more open-ended senior-engineering work.
+- Pilot: **Senior SWE-Bench Local-5** (diagnostic; NOT in eval-standard).
+
+### ProgramBench (pilot)
+
+- Repo: `facebookresearch/ProgramBench` @ `b08d862`.
+- Measures: greenfield/program reconstruction (complements bug-fix benchmarks).
+- Pilot: **ProgramBench Local-3** (if locally feasible without proprietary judging).
+
+### Frontier pilots / deferred
+
+- **SWE-bench Pro** (`scaleapi/SWE-bench_Pro-os` @ `ca10a60`): **DEFERRED —
+  task-quality review** (2026 public audits report substantial task-quality
+  concerns; not run as a primary frontier metric until a justified subset
+  exists).
+- **SWE-EVO** (`SWE-EVO/SWE-EVO` @ `9b83d5a`): **deferred** until Verified /
+  DeepSWE / Live / Terminal are working.
+- **SWE-rebench v2**: `NOT_FEASIBLE_COMMON_CONTEXT` if its fair protocol needs
+  a context window beyond the common local setup.
+
+Frontier pilots are diagnostics, not full runs.
 
 ## Not applicable
 

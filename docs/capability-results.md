@@ -18,12 +18,18 @@ pass weak tests).
 | model | HumanEval | HumanEval+ | MBPP | MBPP+ | base→plus drop |
 |---|---|---|---|---|---|
 | Qwen3-8B | 84.1% (138/164) | 79.3% (130/164) | 79.1% (299/378) | 70.1% (265/378) | 4.9 / 9.0 pts |
-| DeepSeek-R1-Distill-Llama-8B | — | — | — | — | — |
-| GLM-4-9B-0414 | — | — | — | — | — |
-| Yi-1.5-9B-Chat | — | — | — | — | — |
-| Spark-X2.5-4B (REFERENCE / 4B) | — | — | — | — | — |
+| DeepSeek-R1-Distill-Llama-8B | 20.1% (33/164) | 18.3% (30/164) | 31.2% (118/378) | 28.3% (107/378) | 1.8 / 2.9 pts |
+| GLM-4-9B-0414 | 81.7% (134/164) | 77.4% (127/164) | 75.7% (286/378) | 65.1% (246/378) | 4.3 / 10.6 pts |
+| Yi-1.5-9B-Chat | 73.8% (121/164) | 70.1% (115/164) | 78.3% (296/378) | 66.4% (251/378) | 3.7 / 11.9 pts |
+| Spark-X2.5-4B (REFERENCE / 4B) | running | running | running | running | — |
 
-`—` = running or not yet run.
+`—` = not yet run.
+
+> Note on DeepSeek-R1-Distill-Llama-8B: it is a reasoning-specialized model.
+> Under the uniform `reasoning off` protocol it frequently emits degenerate
+> output (e.g. `"\nWait,"`), so its EvalPlus numbers are a **lower bound**, not
+> representative of its reasoning-native capability. This is a documented
+> limitation of the uniform non-reasoning protocol, not a ranking claim.
 
 These are old, widely-memorized datasets; treat them as a floor check, not a
 measure of contamination-resistant generalization.
