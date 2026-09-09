@@ -1,3 +1,9 @@
 model	dataset	base	plus	base_pass_at_1	plus_pass_at_1	base_wilson_lo	base_wilson_hi	plus_wilson_lo	plus_wilson_hi	n	drop_base_to_plus_pts
 qwen3_8b	mbpp	MBPP	MBPP+	79.1	70.1	74.7	82.9	65.3	74.5	378	9.0
 qwen3_8b	humaneval	HumanEval	HumanEval+	84.1	79.3	77.8	88.9	72.4	84.8	164	4.9
+deepseek_r1_8b	humaneval	HumanEval	HumanEval+	20.1	18.3	14.7	26.9	13.1	24.9	164	1.8
+deepseek_r1_8b	mbpp	MBPP	MBPP+	31.2	28.3	26.8	36.1	24.0	33.0	378	2.9
+glm4_9b	humaneval	HumanEval	HumanEval+	81.7	77.4	75.1	86.9	70.5	83.2	164	4.3
+glm4_9b	mbpp	MBPP	MBPP+	75.7	65.1	71.1	79.7	60.1	69.7	378	10.6
+yi_15_9b	humaneval	HumanEval	HumanEval+	73.8	70.1	66.6	79.9	62.7	76.6	164	3.7
+yi_15_9b	mbpp	MBPP	MBPP+	78.3	66.4	73.9	82.2	61.5	71.0	378	11.9
