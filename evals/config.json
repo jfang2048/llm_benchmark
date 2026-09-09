@@ -1,0 +1,111 @@
+{
+  "schema_version": "1",
+  "note": "Capability-evaluation configuration. Model metadata lives in configs/models.json (single source of truth); this file only pins external benchmark versions, the agent serving profile, and deterministic subset specs.",
+
+  "cache_dir": ".cache/evals",
+
+  "agent_profile": {
+    "note": "Serving profile for coding-agent workloads. Distinct from the serving benchmark (ctx 4096 / parallel 2): agent trajectories are evaluated one at a time and need more context.",
+    "ctx_size": 8192,
+    "parallel": 1,
+    "cont_batching": true,
+    "n_gpu_layers": 999,
+    "kv_cache_policy": "none",
+    "kv_cache_policy_note": "No KV-cache quantization used for the primary comparison. Recorded per run in the manifest if changed.",
+    "context_ladder": [8192, 12288, 16384],
+    "common_agent_context": 8192,
+    "generation": { "temperature": 0.3, "n": 1 }
+  },
+
+  "direct_coding_profile": {
+    "ctx_size": 8192,
+    "parallel": 1,
+    "n_gpu_layers": 999,
+    "generation": { "temperature": 0, "n": 1 }
+  },
+
+  "benchmarks": {
+    "evalplus": {
+      "repo": "https://github.com/evalplus/evalplus.git",
+      "version": "v0.3.1",
+      "commit": "26d6d00bb1fd0fa37f39c99d5290da67891d1c5e",
+      "harness": "evalplus",
+      "datasets": ["humaneval", "mbpp"],
+      "protocol": "temp=0, n=1, official EvalPlus executor"
+    },
+    "livecodebench": {
+      "repo": "https://github.com/LiveCodeBench/LiveCodeBench.git",
+      "version": "main",
+      "commit": "28fef95ea8c9f7a547c8329f2cd3d32b92c1fa24",
+      "harness": "lcb_runner",
+      "scenarios": ["code_generation"],
+      "note": "LOCAL PROTOCOL: lite code-generation path, n=1. Not leaderboard-equivalent."
+    },
+    "swe_verified": {
+      "repo": "https://github.com/SWE-bench/SWE-bench.git",
+      "version": "main",
+      "commit": "02e7a74ffd0b707aab73d203fe87bdc7c76afc8e",
+      "harness": "swebench official",
+      "agent": "mini-swe-agent",
+      "subset": { "name": "SWE-bench Verified Local-20", "seed": 42, "size": 20 }
+    },
+    "deepswe": {
+      "repo": "https://github.com/datacurve-ai/deep-swe.git",
+      "version": "v1.1",
+      "commit": "0b9fabbb63b9104d678fe965e1632f2dd9eaa2ea",
+      "harness": "pier (harbor fork)",
+      "pier_repo": "https://github.com/datacurve-ai/pier.git",
+      "pier_commit": "0c802fc067a425345b24d1c69411aa98acf61a1d",
+      "agent": "mini-swe-agent",
+      "subset": { "name": "DeepSWE Local-10", "seed": 42, "size": 10 }
+    },
+    "swe_multilingual": {
+      "repo": "https://github.com/SWE-bench/swe-bench-multilingual-tasks.git",
+      "version": "main",
+      "commit": "6e08cbcd763c869abd7aae4bcb9e1b3991180777",
+      "harness": "swebench official",
+      "agent": "mini-swe-agent",
+      "subset": { "name": "SWE-Multilingual Local-18", "seed": 42, "per_language": 2 }
+    },
+    "terminal_bench": {
+      "repo": "https://github.com/harbor-framework/terminal-bench-2.git",
+      "version": "2.0",
+      "commit": "2fd12b88aafdd04a52c298e3940bcb189f9766d6",
+      "harness": "harbor",
+      "harbor_repo": "https://github.com/harbor-framework/harbor.git",
+      "harbor_commit": "90e28af3f9a105645fab4ad5f4b6df5241024c5b",
+      "agent": "mini-swe-agent",
+      "subset": { "name": "Terminal-Bench Local-10", "seed": 42, "size": 10 }
+    },
+    "swe_pro": {
+      "repo": "https://github.com/scaleapi/SWE-bench_Pro-os.git",
+      "version": "main",
+      "commit": "ca10a60a5fcae51e6948ffe1485d4153d421e6c5",
+      "harness": "swebench official",
+      "agent": "mini-swe-agent",
+      "subset": { "name": "SWE-bench Pro Local-10", "seed": 42, "size": 10 }
+    },
+    "swe_evo": {
+      "repo": "https://github.com/SWE-EVO/SWE-EVO.git",
+      "version": "main",
+      "commit": "9b83d5af943ba7a17567336f5b18239f73960219",
+      "harness": "swe-evo official",
+      "agent": "mini-swe-agent",
+      "subset": { "name": "SWE-EVO Local-4", "seed": 42, "size": 4 }
+    },
+    "mini_swe_agent": {
+      "repo": "https://github.com/SWE-agent/mini-swe-agent.git",
+      "version": "main",
+      "commit": "04d809ceab9df28f9adaed044884180159172930",
+      "harness": "mini-swe-agent (bash/text action interface)"
+    },
+    "commit0": {
+      "repo": "https://github.com/commit-0/commit0.git",
+      "version": "main",
+      "commit": "1123db33219ee1bfcc735304cb4308663e329aeb",
+      "harness": "commit0 official",
+      "optional": true,
+      "subset": { "name": "Commit0 Local-4", "size": 4 }
+    }
+  }
+}

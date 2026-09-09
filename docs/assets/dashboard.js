@@ -79,7 +79,16 @@ function buildShell() {
     ["Resources", "resources"], ["Sessions", "sessions"], ["Startup / soak", "startup"],
     ["llama-bench", "llamabench"], ["Data", "data"],
   ];
-  const nav = navItems.map(([t, id]) => `<a href="#${id}">${t}</a>`).join("");
+  const capNavItems = [
+    ["Coding overview", "cap-overview"], ["Direct coding", "cap-direct"],
+    ["SWE-bench", "cap-swe-verified"], ["DeepSWE", "cap-deepswe"],
+    ["Multilingual", "cap-swe-multilingual"], ["Terminal", "cap-terminal-bench"],
+    ["Frontier", "cap-frontier"], ["Failures", "cap-failures"],
+    ["Task explorer", "cap-explorer"],
+  ];
+  const nav = navItems.map(([t, id]) => `<a href="#${id}">${t}</a>`).join("") +
+    `<span class="navsep" title="Serving / coding split">·</span>` +
+    capNavItems.map(([t, id]) => `<a class="cap-link" href="#${id}">${t}</a>`).join("");
   const chips = D.models.map((mm) =>
     `<span class="chip ${mm.is_reference ? "ref" : ""}" id="chip-${mm.arm}" data-arm="${mm.arm}">` +
     `<span class="dot" style="background:${mm.color}"></span>${mm.display_name}</span>`).join("");
@@ -115,6 +124,20 @@ function buildShell() {
     <section id="startup"></section>
     <section id="llamabench"></section>
     <section id="data"></section>
+    <div class="cap-divider">
+      <h1>Coding / software-engineering capability</h1>
+      <p>Separate from serving performance. Direct coding (EvalPlus, LiveCodeBench) and agentic SWE
+      (SWE-bench, DeepSWE, Multilingual, Terminal-Bench) with mini-swe-agent. No combined score.</p>
+    </div>
+    <section id="cap-overview"></section>
+    <section id="cap-direct"></section>
+    <section id="cap-swe-verified"></section>
+    <section id="cap-deepswe"></section>
+    <section id="cap-swe-multilingual"></section>
+    <section id="cap-terminal-bench"></section>
+    <section id="cap-frontier"></section>
+    <section id="cap-failures"></section>
+    <section id="cap-explorer"></section>
     <footer>Generated from results/current/ &middot; Plotly ${D.meta.plotly_version} (sha256 ${D.meta.plotly_sha256.slice(0, 12)}&hellip;) &middot; GPU-side energy is an estimate, not full-system power.</footer>
   </main>`;
   document.getElementById("f-cohort").addEventListener("change", (e) => { state.cohort = e.target.value; refresh(); });

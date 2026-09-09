@@ -93,6 +93,10 @@ results/v2/runs/
 results/*/*/*/rows.jsonl
 results/*/*/*/*/
 
+# Capability evaluation: commit summaries/tasks/manifests only; raw trajectories,
+# logs and generated samples stay local under results/capability/runs/.
+results/capability/runs/
+
 # =====================================================================
 # Superseded workspace layout (historical scripts/configs kept local;
 # canonical versions live under scripts/, docker/, configs/, monitoring/)

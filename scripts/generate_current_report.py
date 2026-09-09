@@ -456,6 +456,10 @@ def build_data():
 
 def render_html(data):
     payload = json.dumps(data, ensure_ascii=False)
+    cap_payload = "{}"
+    cap_path = DOCS / "data" / "capability.json"
+    if cap_path.exists():
+        cap_payload = cap_path.read_text(encoding="utf-8")
     return f"""<!doctype html>
 <html lang="en">
 <head>
@@ -468,7 +472,9 @@ def render_html(data):
 <body>
 <div id="app"><div class="loading">Loading benchmark data&hellip;</div></div>
 <script id="bench-data" type="application/json">{payload}</script>
+<script id="capability-data" type="application/json">{cap_payload}</script>
 <script src="assets/dashboard.js"></script>
+<script src="assets/capability.js"></script>
 </body>
 </html>
 """

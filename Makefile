@@ -31,8 +31,13 @@ AIPERF ?= $(HOME)/venvs/aiperf/bin/aiperf
 RUNNER  = AIPERF="$(AIPERF)" python3 -m bench.runner
 COHORTS = mainstream_8_9b spark_reference
 
+# Capability-evaluation python (has evalplus + mini-swe-agent).
+EVALPY ?= $(HOME)/venvs/aiperf/bin/python
+
 .PHONY: help setup smoke benchmark spark reliability shape open-loop startup \
-	soak sessions llama-bench report reproduce clean benchmark-v1
+	soak sessions llama-bench report reproduce clean benchmark-v1 \
+	eval-setup eval-admit eval-code eval-swe eval-deepswe eval-multilingual \
+	eval-terminal eval-frontier eval-report eval-all
 
 help:
 	@printf '%s\n' \
@@ -93,6 +98,38 @@ llama-bench:
 
 report:
 	python3 scripts/generate_current_report.py
+
+# --- Coding / SWE capability evaluation (separate from serving) ---
+eval-setup:
+	./scripts/eval_setup.sh
+
+eval-admit:
+	@for a in qwen3_8b deepseek_r1_distill_llama_8b glm4_9b_0414 yi_15_9b_chat spark_x2_5_4b; do \
+		$(EVALPY) evals/admit.py context $$a || exit 1; done
+
+eval-code:
+	@for a in qwen3_8b deepseek_r1_distill_llama_8b glm4_9b_0414 yi_15_9b_chat spark_x2_5_4b; do \
+		for d in humaneval mbpp; do $(EVALPY) evals/direct_code.py run $$a $$d || exit 1; done; done
+
+eval-swe:
+	@echo "SWE-bench Verified Local-20 (see evals/tasksets/ + scripts/eval_swe.sh)"
+
+eval-deepswe:
+	@echo "DeepSWE Local-10 (see evals/tasksets/)"
+
+eval-multilingual:
+	@echo "SWE-bench Multilingual Local-18"
+
+eval-terminal:
+	@echo "Terminal-Bench Local-10"
+
+eval-frontier:
+	@echo "SWE-bench Pro Local-10 / SWE-EVO Local-4"
+
+eval-report:
+	python3 scripts/eval_report.py
+
+eval-all: eval-setup eval-code eval-report
 
 reproduce:
 	./scripts/reproduce.sh

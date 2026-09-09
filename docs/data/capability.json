@@ -1,0 +1,54 @@
+{
+  "models": [
+    {
+      "arm": "spark_llama",
+      "display_name": "Spark-X2.5-4B",
+      "context_length": 9216,
+      "quantization": "IQ4_XS",
+      "is_reference": true,
+      "params_b": 4.11
+    },
+    {
+      "arm": "qwen3_8b",
+      "display_name": "Qwen3-8B",
+      "context_length": 40960,
+      "quantization": "IQ4_XS",
+      "is_reference": false,
+      "params_b": 8.19
+    },
+    {
+      "arm": "deepseek_r1_8b",
+      "display_name": "DeepSeek-R1-Distill-Llama-8B",
+      "context_length": 131072,
+      "quantization": "IQ4_XS",
+      "is_reference": false,
+      "params_b": 8.03
+    },
+    {
+      "arm": "glm4_9b",
+      "display_name": "GLM-4-9B-0414",
+      "context_length": 131072,
+      "quantization": "IQ4_XS",
+      "is_reference": false,
+      "params_b": 9.4
+    },
+    {
+      "arm": "yi_15_9b",
+      "display_name": "Yi-1.5-9B-Chat",
+      "context_length": 4096,
+      "quantization": "IQ4_XS",
+      "is_reference": false,
+      "params_b": 8.83
+    }
+  ],
+  "benchmarks": {
+    "evalplus": {
+      "summary": [],
+      "tasks": []
+    }
+  },
+  "overview": {},
+  "tasks": [],
+  "failure_taxonomy": {},
+  "task_count": 0
+}

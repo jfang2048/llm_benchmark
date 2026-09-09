@@ -100,3 +100,18 @@ section h2 {
 
 footer { color: var(--muted); font-size: 0.75rem; padding: 1rem; border-top: 1px solid var(--border); }
 .loading { padding: 3rem; color: var(--muted); text-align: center; }
+
+/* Coding / SWE capability side */
+.navsep { color: var(--muted); padding: 0 0.35rem; user-select: none; }
+a.cap-link { color: #6a1b9a; }
+.cap-divider {
+  border-top: 2px solid var(--border);
+  margin: 2.5rem 0 1rem;
+  padding-top: 1rem;
+  scroll-margin-top: 96px;
+}
+.cap-divider h1 { font-size: 1.4rem; margin: 0 0 0.35rem; }
+.cap-divider p { color: var(--muted); margin: 0; max-width: 60rem; }
+td.na { color: var(--muted); font-style: italic; text-align: center; }
+.filterline { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center; margin: 0.5rem 0; }
+.filterline select { padding: 0.2rem 0.4rem; }
