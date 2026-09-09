@@ -1,0 +1,20 @@
+{
+  "benchmark": "deepswe",
+  "source": "datacurve-ai/deep-swe (117 tasks, v1.1)",
+  "seed": 42,
+  "stratify": "language",
+  "size": 10,
+  "task_ids_hash": "0f4242b0ae80388cabbd0ab27908f4a75b218739dcbff6dc272ea669e57757cd",
+  "instance_ids": [
+    "arcane-drift-detection-baselines",
+    "httpx-deterministic-cookie-store",
+    "ipython-session-bundle-replay",
+    "katex-multicolumn-array-spans",
+    "kombu-virtual-queue-dead-lettering",
+    "opa-rego-rule-profiling",
+    "optique-conditional-option-dependencies",
+    "pest-character-class-coalescing",
+    "testem-bail-on-test-failure",
+    "wasmi-trap-coredumps"
+  ]
+}

@@ -1,0 +1,30 @@
+{
+  "benchmark": "swe-verified",
+  "source": "princeton-nlp/SWE-bench_Verified (500 instances)",
+  "seed": 42,
+  "stratify": "repo",
+  "size": 20,
+  "task_ids_hash": "8eaa41cbc0116975fd79561381b022981b0212de242876eae632a2210da041e3",
+  "instance_ids": [
+    "astropy__astropy-13579",
+    "astropy__astropy-8872",
+    "django__django-11099",
+    "django__django-11951",
+    "matplotlib__matplotlib-24637",
+    "matplotlib__matplotlib-25332",
+    "mwaskom__seaborn-3069",
+    "mwaskom__seaborn-3187",
+    "pallets__flask-5014",
+    "psf__requests-1766",
+    "psf__requests-5414",
+    "pydata__xarray-4629",
+    "pydata__xarray-7233",
+    "pylint-dev__pylint-4970",
+    "pylint-dev__pylint-6528",
+    "pytest-dev__pytest-6197",
+    "pytest-dev__pytest-7490",
+    "scikit-learn__scikit-learn-14053",
+    "sphinx-doc__sphinx-9258",
+    "sympy__sympy-12481"
+  ]
+}
