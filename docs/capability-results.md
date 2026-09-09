@@ -21,7 +21,7 @@ pass weak tests).
 | DeepSeek-R1-Distill-Llama-8B | 20.1% (33/164) | 18.3% (30/164) | 31.2% (118/378) | 28.3% (107/378) | 1.8 / 2.9 pts |
 | GLM-4-9B-0414 | 81.7% (134/164) | 77.4% (127/164) | 75.7% (286/378) | 65.1% (246/378) | 4.3 / 10.6 pts |
 | Yi-1.5-9B-Chat | 73.8% (121/164) | 70.1% (115/164) | 78.3% (296/378) | 66.4% (251/378) | 3.7 / 11.9 pts |
-| Spark-X2.5-4B (REFERENCE / 4B) | running | running | running | running | — |
+| Spark-X2.5-4B (REFERENCE / 4B) | 67.1% (110/164) | 62.2% (102/164) | running | running | 4.9 / — pts |
 
 `—` = not yet run.
 
