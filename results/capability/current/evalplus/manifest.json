@@ -1,26 +1,38 @@
 {
   "benchmark": "evalplus",
-  "benchmark_version": "v0.3.1",
-  "benchmark_commit": "26d6d00bb1fd0fa37f39c99d5290da67891d1c5e",
-  "agent_scaffold": "none (direct coding)",
-  "agent_version": null,
-  "model": "yi_15_9b",
-  "display_name": "Yi-1.5-9B-Chat",
-  "gguf": "Yi-1.5-9B-Chat-IQ4_XS.gguf",
-  "gguf_sha256": "acf005319fa455ea91f6c8954d5beb1a08138114ea0cb88be718cdbfc8b1c5ba",
-  "quantization": "IQ4_XS",
-  "llama_cpp_commit": "5ac847190e979e0da7c4a21806630805f396d487",
-  "agent_context": 8192,
-  "kv_cache_policy": "none",
-  "generation": {
-    "temperature": 0,
-    "n": 1
+  "benchmark_metadata": {
+    "version": "v0.3.1",
+    "commit": "26d6d00bb1fd0fa37f39c99d5290da67891d1c5e"
   },
-  "reasoning": "off",
-  "hardware": "RTX 3060 Laptop 6 GiB",
-  "run_timestamp": "2026-09-09T13:00:53.231167+00:00",
-  "project_git_commit": "335e7f58d061f31463a66f25f1ad61f2bbab0d42",
-  "dataset": "mbpp",
-  "n": 378,
-  "protocol": "temp=0, n=1, reasoning off"
+  "runs": [
+    {
+      "benchmark": "evalplus",
+      "benchmark_version": "v0.3.1",
+      "benchmark_commit": "26d6d00bb1fd0fa37f39c99d5290da67891d1c5e",
+      "serving_profile": "direct_coding_profile",
+      "agent": "none",
+      "context": 8192,
+      "parallel": 1,
+      "generation": {
+        "temperature": 0,
+        "n": 1
+      },
+      "reasoning": "off",
+      "max_output_tokens": null,
+      "prompt_protocol": "local chat protocol + official executor",
+      "model": "spark_llama",
+      "display_name": "Spark-X2.5-4B",
+      "gguf": "Spark-X2.5-4B-IQ4_XS.gguf",
+      "gguf_sha256": "e164454ef60b72af5f2dd544fafd754f2e30f6133cbab0506b925cc863070b38",
+      "quantization": "IQ4_XS",
+      "engine_commit": "4a3635c32fc9f044c2bde9ebeabf50c7e1ec5991",
+      "hardware": "RTX 3060 Laptop 6 GiB",
+      "run_timestamp": "2026-09-09T22:54:58.293274+00:00",
+      "project_git_commit": "60fb7c7eebde9563f5387cc36e902782ed6247be",
+      "dataset": "humaneval",
+      "n": 164,
+      "protocol": "temp=0, n=1, reasoning off",
+      "run_fingerprint": "a8f084615a4d7b27"
+    }
+  ]
 }
