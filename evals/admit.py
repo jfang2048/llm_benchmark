@@ -87,18 +87,43 @@ def context_admission(arm, kv_cache_quant=None, prompt_fill_frac=0.8):
     return rows
 
 
+def _context_status(arm, rows):
+    """Derive context eligibility from ladder results (measured, not assumed)."""
+    ok = [r for r in rows if r["ok"]]
+    if not ok:
+        reasons = {r.get("reason", "") for r in rows}
+        if any("OOM" in r for r in reasons):
+            return "OOM"
+        return "ERROR"
+    max_ctx = max(r["ctx"] for r in ok)
+    if max_ctx < 8192:
+        return "CONTEXT_INELIGIBLE"
+    # near-full-context answer at 8192?
+    at8192 = [r for r in ok if r["ctx"] == 8192]
+    if at8192 and not any("answer ok" in r.get("reason", "") for r in at8192):
+        return "TRANSPORT_INELIGIBLE"
+    return "ELIGIBLE"
+
+
 def write_context_results(rows):
     normalize.write_tasks("admission", rows,
                           ["arm", "ctx", "ok", "reason", "vram_mib"])
-    # summary: max ctx per model
     summary = {}
     for r in rows:
         if r["ok"]:
             summary[r["arm"]] = max(summary.get(r["arm"], 0), r["ctx"])
-    srows = [{"arm": a, "max_supported_ctx": c,
-              "eligible_8192": c >= 8192} for a, c in sorted(summary.items())]
+    srows = []
+    for a in sorted(summary):
+        arows = [r for r in rows if r["arm"] == a]
+        c = summary[a]
+        srows.append({
+            "arm": a, "max_supported_ctx": c,
+            "eligible_8192": c >= 8192,
+            "context_status": _context_status(a, arows),
+        })
     normalize.write_summary("admission", srows,
-                            ["arm", "max_supported_ctx", "eligible_8192"])
+                            ["arm", "max_supported_ctx", "eligible_8192",
+                             "context_status"])
 
 
 def agent_admission(arm, step_limit=20, ctx=8192):

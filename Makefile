@@ -36,8 +36,9 @@ EVALPY ?= .venv-eval/bin/python
 
 .PHONY: help setup smoke benchmark spark reliability shape open-loop startup \
 	soak sessions llama-bench report reproduce clean benchmark-v1 \
-	eval-setup eval-admit eval-code eval-swe eval-deepswe eval-multilingual \
-	eval-terminal eval-frontier eval-report eval-all
+	eval-setup eval-admit eval-code eval-livecodebench eval-swe eval-deepswe \
+	eval-multilingual eval-terminal eval-live eval-frontier eval-report \
+	eval-standard eval-all
 
 help:
 	@printf '%s\n' \
@@ -59,6 +60,19 @@ help:
 	  "  make report       Rebuild the current dashboard" \
 	  "  make reproduce    End-to-end reproduction" \
 	  "  make clean        Tear down benchmark containers" \
+	  "" \
+	  "Coding / SWE capability (separate layer):" \
+	  "  make eval-setup        Build .venv-eval + pin external benchmarks" \
+	  "  make eval-admit        Context + agent-harness admission (all models)" \
+	  "  make eval-code         EvalPlus (HumanEval+/MBPP+) all models" \
+	  "  make eval-livecodebench LiveCodeBench (LOCAL PROTOCOL, n=1)" \
+	  "  make eval-swe          SWE-bench Verified Local-20" \
+	  "  make eval-deepswe      DeepSWE Local-10" \
+	  "  make eval-multilingual SWE-bench Multilingual Local-18" \
+	  "  make eval-terminal     Terminal-Bench Local-10" \
+	  "  make eval-live         SWE-bench-Live Local-10" \
+	  "  make eval-report       Regenerate capability dashboard data" \
+	  "  make eval-standard     The feasible local standard suite" \
 	  "" \
 	  "Historical: make benchmark-v1"
 
@@ -100,35 +114,49 @@ report:
 	python3 scripts/generate_current_report.py
 
 # --- Coding / SWE capability evaluation (separate from serving) ---
+# Canonical model arms (short form; see configs/models.json).
+EVAL_ARMS = qwen3_8b deepseek_r1_8b glm4_9b yi_15_9b spark_llama
+
 eval-setup:
 	./scripts/eval_setup.sh
 
 eval-admit:
-	@for a in qwen3_8b deepseek_r1_8b glm4_9b yi_15_9b spark_llama; do \
-		$(EVALPY) evals/admit.py context $$a || exit 1; done
+	@for a in $(EVAL_ARMS); do \
+		$(EVALPY) evals/admit.py context $$a || true; \
+		$(EVALPY) evals/admit.py agent $$a || true; done
 
 eval-code:
 	EVALPY="$(EVALPY)" ./scripts/eval_code.sh
 
+eval-livecodebench:
+	@for a in $(EVAL_ARMS); do $(EVALPY) evals/livecodebench.py run $$a || true; done
+
 eval-swe:
-	@echo "SWE-bench Verified Local-20 (see evals/tasksets/ + scripts/eval_swe.sh)"
+	@for a in $(EVAL_ARMS); do $(EVALPY) evals/swe.py run $$a || true; done
 
 eval-deepswe:
-	@echo "DeepSWE Local-10 (see evals/tasksets/)"
+	@for a in $(EVAL_ARMS); do $(EVALPY) evals/deepswe.py run $$a || true; done
 
 eval-multilingual:
-	@echo "SWE-bench Multilingual Local-18"
+	@for a in $(EVAL_ARMS); do $(EVALPY) evals/multilingual.py run $$a || true; done
 
 eval-terminal:
-	@echo "Terminal-Bench Local-10"
+	@for a in $(EVAL_ARMS); do $(EVALPY) evals/terminal.py run $$a || true; done
+
+eval-live:
+	@for a in $(EVAL_ARMS); do $(EVALPY) evals/live.py run $$a || true; done
 
 eval-frontier:
-	@echo "SWE-bench Pro Local-10 / SWE-EVO Local-4"
+	@echo "SWE-bench Pro: DEFERRED (task-quality review). SWE-EVO: deferred."
 
 eval-report:
 	python3 scripts/eval_report.py
+	python3 scripts/generate_current_report.py
 
-eval-all: eval-setup eval-code eval-report
+# Local standard suite (feasible on this laptop; frontier pilots NOT included).
+eval-standard: eval-code eval-livecodebench eval-swe eval-deepswe eval-multilingual eval-terminal eval-report
+
+eval-all: eval-setup eval-standard
 
 reproduce:
 	./scripts/reproduce.sh

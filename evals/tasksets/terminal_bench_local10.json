@@ -1,0 +1,20 @@
+{
+  "benchmark": "terminal-bench",
+  "source": "harbor-framework/terminal-bench-2",
+  "seed": 42,
+  "stratify": "category",
+  "size": 10,
+  "task_ids_hash": "009353af20dc48fde0272a7cc077ac9d1eaebc61d93fbe152873929e3c611e6d",
+  "instance_ids": [
+    "caffe-cifar-10",
+    "chess-best-move",
+    "count-dataset-tokens",
+    "custom-memory-heap-crash",
+    "feal-linear-cryptanalysis",
+    "gcode-to-text",
+    "log-summary-date-ranges",
+    "portfolio-optimization",
+    "query-optimize",
+    "sparql-university"
+  ]
+}

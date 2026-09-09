@@ -52,7 +52,7 @@ def serve(arm):
             raise SystemExit(f"server for {arm} not ready")
 
 
-def run_agent(arm, instance_ids, preds_dir):
+def run_agent(arm, instance_ids, preds_dir, subset="verified", dataset=None):
     """Run mini-swe-agent batch inference. Returns preds.json path."""
     m = runner.model_by_arm(arm)
     if not m:
@@ -62,7 +62,7 @@ def run_agent(arm, instance_ids, preds_dir):
     preds_dir.mkdir(parents=True, exist_ok=True)
     cmd = [
         str(EVAL_BIN / "python"), "-m", "minisweagent.run.benchmarks.swebench",
-        "--subset", "verified", "--split", SPLIT,
+        "--subset", subset, "--split", SPLIT,
         "--filter", filter_regex(instance_ids),
         "-m", arm, "-w", "1", "-o", str(preds_dir),
         "-c", "swebench.yaml",
@@ -77,10 +77,11 @@ def run_agent(arm, instance_ids, preds_dir):
     return preds_dir / "preds.json"
 
 
-def run_evaluator(preds_path, instance_ids, run_id):
+def run_evaluator(preds_path, instance_ids, run_id, dataset=None):
+    ds = dataset or DATASET
     cmd = [
         str(EVAL_BIN / "python"), "-m", "swebench.harness.run_evaluation",
-        "-d", DATASET, "-s", SPLIT,
+        "-d", ds, "-s", SPLIT,
         "-i", *instance_ids,
         "-p", str(preds_path),
         "--max_workers", "1", "--timeout", "1800",

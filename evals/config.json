@@ -91,7 +91,35 @@
       "commit": "9b83d5af943ba7a17567336f5b18239f73960219",
       "harness": "swe-evo official",
       "agent": "mini-swe-agent",
-      "subset": { "name": "SWE-EVO Local-4", "seed": 42, "size": 4 }
+      "subset": { "name": "SWE-EVO Local-4", "seed": 42, "size": 4 },
+      "status": "DEFERRED (after Verified/DeepSWE/Live/Terminal)"
+    },
+    "swe_bench_live": {
+      "repo": "https://github.com/microsoft/SWE-bench-Live.git",
+      "version": "main",
+      "commit": "a9c6b8aae9387f7a231d55b52da4b7ed0fd43bc3",
+      "harness": "official SWE-bench-Live evaluator",
+      "agent": "mini-swe-agent",
+      "subset": { "name": "SWE-bench-Live Local-10", "seed": 42, "size": 10 },
+      "note": "Continuously-updated current SWE signal; deterministic snapshot."
+    },
+    "senior_swe_bench": {
+      "repo": "https://github.com/snorkel-ai/senior-swe-bench-v2026.06.git",
+      "version": "v2026.06",
+      "commit": "1212f23a662d2e8d3f321b174735a80be1fdf2e2",
+      "harness": "Harbor",
+      "agent": "mini-swe-agent",
+      "subset": { "name": "Senior SWE-Bench Local-5", "seed": 42, "size": 5 },
+      "note": "Diagnostic pilot; NOT in eval-standard until healthy."
+    },
+    "programbench": {
+      "repo": "https://github.com/facebookresearch/ProgramBench.git",
+      "version": "main",
+      "commit": "b08d8621031f5f5abc4d3ffc2950256c83fbfe42",
+      "harness": "official ProgramBench",
+      "agent": "mini-swe-agent",
+      "subset": { "name": "ProgramBench Local-3", "seed": 42, "size": 3 },
+      "note": "Greenfield reconstruction; separate from issue-resolution scores."
     },
     "mini_swe_agent": {
       "repo": "https://github.com/SWE-agent/mini-swe-agent.git",

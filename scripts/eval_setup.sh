@@ -28,14 +28,14 @@ if [ ! -x "$VENV/bin/python" ]; then
   fi
 fi
 VPY="$VENV/bin/python"
-VPY -m pip install --quiet --upgrade pip
-VPY -m pip install --quiet -r "$ROOT/requirements-eval.txt"
+"$VPY" -m pip install --quiet --upgrade pip
+"$VPY" -m pip install --quiet -r "$ROOT/requirements-eval.txt"
 
 # mini-swe-agent + swebench from pinned clones (exact commits).
 for pkg in mini-swe-agent SWE-bench; do
   src="$CACHE/$pkg"
   if [ -d "$src" ]; then
-    VPY -m pip install --quiet -e "$src"
+    "$VPY" -m pip install --quiet -e "$src"
   fi
 done
 
