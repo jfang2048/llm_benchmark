@@ -18,8 +18,8 @@
   },
   "reasoning": "off",
   "hardware": "RTX 3060 Laptop 6 GiB",
-  "run_timestamp": "2026-09-09T01:55:27.641082+00:00",
-  "project_git_commit": "958ce221165361336e98307fabd56ab805393ba3",
+  "run_timestamp": "2026-09-09T07:59:44.032595+00:00",
+  "project_git_commit": "55740aebc350974e72ed28d870ef28b066fe2d2a",
   "dataset": "humaneval",
   "n": 164,
   "protocol": "temp=0, n=1, reasoning off"
