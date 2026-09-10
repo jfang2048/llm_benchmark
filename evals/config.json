@@ -5,15 +5,15 @@
   "cache_dir": ".cache/evals",
 
   "agent_profile": {
-    "note": "Serving profile for coding-agent workloads. Distinct from the serving benchmark (ctx 4096 / parallel 2): agent trajectories are evaluated one at a time and need more context.",
-    "ctx_size": 8192,
+    "note": "Serving profile for coding-agent workloads. Distinct from the serving benchmark (ctx 4096 / parallel 2): agent trajectories are evaluated one at a time and need more context. ctx 16384 is the max the 8-9B IQ4_XS models serve on 6 GiB VRAM (measured by context admission).",
+    "ctx_size": 16384,
     "parallel": 1,
     "cont_batching": true,
     "n_gpu_layers": 999,
     "kv_cache_policy": "none",
     "kv_cache_policy_note": "No KV-cache quantization used for the primary comparison. Recorded per run in the manifest if changed.",
     "context_ladder": [8192, 12288, 16384],
-    "common_agent_context": 8192,
+    "common_agent_context": 16384,
     "generation": { "temperature": 0.3, "n": 1 }
   },
 
