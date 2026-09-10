@@ -36,7 +36,7 @@ def run(arm):
 
     prof = normalize.load_evals_cfg()["agent_profile"]
     if not runner.wait_ready(arm, timeout=5):
-        runner.serve(arm, ctx_size=prof["ctx_size"], parallel=1, reasoning="off")
+        runner.serve(arm, ctx_size=prof["ctx_size"], parallel=1, reasoning="auto")
         if not runner.wait_ready(arm, timeout=300):
             raise SystemExit(f"server for {arm} not ready")
 

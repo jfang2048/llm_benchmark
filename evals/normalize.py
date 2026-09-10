@@ -121,7 +121,7 @@ def make_manifest(benchmark, model_arm, kind="direct", extra=None):
             "parallel": prof["parallel"],
             "kv_cache_policy": prof["kv_cache_policy"],
             "generation": prof["generation"],
-            "reasoning": "off",
+            "reasoning": "auto",
             "max_iterations": None,
         }
     else:
