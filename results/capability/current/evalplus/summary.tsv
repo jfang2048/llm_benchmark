@@ -8,3 +8,4 @@ glm4_9b	mbpp	MBPP	MBPP+	75.7	65.1	71.1	79.7	60.1	69.7	378	10.6
 yi_15_9b	humaneval	HumanEval	HumanEval+	73.8	70.1	66.6	79.9	62.7	76.6	164	3.7
 yi_15_9b	mbpp	MBPP	MBPP+	78.3	66.4	73.9	82.2	61.5	71.0	378	11.9
 spark_llama	humaneval	HumanEval	HumanEval+	67.1	62.2	59.6	73.8	54.6	69.3	164	4.9
+spark_llama	mbpp	MBPP	MBPP+	68.0	56.9	63.1	72.5	51.8	61.8	378	11.1

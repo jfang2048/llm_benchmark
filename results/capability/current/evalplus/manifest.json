@@ -27,10 +27,10 @@
       "quantization": "IQ4_XS",
       "engine_commit": "4a3635c32fc9f044c2bde9ebeabf50c7e1ec5991",
       "hardware": "RTX 3060 Laptop 6 GiB",
-      "run_timestamp": "2026-09-09T22:54:58.293274+00:00",
-      "project_git_commit": "60fb7c7eebde9563f5387cc36e902782ed6247be",
-      "dataset": "humaneval",
-      "n": 164,
+      "run_timestamp": "2026-09-10T00:38:29.753905+00:00",
+      "project_git_commit": "712780a0c038874369b467e77f09f306098a118d",
+      "dataset": "mbpp",
+      "n": 378,
       "protocol": "temp=0, n=1, reasoning off",
       "run_fingerprint": "a8f084615a4d7b27"
     }
