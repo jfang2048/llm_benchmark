@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
 import subprocess
 import sys
@@ -72,7 +73,9 @@ def run_agent(arm, instance_ids, preds_dir, subset="verified", dataset=None, spl
         "-c", "agent.max_iterations=50",
     ]
     print(" ".join(cmd))
-    r = subprocess.run(cmd, cwd=ROOT, text=True, timeout=None)
+    env = {**os.environ, "MSWEA_CONFIGURED": "true", "OPENAI_API_KEY": "sk-local",
+           "MSWEA_COST_TRACKING": "ignore_errors"}
+    r = subprocess.run(cmd, cwd=ROOT, text=True, timeout=None, env=env)
     if r.returncode != 0:
         raise SystemExit(f"mini-swe-agent failed (exit {r.returncode})")
     return preds_dir / "preds.json"

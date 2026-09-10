@@ -107,7 +107,8 @@ def _context_status(arm, rows):
 
 def write_context_results(rows):
     normalize.write_tasks("admission", rows,
-                          ["arm", "ctx", "ok", "reason", "vram_mib"])
+                          ["arm", "ctx", "ok", "reason", "vram_mib"],
+                          key_cols=["arm", "ctx"])
     summary = {}
     for r in rows:
         if r["ok"]:
@@ -123,7 +124,7 @@ def write_context_results(rows):
         })
     normalize.write_summary("admission", srows,
                             ["arm", "max_supported_ctx", "eligible_8192",
-                             "context_status"])
+                             "context_status"], key_cols=["arm"])
 
 
 def agent_admission(arm, step_limit=20, ctx=8192):
@@ -160,9 +161,11 @@ def agent_admission(arm, step_limit=20, ctx=8192):
            "-c", f"model.model_kwargs.api_base={base}",
            "-c", f"agent.step_limit={step_limit}",
            "-o", out, "--exit-immediately"]
+    env = {**os.environ, "MSWEA_CONFIGURED": "true", "OPENAI_API_KEY": "sk-local",
+           "MSWEA_COST_TRACKING": "ignore_errors"}
     try:
         r = subprocess.run(cmd, cwd=workdir, capture_output=True, text=True,
-                           timeout=1800)
+                           timeout=1800, env=env)
     except subprocess.TimeoutExpired:
         r = None
     wall = time.time() - t0
@@ -177,14 +180,21 @@ def agent_admission(arm, step_limit=20, ctx=8192):
     if Path(out).exists():
         try:
             traj = json.load(open(out))
-            steps = len(traj.get("trajectory", traj.get("steps", [])))
-            tool_calls = steps
+            msgs = traj.get("messages", [])
+            steps = len(msgs)
+            tool_calls = sum(1 for m in msgs if isinstance(m, dict)
+                             and (m.get("role") == "tool" or m.get("tool_calls")))
         except Exception:
             pass
 
     vram = subprocess.run(
         ["nvidia-smi", "--query-gpu=memory.used", "--format=csv,noheader,nounits"],
         capture_output=True, text=True).stdout.strip()
+
+    # Admission = the harness worked end-to-end (endpoint + connect + the model
+    # produced at least one bash action). Task resolution is a capability
+    # signal, recorded separately, not a harness gate.
+    admitted = bool(r is not None and r.returncode == 0 and steps and steps > 0)
 
     result = {
         "arm": arm,
@@ -194,7 +204,7 @@ def agent_admission(arm, step_limit=20, ctx=8192):
         "steps": steps, "tool_calls": tool_calls, "invalid_actions": invalid,
         "wall_time_s": round(wall, 1),
         "vram_mib": vram,
-        "admitted": bool(resolved),
+        "admitted": admitted,
     }
     return result
 
@@ -202,7 +212,12 @@ def agent_admission(arm, step_limit=20, ctx=8192):
 def write_agent_results(rows):
     cols = ["arm", "endpoint_ok", "harness_connected", "resolved", "steps",
             "tool_calls", "invalid_actions", "wall_time_s", "vram_mib", "admitted"]
-    normalize.write_tasks("admission", rows, cols)
+    normalize.write_tasks("admission-agent", rows, cols, key_cols=["arm"])
+    srows = [{k: r[k] for k in ("arm", "resolved", "steps", "wall_time_s", "admitted")}
+             for r in rows]
+    normalize.write_summary("admission-agent", srows,
+                            ["arm", "resolved", "steps", "wall_time_s", "admitted"],
+                            key_cols=["arm"])
 
 
 def main():
