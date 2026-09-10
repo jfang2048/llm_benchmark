@@ -1,0 +1,16 @@
+arm	ctx	ok	reason	vram_mib
+qwen3_8b	16384	True	answer ok	5930
+qwen3_8b	8192	True	answer ok	5460
+qwen3_8b	12288	True	answer ok	5930
+deepseek_r1_8b	8192	True	answer ok	5956
+deepseek_r1_8b	12288	True	answer ok	5914
+deepseek_r1_8b	16384	True	answer ok	5918
+glm4_9b	8192	True	answer ok	5941
+glm4_9b	12288	True	no valid answer	5913
+glm4_9b	16384	True	no valid answer	5885
+yi_15_9b	8192	True	no valid answer	5936
+yi_15_9b	12288	True	no valid answer	5940
+yi_15_9b	16384	True	no valid answer	5944
+spark_llama	8192	True	answer ok	5928
+spark_llama	12288	True	answer ok	5884
+spark_llama	16384	True	answer ok	5904

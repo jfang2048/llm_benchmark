@@ -1,0 +1,6 @@
+arm	endpoint_ok	harness_connected	resolved	steps	tool_calls	invalid_actions	wall_time_s	vram_mib	admitted
+qwen3_8b	True	False	False	42	40	None	1800.1	5470	False
+deepseek_r1_8b	True	True	False	6	0	None	45.5	5726	True
+glm4_9b	True	True	False	6	0	None	10.4	5565	True
+yi_15_9b	True	True	False	6	0	None	11.8	5816	True
+spark_llama	True	True	True	38	34	None	33.0	5616	True

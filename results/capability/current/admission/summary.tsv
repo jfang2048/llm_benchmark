@@ -1,0 +1,6 @@
+arm	max_supported_ctx	eligible_8192	context_status
+qwen3_8b	16384	True	ELIGIBLE
+deepseek_r1_8b	16384	True	ELIGIBLE
+glm4_9b	16384	True	ELIGIBLE
+yi_15_9b	16384	True	TRANSPORT_INELIGIBLE
+spark_llama	16384	True	ELIGIBLE

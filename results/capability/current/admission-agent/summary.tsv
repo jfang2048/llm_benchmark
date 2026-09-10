@@ -1,0 +1,6 @@
+arm	resolved	steps	wall_time_s	admitted
+qwen3_8b	False	42	1800.1	False
+deepseek_r1_8b	False	6	45.5	True
+glm4_9b	False	6	10.4	True
+yi_15_9b	False	6	11.8	True
+spark_llama	True	38	33.0	True
