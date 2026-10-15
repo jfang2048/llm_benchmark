@@ -157,3 +157,50 @@ Spark-X2.5-4B 用的是 XHToken 架构，上游 llama.cpp 不支持，所以只�
 - Yi-1.5 在通用 + 中文上强，但代码后训练的广度和深度略弱于前两者，且原生上下文短（4K）。
 - DeepSeek-R1 是"推理优先"模型，把能力放在了思考链上，而不是直接输出答案上——关掉思考就等于砍掉了它的核心能力。
 - Spark-4B 是 4B 小模型，能力天花板天然比 8-9B 低一档，但函数级任务（MBPP 68%）已经可用。
+
+## 7. 前沿调研（相关博客与论文，附引用）
+
+这部分汇总 2026 年公开博文 / 论文里的前沿信息，给上面的分析提供外部参照。引用编号对应文末的 Sources 列表（英文完整版见 [docs/references.md](../references.md)）。
+
+### 7.1 推理引擎：vLLM vs SGLang vs llama.cpp
+
+- vLLM 和 SGLang 的胜负取决于并发度：低并发 SGLang 完胜（c=1 时 TTFT 583ms vs 2141ms，约 3.7 倍快），高并发 vLLM 反超（峰值吞吐 5129 vs 4638 tok/s，约高 11%）[1]。
+- 更大的独立 A/B 测试（149 组公平对比）里 vLLM 赢了 82% 的场次 [2]。
+- llama.cpp 系运行时之间差距很小：同一份 sha256 校验的 GGUF 上，llama.cpp 比 Ollama 快 2-6%，Ollama 比 LM Studio 快 5-11% [3]。这印证了本仓库"固定引擎、只把 vLLM 当关闭的 A/B 臂"的做法。
+
+### 7.2 KV cache 量化：小显存跑长上下文的关键
+
+- KV cache 随上下文长度线性增长，是长上下文的显存瓶颈。llama.cpp 把 K/V 量化到 Q8_0 / Q4_0 可以大幅省显存（量化 V cache 需要 flash attention）[9]。
+- 研究层面 KVQuant 做到 3-bit KV 量化、困惑度退化 <0.1、KV 显存省约 4.8 倍，让 LLaMA-7B 在单张 A100-80GB 上跑到 1M token 上下文 [10]。本仓库的 agent 层目前 ctx 16384、不用 KV 量化（manifest 记 `kv_cache_policy: none`）——若未来要更长的 agent 上下文，这是最直接的杠杆。
+
+### 7.3 推理模型服务（thinking tokens）
+
+- llama.cpp 可以把思考 token 放进单独的 `reasoning_content` 字段（`--reasoning-format` / `--jinja`），前端不用逐个模型解析思考分隔符 [11]。
+- DeepSeek-R1 的工具调用 + `reasoning_content` 是单独合入的；维护者指出 R1-Distill-8B"对工具调用起始标签很随意"、可能跳过 tools 输出标签，建议避免用 8B（或更低量化）做工具调用 [12]。本仓库从另一个方向观察到同类问题：`--reasoning off` 下 R1-Distill-8B 输出截断的思考片段。
+
+### 7.4 agentic 编码 benchmark 前沿（2026）
+
+- **SWE-bench Verified 事实上退役了**：OpenAI 2026 年 2 月停止报告，原因是测试用例有缺陷 + 污染（前沿模型能复现 gold patch 和问题原文）[4]。
+- **Terminal-Bench 2.1**（89 任务）在饱和：顶尖模型挤在 74-84% 区间；换个 scaffold 分数能差 5.1 分（比第一名和第三名的差距还大）[4]。
+- **Frontier-Bench v0.1**（74 任务、7 个领域）2026 年 7 月上线，最高分 34.4%，还很开阔 [4]。
+- **DeepSWE**：113 个从零写的长程任务（91 仓库、5 语言）、手写验证器；独立评审对它的判定分歧只有 1.4%，而对 SWE-bench Pro 继承测试的分歧是 32.4% [5]。（本仓库用的就是 Datacurve 的 DeepSWE 基准，不是那个约 32B 的"DeepSWE-Preview"模型。）
+- **SWE-bench-Live**：1319 个 2024 年以来的真实 GitHub issue 任务、93 仓库，用发布日期窗口化来抗污染 [6]。
+- **ProgramBench** 是引用度高的基准里最没饱和的：最强模型完全复原（二进制 → 源码）只有约 4.5% [7]。
+- 整体：SWE-bench Verified 从 2024 年初的约 13% 涨到 2026 年 5 月约 78%（接近饱和），开源权重 agent 落后闭源 API agent 25-40% [8]。
+
+这些对本仓库的意义：本地 4-9B 模型离前沿很远，本地子集明确标成 `Local-N`、不等同于排行榜——它们测的是"本地模型 + harness + 上下文策略"，不是对前沿名次的声明。
+
+## Sources
+
+[1] https://rawlinson.ca/articles/vllm-vs-sglang-performance-benchmark-h100 — vLLM vs SGLang benchmark (H100)
+[2] https://vllm-sglang-dashboard.vercel.app — vLLM vs SGLang dashboard
+[3] https://www.kaggle.com/datasets/lowellwoodiblessi/local-llm-runtime-comparison-rtx-5080/data — Ollama vs llama.cpp vs LM Studio (RTX 5080)
+[4] https://backgrind.com/blog/agentic-coding-benchmarks-2026 — Agentic coding benchmarks 2026
+[5] https://arxiv.org/html/2607.07946v1 — DeepSWE paper
+[6] https://arxiv.org/html/2505.23419v2 — SWE-bench-Live paper
+[7] https://peterindia.net/OpenSourceBenchmarksForAICodingAgents.html — Coding-agent benchmarks field guide 2026
+[8] https://presenc.ai/research/coding-agent-benchmarks-2026 — Coding agent benchmarks 2026
+[9] https://github.com/gravitee-io/llamaj.cpp/blob/main/docs/quantized-kv-cache/README.md — llama.cpp quantized KV cache
+[10] https://arxiv.org/pdf/2401.18079v4 — KVQuant paper
+[11] https://github.com/ggml-org/llama.cpp/discussions/15333 — llama.cpp thinking blocks
+[12] https://github.com/ggml-org/llama.cpp/pull/11607 — llama.cpp DeepSeek-R1 reasoning_content

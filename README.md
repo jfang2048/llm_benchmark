@@ -21,8 +21,10 @@ reported separately, and are **never** combined into one synthetic score.
   cross-cohort reference, never as a size-matched competitor.
 
 > **Dashboard:** https://jfang2048.github.io/llm_benchmark/
+> **Documentation index:** [docs/README.md](docs/README.md)
 > **Capability results:** [docs/capability-results.md](docs/capability-results.md)
 > **Problems & solutions:** [docs/capability-troubleshooting.md](docs/capability-troubleshooting.md)
+> **Frontier references:** [docs/references.md](docs/references.md)
 > **中文文档:** [docs/zh/problems-and-solutions.md](docs/zh/problems-and-solutions.md) · [docs/zh/results-analysis.md](docs/zh/results-analysis.md)
 
 ## What this repository does
