@@ -22,6 +22,7 @@ reported separately, and are **never** combined into one synthetic score.
 
 > **Dashboard:** https://jfang2048.github.io/llm_benchmark/
 > **Capability results:** [docs/capability-results.md](docs/capability-results.md)
+> **Problems & solutions:** [docs/capability-troubleshooting.md](docs/capability-troubleshooting.md)
 
 ## What this repository does
 
