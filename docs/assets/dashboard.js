@@ -225,7 +225,7 @@ function renderCompact() {
   if (!run) return;
 
   const {models, protocol, aggregate} = run;
-  const chosen = protocol.concurrency.at(-1);
+  const chosen = protocol.concurrency.includes(2) ? 2 : protocol.concurrency[0];
   const host = document.getElementById("compact");
   host.innerHTML = `
     <h2>Compact 4B capacity comparison</h2>
@@ -261,15 +261,21 @@ function renderCompact() {
         hovertemplate: `Concurrent requests %{x}<br>%{y:.1f} ${unit}<br>Successful %{customdata[0]}/%{customdata[1]}<extra>%{fullData.name}</extra>`,
       };
     });
-    const layout = baseLayout(title, "Concurrent requests", unit);
+    const axisLabel = field === "ttft_p50" ? "p50 (ms, log scale)" : unit;
+    const layout = baseLayout(title, "Concurrent requests", axisLabel);
     layout.xaxis.tickvals = protocol.concurrency;
-    layout.yaxis.rangemode = "tozero";
+    if (field === "ttft_p50") {
+      const ticks = [50, 100, 200, 500, 1000, 2000];
+      Object.assign(layout.yaxis, {type: "log", tickvals: ticks, ticktext: ticks.map(String)});
+    } else {
+      layout.yaxis.rangemode = "tozero";
+    }
     layout.legend = {orientation: "h", x: 0, y: -0.26};
-    layout.margin.b = 85;
+    layout.margin.b = 105;
     plot(id, traces, layout);
   };
   draw("compact-throughput", "Output throughput", "tok/s", "output_tps");
-  draw("compact-ttft", "Time to first token (p50)", "ms", "ttft_p50");
+  draw("compact-ttft", "First-token latency", "ms", "ttft_p50");
 
   const updateTable = (concurrency) => {
     host.querySelector("tbody").innerHTML = models.map((model) => {

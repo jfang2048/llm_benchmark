@@ -36,9 +36,11 @@ not marketing names. All four models are MIT or Apache-2.0 and ungated.
 
 ## Compact 4B cohort
 
-Three existing weights were remeasured on the pinned upstream llama.cpp
-image in Q4_K_M. Qwen3-4B uses Qwen's official GGUF, Phi-4-mini-instruct
-uses Bartowski's GGUF, and Gemma 3 4B uses the ggml-org text-only GGUF.
+Four weights were measured on the pinned upstream llama.cpp image in
+Q4_K_M. Qwen3-4B uses Qwen's official GGUF. Phi-4-mini-instruct and
+[Qwen3.5-4B](https://huggingface.co/Qwen/Qwen3.5-4B) use Bartowski's GGUFs,
+and Gemma 3 4B uses the ggml-org text-only GGUF. The Qwen3.5 run loads the
+text checkpoint without the vision projector.
 Their exact source revisions and checksums are recorded in the registry.
 See the [short capacity results](results.md#compact-4b-short-capacity).
 

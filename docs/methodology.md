@@ -44,7 +44,7 @@ to reduce temporal/thermal order bias.
 
 The compact sweep uses the same RTX 3060 Laptop GPU, pinned upstream
 llama.cpp binary, prompt bytes, and sampling policy as the full 8-9B sweep.
-All three text-serving artifacts use Q4_K_M with the same 4096 context
+All four text-serving artifacts use Q4_K_M with the same 4096 context
 and two server slots. The GGUF publishers and their quantization inputs
 vary by model and are identified in the manifest.
 

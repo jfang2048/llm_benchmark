@@ -5,19 +5,21 @@
 ## 4B 模型短测
 
 在同一张 RTX 3060 Laptop 6 GiB 上，用上游 llama.cpp 和 Q4_K_M
-重测 Qwen3-4B、Phi-4-mini-instruct 和 Gemma 3 4B（纯文本）。每个模型
+测试 Qwen3-4B、Qwen3.5-4B、Phi-4-mini-instruct 和 Gemma 3 4B。每个模型
 测并发 1、2、4，每档各做两轮，每轮 12 个计入结果的请求，固定生成 64
-个 token。三款模型合计 216/216 个请求成功。
+个 token。四款模型合计 288/288 个请求成功。
 
 | 模型 | 并发 2 首 token p50 (ms) | 并发 2 输出 (tok/s) | 并发 4 峰值显存均值 (MiB) |
 |---|---:|---:|---:|
 | Qwen3-4B | 141.6 | 120.3 | 3230 |
+| Qwen3.5-4B （纯文本） | 483.1 | 75.6 | 3264 |
 | Phi-4-mini-instruct | 83.1 | 128.9 | 3144 |
-| Gemma 3 4B（纯文本） | 164.3 | 108.2 | 3078 |
+| Gemma 3 4B （纯文本） | 164.3 | 108.2 | 3078 |
 
-Phi-4-mini 在并发 2 的首 token 延迟最低、吞吐最高。Gemma 的显存占用最低。
-并发加到 4 后，三款模型的首 token p50 都超过 1 秒，吞吐变化均在
-1.4 tok/s 以内。服务器只有两个并行槽位，这组数据体现了排队代价。
+并发 2 时，Phi-4-mini-instruct 的首 token p50 最低，
+Phi-4-mini-instruct 的输出吞吐最高。并发 4 时，首 token p50 为
+1.08–2.14 秒，吞吐较并发 2 的最大变化为 1.3 tok/s。
+Qwen3.5 是按同一协议补跑的。两代 Qwen 的 GGUF 发布者和分词器各有不同。
 4B 短测和 8–9B 全量测试的量化、输出长度及样本量不同，按各自协议解读。
 [完整结果](../results.md#compact-4b-short-capacity) · [交互图](../index.html#compact)
 

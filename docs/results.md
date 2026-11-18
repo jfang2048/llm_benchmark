@@ -83,17 +83,22 @@ roughly halves per-turn TTFT.
 ## Compact 4B short capacity
 
 Measured on 2026-11-18 with the pinned upstream engine, Q4_K_M, two
-server slots, and a 64-token output cap. Each of the nine conditions
+server slots, and a 64-token output cap. Each of the twelve conditions
 contains two AIPerf repeats of 12 measured requests, plus two warmups per
 repeat. The latency percentiles and peak VRAM are means of the individual
-repeat summaries. All 216 measured requests succeeded and averaged 64
-output tokens in every repeat.
+repeat summaries. All 288 measured requests succeeded and averaged 64
+output tokens in every repeat. The throughput counts generated tokens,
+including reasoning tokens when emitted. See the separate
+[capability evaluation](capability-results.md) for task correctness.
 
 | Model | Concurrency | TTFT p50 (ms) | TTFT p95 (ms) | Output tok/s | Peak VRAM (MiB) | Requests |
 |---|---:|---:|---:|---:|---:|---:|
 | Qwen3-4B | 1 | 84.8 | 96.2 | 71.8 | 3226 | 24/24 |
 | Qwen3-4B | 2 | 141.6 | 152.6 | 120.3 | 3230 | 24/24 |
 | Qwen3-4B | 4 | 1172.5 | 1213.3 | 121.5 | 3230 | 24/24 |
+| Qwen3.5-4B (text-only) | 1 | 210.7 | 264.8 | 53.1 | 3264 | 24/24 |
+| Qwen3.5-4B (text-only) | 2 | 483.1 | 536.1 | 75.6 | 3264 | 24/24 |
+| Qwen3.5-4B (text-only) | 4 | 2142.1 | 2197.8 | 76.6 | 3264 | 24/24 |
 | Phi-4-mini-instruct | 1 | 42.4 | 48.3 | 76.6 | 3140 | 24/24 |
 | Phi-4-mini-instruct | 2 | 83.1 | 102.5 | 128.9 | 3144 | 24/24 |
 | Phi-4-mini-instruct | 4 | 1077.0 | 1105.4 | 127.8 | 3144 | 24/24 |
@@ -101,13 +106,19 @@ output tokens in every repeat.
 | Gemma 3 4B (text-only) | 2 | 164.3 | 184.5 | 108.2 | 3078 | 24/24 |
 | Gemma 3 4B (text-only) | 4 | 1323.8 | 1358.0 | 109.6 | 3078 | 24/24 |
 
-- **Lowest latency and highest throughput at concurrency 2:** Phi-4-mini
-  delivered 128.9 tok/s with 83.1 ms p50 and 102.5 ms p95 TTFT.
-- **Lowest VRAM:** Gemma used 3078 MiB at every tested concurrency.
-  Qwen used 3230 MiB at concurrency 4, the highest mean peak in this group.
-- **Queueing:** All three models gained throughput from concurrency 1 to 2.
-  At concurrency 4, TTFT exceeded one second for every model while
-  throughput stayed within 1.4 tok/s of its concurrency-2 value.
+At concurrency 2, Phi-4-mini-instruct had the lowest median TTFT (83.1 ms)
+and the highest output throughput (128.9 tok/s). Gemma 3 4B (text-only) used
+the least VRAM at concurrency 4 (3078 MiB).
+
+At concurrency 4, median TTFT reached 1.08–2.14 s. The largest throughput
+change from concurrency 2 to 4 was 1.3 tok/s.
+
+At concurrency 2, Qwen3-4B and Qwen3.5-4B had median TTFT of 141.6 and 483.1
+ms, respectively, and output throughput of 120.3 and 75.6 tok/s.
+Qwen3.5 was measured in a follow-up run with the same protocol after the
+initial three-model sweep. Both Qwen artifacts use Q4_K_M. They come
+from different GGUF publishers and use their own tokenizers and chat
+templates.
 
 Each condition has 24 requests, so 24/24 is an observed success count.
 See the [protocol](methodology.md#compact-4b-short-capacity-sweep), the

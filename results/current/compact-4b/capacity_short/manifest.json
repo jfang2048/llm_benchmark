@@ -1,7 +1,7 @@
 {
   "suite": "capacity_short",
   "cohort": "compact_4b",
-  "git_commit": "fa0e387a51715dbd083d34901cefb3724697dc08",
+  "git_commit": "fe5b56151d6ec6ea8ff63adf591fa8d3ee545077",
   "aiperf_version": "0.12.0",
   "engine": "upstream_llama_cpp",
   "engine_source": "ggml-org/llama.cpp",
@@ -69,7 +69,17 @@
       "gguf_source_revision": "d0976223747697cb51e056d85c532013931fe52e",
       "upstream_repo": "ggml-org/gemma-3-4b-it-GGUF",
       "license": "Gemma Terms of Use"
+    },
+    "Qwen3.5-4B-Q4_K_M.gguf": {
+      "display_name": "Qwen3.5-4B (text-only)",
+      "actual_parameter_count": 4326350848,
+      "sha256": "13c16f426047e2de38cd075bdade4a7bcbc8c774384876f677740cda65f8a983",
+      "quantization": "Q4_K_M",
+      "gguf_source": "bartowski/Qwen_Qwen3.5-4B-GGUF",
+      "gguf_source_revision": "4168f45a16a1290d65a4ec0fa312ae917a4c15d6",
+      "upstream_repo": "Qwen/Qwen3.5-4B",
+      "license": "Apache-2.0"
     }
   },
-  "generated_at": "2026-11-18T19:16:45.816327+00:00"
+  "generated_at": "2026-11-18T19:35:06.040164+00:00"
 }

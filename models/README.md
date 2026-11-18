@@ -56,12 +56,12 @@ historical data.
 
 ## Compact 4B short sweep (Q4_K_M)
 
-Qwen3-4B, Phi-4-mini-instruct, and Gemma 3 4B (text-only) are measured on a
-common upstream llama.cpp runtime. Source revisions and checksums are locked
+Qwen3-4B, Qwen3.5-4B (text-only), Phi-4-mini-instruct, and Gemma 3 4B
+(text-only) are measured on a common upstream llama.cpp runtime. Source revisions and checksums are locked
 in `configs/models.json`.
 
 ```bash
-./scripts/download_models.sh qwen3_4b_compact phi4_mini_compact gemma3_4b_compact
+./scripts/download_models.sh qwen3_4b_compact qwen3_5_4b_compact phi4_mini_compact gemma3_4b_compact
 make benchmark-compact
 ```
 

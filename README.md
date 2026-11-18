@@ -16,8 +16,8 @@ reported separately, and are **never** combined into one synthetic score.
 - **Current benchmark — mainstream 8-9B cohort:** four dense open-weight
   8-9B models in IQ4_XS quantization, all served by the same pinned upstream
   llama.cpp build under an identical resource policy and workload.
-- **Compact 4B comparison:** Qwen3-4B, Phi-4-mini-instruct, and Gemma 3 4B
-  (text-only) in Q4_K_M on the same upstream engine and GPU. The short
+- **Compact 4B comparison:** Qwen3-4B, Qwen3.5-4B (text-only),
+  Phi-4-mini-instruct, and Gemma 3 4B (text-only) in Q4_K_M on the same upstream engine and GPU. The short
   capacity sweep uses a 64-token output cap and a smaller sample.
 - **Reference baseline — Spark-X2.5-4B:** a 4B model served on the XHToken
   llama.cpp fork (IQ4_XS). It is shown alongside the cohort as a fixed-hardware
@@ -105,7 +105,7 @@ make spark                 # Spark reference capacity sweep
 make report                # rebuild the current dashboard
 
 # Optional compact 4B comparison after setup
-./scripts/download_models.sh qwen3_4b_compact phi4_mini_compact gemma3_4b_compact
+./scripts/download_models.sh qwen3_4b_compact qwen3_5_4b_compact phi4_mini_compact gemma3_4b_compact
 make benchmark-compact
 ```
 
@@ -163,7 +163,7 @@ repeat's p50. The VRAM column shows mean peak usage at concurrency 8.
 
 ### Compact 4B short sweep
 
-The three Q4_K_M models ran on the same upstream llama.cpp build, with
+The four Q4_K_M models ran on the same upstream llama.cpp build, with
 context 4096 and two server slots. Each model completed 72/72 measured
 requests across concurrency 1, 2, and 4. TTFT is the mean of the two
 per-repeat medians. Peak VRAM is averaged across repeats at concurrency 4.
@@ -171,15 +171,20 @@ per-repeat medians. Peak VRAM is averaged across repeats at concurrency 4.
 | Model | TTFT c=1 (ms) | TTFT c=2 (ms) | Output c=2 (tok/s) | Output c=4 (tok/s) | Peak VRAM c=4 (MiB) |
 |---|---:|---:|---:|---:|---:|
 | Qwen3-4B | 84.8 | 141.6 | 120.3 | 121.5 | 3230 |
+| Qwen3.5-4B (text-only) | 210.7 | 483.1 | 75.6 | 76.6 | 3264 |
 | Phi-4-mini-instruct | 42.4 | 83.1 | 128.9 | 127.8 | 3144 |
 | Gemma 3 4B (text-only) | 98.5 | 164.3 | 108.2 | 109.6 | 3078 |
 
-Phi-4-mini-instruct had the lowest first-token latency and highest output
-throughput at concurrency 2 in this sweep. Gemma used the least VRAM.
-At concurrency 4, median TTFT rose to 1.08–1.32 s with throughput within
-1.4 tok/s of concurrency 2 for every model. The short sweep used 64 output
-tokens per request and 24 measurements per condition. Interpret these values
-within the compact cohort. [Full compact results](docs/results.md#compact-4b-short-capacity)
+At concurrency 2, Phi-4-mini-instruct had the lowest median TTFT (83.1 ms)
+and the highest output throughput (128.9 tok/s). Gemma 3 4B (text-only) used
+the least VRAM at concurrency 4 (3078 MiB). At concurrency 4, median TTFT
+reached 1.08–2.14 s. The largest throughput change from concurrency 2 to 4
+was 1.3 tok/s.
+
+At concurrency 2, Qwen3-4B and Qwen3.5-4B had median TTFT of 141.6 and 483.1
+ms, respectively, and output throughput of 120.3 and 75.6 tok/s.
+The 64-token cap and sample size apply to this compact sweep.
+[Full compact results](docs/results.md#compact-4b-short-capacity)
 
 ![Output throughput vs concurrency for the compact 4B models](docs/assets/figures/compact-throughput.svg)
 

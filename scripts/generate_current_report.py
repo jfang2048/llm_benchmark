@@ -45,6 +45,7 @@ MODEL_COLOR = {
     "yi_15_9b": "#E69F00",
     "spark_llama": "#CC79A7",
     "qwen3_4b_compact": "#0072B2",
+    "qwen3_5_4b_compact": "#7542A8",
     "phi4_mini_compact": "#D55E00",
     "gemma3_4b_compact": "#008768",
 }
