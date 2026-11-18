@@ -5,6 +5,7 @@ import hashlib
 import json
 import os
 import random
+import re
 import subprocess
 import time
 from concurrent.futures import ThreadPoolExecutor
@@ -23,7 +24,7 @@ TASKS = ROOT / "configs/home_tasks.jsonl"
 COLUMNS = [
     "arm", "scenario", "repeat", "task", "kind", "language", "status", "finish_reason",
     "first_token_ms", "first_answer_ms", "complete_ms", "input_tokens", "output_tokens",
-    "redaction_leak",
+    "redaction_leak", "fence_correct",
 ]
 ARCHIVE_LINE = (
     "{i:02d} | Paper inventory check: plain folders counted at the front shelf. "
@@ -31,6 +32,7 @@ ARCHIVE_LINE = (
 )
 SYSTEM = "Return exactly one JSON object using the requested fields. Output JSON only."
 HTTP = build_opener(ProxyHandler({}))
+FENCE = re.compile(r"\s*```(?:json)?[ \t]*\r?\n(.*?)\r?\n[ \t]*```\s*", re.IGNORECASE | re.DOTALL)
 
 
 def sha(path):
@@ -131,11 +133,14 @@ def request_task(url, alias, task, settings):
     answer, visible = answer_text(chunks)
     markers = task.get("sensitive", [])
     leak = int(any(span.casefold() in answer.casefold() for span in markers)) if markers and answer else None
+    outcome = status or grade(answer, task["expected"], finish)
+    fenced = FENCE.fullmatch(answer) if outcome == "invalid_json" else None
     return {
-        "status": status or grade(answer, task["expected"], finish), "finish_reason": finish,
+        "status": outcome, "finish_reason": finish,
         "first_token_ms": first_token, "first_answer_ms": visible, "complete_ms": complete,
         "input_tokens": usage.get("prompt_tokens"), "output_tokens": usage.get("completion_tokens"),
         "redaction_leak": leak,
+        "fence_correct": int(bool(fenced and grade(fenced[1], task["expected"], finish) == "correct")),
     }
 
 
@@ -250,6 +255,7 @@ def main():
         "source_commit": subprocess.check_output(["git", "-C", str(ROOT), "rev-parse", "HEAD"], text=True).strip(),
         "arms": arms,
     }
+    (args.output / "tasks.jsonl").write_bytes(TASKS.read_bytes())
     (args.output / "manifest.json").write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
 
 
