@@ -347,6 +347,29 @@
       "gguf_source": "ggml-org/gemma-3-4b-it-GGUF",
       "gguf_source_file": "gemma-3-4b-it-Q4_K_M.gguf",
       "gguf_source_revision": "d0976223747697cb51e056d85c532013931fe52e"
+    },
+    {
+      "id": "qwen3_5_4b_compact",
+      "display_name": "Qwen3.5-4B (text-only)",
+      "arm": "qwen3_5_4b_compact",
+      "cohort": "compact_4b",
+      "upstream_repo": "Qwen/Qwen3.5-4B",
+      "model_revision": "851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a",
+      "actual_parameter_count": 4326350848,
+      "architecture": "dense hybrid Gated DeltaNet and full attention (qwen35)",
+      "context_length": 262144,
+      "license": "Apache-2.0",
+      "gguf_filename": "Qwen3.5-4B-Q4_K_M.gguf",
+      "quantization": "Q4_K_M",
+      "sha256": "13c16f426047e2de38cd075bdade4a7bcbc8c774384876f677740cda65f8a983",
+      "chat_template": "chat",
+      "enabled": true,
+      "primary": false,
+      "port": 8223,
+      "notes": "Text-only Qwen3.5 checkpoint. Parameter count is for the GGUF without the vision projector.",
+      "gguf_source": "bartowski/Qwen_Qwen3.5-4B-GGUF",
+      "gguf_source_file": "Qwen_Qwen3.5-4B-Q4_K_M.gguf",
+      "gguf_source_revision": "4168f45a16a1290d65a4ec0fa312ae917a4c15d6"
     }
   ],
   "engine_comparison_arms": [
