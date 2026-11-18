@@ -128,6 +128,37 @@ def storage_summary(path):
     return data
 
 
+def load_fit(path, manifest):
+    if not path.exists():
+        return None
+    fit = json.loads(path.read_text(encoding="utf-8"))
+    if any(fit[key] != manifest[key] for key in ("gpu", "platform")):
+        raise ValueError("context probe used a different GPU environment")
+    if fit["auto_fit"] or fit["slots"] != manifest["settings"]["slots"] or fit["gpu_layers"] != 999:
+        raise ValueError("context probe must request full offload with the same slot count")
+    contexts = fit["contexts"]
+    fit["vram_total_mib"] = number(fit["gpu"].rsplit(",", 2)[1])
+    if not fit["vram_total_mib"] or not contexts:
+        raise ValueError("missing device VRAM or context points")
+    names = {m["arm"]: m["name"] for m in manifest["arms"]}
+    seen = set()
+    for row in fit["rows"]:
+        key = row["arm"], row["context"]
+        if key in seen or row["arm"] not in names or row["context"] not in contexts:
+            raise ValueError(f"unexpected context row: {key}")
+        seen.add(key)
+        row["name"] = names[row["arm"]]
+        row["peak_vram_mib"] = number(row["peak_vram_mib"])
+        row["fully_offloaded"] = (
+            row["status"] == "streamed" and row["offloaded_layers"] is not None
+            and row["offloaded_layers"] == row["total_layers"]
+            and row["per_slot_context"] == row["context"] // fit["slots"]
+        )
+    if not seen or len(seen) != len({arm for arm, _ in seen}) * len(contexts):
+        raise ValueError("incomplete context matrix")
+    return fit
+
+
 def summarize(path):
     manifest, groups, task_ids = read_run(path)
     settings = manifest["settings"]
@@ -150,6 +181,7 @@ def summarize(path):
         "repeats": settings["repeats"], "gpu": manifest["gpu"], "platform": manifest["platform"],
         "slots": settings["slots"], "context": settings["context"],
         "storage": storage_summary(path / "storage.json"),
+        "fit": load_fit(path / "fit.json", manifest),
     }
 
 

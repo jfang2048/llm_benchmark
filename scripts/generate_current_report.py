@@ -605,7 +605,8 @@ def main():
         (FIG_DIR / "home-lab.svg").write_text(home_figure(data["home_lab"]), encoding="utf-8")
 
     model_count = len(models) + (len(compact["models"]) if compact else 0)
-    print(f"wrote {out} ({model_count} models)")
+    home_count = len(data["home_lab"]["models"]) if data["home_lab"] else 0
+    print(f"wrote {out} ({model_count} serving models, {home_count} Home Lab deployments)")
     print(f"wrote {DATA_PATH}")
     print(f"wrote README figures under {FIG_DIR}")
 

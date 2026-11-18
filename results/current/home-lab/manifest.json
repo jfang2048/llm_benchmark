@@ -1,10 +1,14 @@
 {
+  "tasks_sha256": "0c345543631478fb7889dfc8571a3a13df2c5fb35f931060c76863a8c58bab8b",
+  "gpu": "NVIDIA GeForce RTX 3060 Laptop GPU, 6144, 610.74",
+  "platform": "6.18.33.2-microsoft-standard-WSL2",
   "settings": {
     "schema_version": 1,
     "cohorts": [
       "compact_4b",
       "mainstream_8_9b",
-      "spark_reference"
+      "spark_reference",
+      "lightweight_1_3b"
     ],
     "context": 4096,
     "slots": 2,
@@ -15,7 +19,10 @@
     "disable_reasoning_for": [
       "qwen3_4b_compact",
       "qwen3_5_4b_compact",
-      "qwen3_8b"
+      "qwen3_8b",
+      "qwen3_5_08b_light",
+      "qwen3_5_2b_light",
+      "smollm3_3b_light"
     ],
     "scenarios": {
       "desk": {
@@ -32,11 +39,6 @@
       }
     }
   },
-  "tasks_sha256": "0c345543631478fb7889dfc8571a3a13df2c5fb35f931060c76863a8c58bab8b",
-  "settings_sha256": "95ceff96a120a7915112e123a8e06de61f8c300d5235c1f0f042e3bb11b87438",
-  "gpu": "NVIDIA GeForce RTX 3060 Laptop GPU, 6144, 610.74",
-  "platform": "6.18.33.2-microsoft-standard-WSL2",
-  "source_commit": "0136db855f40d7303587d8b9677b34fb86a08359",
   "arms": [
     {
       "arm": "qwen3_4b_compact",
@@ -447,6 +449,237 @@
           "repeat": 2,
           "seconds": 49.1076734799999
         }
+      ]
+    },
+    {
+      "arm": "qwen3_5_08b_light",
+      "name": "Qwen3.5-0.8B (text-only)",
+      "cohort": "lightweight_1_3b",
+      "quantization": "Q4_K_M",
+      "engine_image": "llama-cpp-upstream:v0.4.0",
+      "image_id": "sha256:427c7b1be34bd9fb0d817eab9d372947fcc63204fa43e9a3f369e15cc91be4bc",
+      "gguf_sha256": "fb044e93939a70469c905781334f5de1e6c8b608ced6cbc8c9249bd4127d9526",
+      "flags": [
+        "--ctx-size",
+        "4096",
+        "--parallel",
+        "2",
+        "--cont-batching",
+        "--metrics",
+        "--n-gpu-layers",
+        "999",
+        "--reasoning",
+        "off"
+      ],
+      "startup_ms": 2569.2780549998133,
+      "ready_vram_mib": 989,
+      "peak_vram_mib": 1009.0,
+      "peak_temperature_c": 61.0,
+      "windows": [
+        {
+          "scenario": "desk",
+          "repeat": 1,
+          "seconds": 4.41549840100015
+        },
+        {
+          "scenario": "burst",
+          "repeat": 1,
+          "seconds": 3.4647324649999973
+        },
+        {
+          "scenario": "burst",
+          "repeat": 2,
+          "seconds": 3.31996740600016
+        },
+        {
+          "scenario": "desk",
+          "repeat": 2,
+          "seconds": 3.98055949899981
+        }
+      ]
+    },
+    {
+      "arm": "lfm2_5_12b_light",
+      "name": "LFM2.5-1.2B-Instruct",
+      "cohort": "lightweight_1_3b",
+      "quantization": "Q4_K_M",
+      "engine_image": "llama-cpp-upstream:v0.4.0",
+      "image_id": "sha256:427c7b1be34bd9fb0d817eab9d372947fcc63204fa43e9a3f369e15cc91be4bc",
+      "gguf_sha256": "b1b3de114215d9507409a662a501a631095a479a419584e8a2ded6304b19b4f5",
+      "flags": [
+        "--ctx-size",
+        "4096",
+        "--parallel",
+        "2",
+        "--cont-batching",
+        "--metrics",
+        "--n-gpu-layers",
+        "999"
+      ],
+      "startup_ms": 1403.196183000091,
+      "ready_vram_mib": 1191,
+      "peak_vram_mib": 1199.0,
+      "peak_temperature_c": 56.0,
+      "windows": [
+        {
+          "scenario": "desk",
+          "repeat": 1,
+          "seconds": 2.7027031489999445
+        },
+        {
+          "scenario": "burst",
+          "repeat": 1,
+          "seconds": 2.1931500589998905
+        },
+        {
+          "scenario": "burst",
+          "repeat": 2,
+          "seconds": 2.0665844380000635
+        },
+        {
+          "scenario": "desk",
+          "repeat": 2,
+          "seconds": 2.640379166999992
+        }
+      ]
+    },
+    {
+      "arm": "qwen3_5_2b_light",
+      "name": "Qwen3.5-2B (text-only)",
+      "cohort": "lightweight_1_3b",
+      "quantization": "Q4_K_M",
+      "engine_image": "llama-cpp-upstream:v0.4.0",
+      "image_id": "sha256:427c7b1be34bd9fb0d817eab9d372947fcc63204fa43e9a3f369e15cc91be4bc",
+      "gguf_sha256": "57a1085840f497d764a7fc5d346922dbde961efb54cc792ea81d694fd846a1d8",
+      "flags": [
+        "--ctx-size",
+        "4096",
+        "--parallel",
+        "2",
+        "--cont-batching",
+        "--metrics",
+        "--n-gpu-layers",
+        "999",
+        "--reasoning",
+        "off"
+      ],
+      "startup_ms": 2419.470345999798,
+      "ready_vram_mib": 1731,
+      "peak_vram_mib": 1753.0,
+      "peak_temperature_c": 61.0,
+      "windows": [
+        {
+          "scenario": "desk",
+          "repeat": 1,
+          "seconds": 5.48969024500002
+        },
+        {
+          "scenario": "burst",
+          "repeat": 1,
+          "seconds": 4.5008325519997925
+        },
+        {
+          "scenario": "burst",
+          "repeat": 2,
+          "seconds": 4.407398376999936
+        },
+        {
+          "scenario": "desk",
+          "repeat": 2,
+          "seconds": 4.9698401609998655
+        }
+      ]
+    },
+    {
+      "arm": "smollm3_3b_light",
+      "name": "SmolLM3-3B",
+      "cohort": "lightweight_1_3b",
+      "quantization": "Q4_K_M",
+      "engine_image": "llama-cpp-upstream:v0.4.0",
+      "image_id": "sha256:427c7b1be34bd9fb0d817eab9d372947fcc63204fa43e9a3f369e15cc91be4bc",
+      "gguf_sha256": "519732558d5fa7420ab058e1b776dcfe73da78013c2fe59c7ca43c325ef89132",
+      "flags": [
+        "--ctx-size",
+        "4096",
+        "--parallel",
+        "2",
+        "--cont-batching",
+        "--metrics",
+        "--n-gpu-layers",
+        "999",
+        "--reasoning",
+        "off"
+      ],
+      "startup_ms": 2458.39295199994,
+      "ready_vram_mib": 2523,
+      "peak_vram_mib": 2533.0,
+      "peak_temperature_c": 65.0,
+      "windows": [
+        {
+          "scenario": "desk",
+          "repeat": 1,
+          "seconds": 6.224257238000064
+        },
+        {
+          "scenario": "burst",
+          "repeat": 1,
+          "seconds": 4.967791044000023
+        },
+        {
+          "scenario": "burst",
+          "repeat": 2,
+          "seconds": 4.956098654000016
+        },
+        {
+          "scenario": "desk",
+          "repeat": 2,
+          "seconds": 6.267142715999853
+        }
+      ]
+    }
+  ],
+  "source_runs": [
+    {
+      "source_commit": "0136db855f40d7303587d8b9677b34fb86a08359",
+      "settings_sha256": "95ceff96a120a7915112e123a8e06de61f8c300d5235c1f0f042e3bb11b87438",
+      "arms": [
+        "deepseek_r1_8b",
+        "gemma3_4b_compact",
+        "glm4_9b",
+        "phi4_mini_compact",
+        "qwen3_4b_compact",
+        "qwen3_5_4b_compact",
+        "qwen3_8b",
+        "spark_llama",
+        "yi_15_9b"
+      ]
+    },
+    {
+      "source_commit": "f3bd466dbdd4a66e2aac68041f0970c9bc889481",
+      "settings_sha256": "068472b6da941519218d8053a00770fb841a9e40c4e095e0b4dd144714b7399f",
+      "arms": [
+        "qwen3_5_08b_light"
+      ]
+    },
+    {
+      "source_commit": "f3bd466dbdd4a66e2aac68041f0970c9bc889481",
+      "settings_sha256": "068472b6da941519218d8053a00770fb841a9e40c4e095e0b4dd144714b7399f",
+      "arms": [
+        "lfm2_5_12b_light"
+      ]
+    },
+    {
+      "source_commit": "f3bd466dbdd4a66e2aac68041f0970c9bc889481",
+      "settings_sha256": "068472b6da941519218d8053a00770fb841a9e40c4e095e0b4dd144714b7399f",
+      "arms": [
+        "qwen3_5_2b_light"
+      ]
+    },
+    {
+      "source_commit": "f3bd466dbdd4a66e2aac68041f0970c9bc889481",
+      "settings_sha256": "068472b6da941519218d8053a00770fb841a9e40c4e095e0b4dd144714b7399f",
+      "arms": [
+        "smollm3_3b_light"
       ]
     }
   ]

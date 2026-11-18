@@ -6,7 +6,7 @@ buried in a note you'd rather keep on your own computer. I wanted to know
 which model I'd leave running on a laptop for jobs like those.
 
 The laptop is an RTX 3060 with **6 GiB of VRAM**, running Ubuntu 24.04 under
-Windows WSL2. Nine local deployments get the same English and Chinese notes,
+Windows WSL2. Thirteen local deployments get the same English and Chinese notes,
 planted identifiers, and archive lookups. Every benchmark request goes to a
 local endpoint. We score each reply for correctness and how soon it arrives.
 
@@ -15,38 +15,39 @@ local endpoint. We score each reply for correctness and how soon it arrives.
 
 ## Results
 
-**For one person, I'd start with Qwen3-8B.** It returned 24/36 correct
-replies on time. Its first visible answer p95 on correct replies was 460 ms.
-It peaked at 4922 MiB.
+**I'd start with Qwen3.5-2B on this laptop.** It returned 22/36 correct
+replies on time at a peak of 1753 MiB. Qwen3-8B returned 24/36 and peaked at
+4922 MiB. The 2B model also had a shorter wait for the first answer on its
+correct replies, with a p95 of 250 ms versus 460 ms.
 
-**For small batches, Qwen3-4B edged ahead on raw JSON** at 98.0 usable jobs per
-minute, alongside Qwen3-8B at 97.0. I'd take the 4B model for the extra
-headroom. With one JSON code fence allowed, Phi-4-mini-instruct reached
-112.6 usable jobs per minute.
+**For a batch, look at the count as well as the rate.** LFM2.5-1.2B-Instruct
+had the highest raw-JSON rate at 169.0 usable jobs per minute. It finished
+12/36 requests correctly and on time. Fast invalid replies still leave work
+to review.
 
-**For more room on the card, try Qwen3-4B.** It delivered 20/36 on-time
-replies at a peak of 3244 MiB. The single-user winner repeated planted
-identifiers in 6 of 12 visible masking replies. For known identifiers, I'd
-add a deterministic masking step.
+| Deployment | Desk on time | Desk first-answer p95 (ms) | Batch on time | Batch usable/min | Peak VRAM (MiB) |
+|---|---:|---:|---:|---:|---:|
+| Qwen3-8B | 24/36 | 460 | 24/36 | 97.0 | 4922 |
+| Qwen3.5-2B (text-only) | 22/36 | 250 | 22/36 | 148.2 | 1753 |
+| Qwen3-4B | 20/36 | 291 | 20/36 | 98.0 | 3244 |
+| Qwen3.5-4B (text-only) | 19/36 | 513 | 23/36 | 77.5 | 3270 |
+| LFM2.5-1.2B-Instruct | 12/36 | 93 | 12/36 | 169.0 | 1199 |
+| Qwen3.5-0.8B (text-only) | 12/36 | 162 | 11/36 | 97.3 | 1009 |
+| Phi-4-mini-instruct | 8/36 | 276 | 7/36 | 41.5 | 3158 |
+| Yi-1.5-9B-Chat | 2/36 | 132 | 1/36 | 2.4 | 5124 |
+| Spark-X2.5-4B | 0/36 | 2676 | 0/36 | 0.0 | 2926 |
+| DeepSeek-R1-Distill-Llama-8B | 0/36 | 3129 | 0/36 | 0.0 | 4806 |
+| Gemma 3 4B (text-only) | 0/36 | — | 0/36 | 0.0 | 3088 |
+| GLM-4-9B-0414 | 0/36 | — | 0/36 | 0.0 | 5180 |
+| SmolLM3-3B | 0/36 | — | 0/36 | 0.0 | 2533 |
 
-| Deployment | Desk on time | Desk first-answer p95 (ms) | Batch usable/min | Peak VRAM (MiB) |
-|---|---:|---:|---:|---:|
-| Qwen3-8B | 24/36 | 460 | 97.0 | 4922 |
-| Qwen3-4B | 20/36 | 291 | 98.0 | 3244 |
-| Qwen3.5-4B (text-only) | 19/36 | 513 | 77.5 | 3270 |
-| Phi-4-mini-instruct | 8/36 | 276 | 41.5 | 3158 |
-| Yi-1.5-9B-Chat | 2/36 | 132 | 2.4 | 5124 |
-| Spark-X2.5-4B | 0/36 | 2676 | 0.0 | 2926 |
-| DeepSeek-R1-Distill-Llama-8B | 0/36 | 3129 | 0.0 | 4806 |
-| Gemma 3 4B (text-only) | 0/36 | — | 0.0 | 3088 |
-| GLM-4-9B-0414 | 0/36 | — | 0.0 | 5180 |
+All four new models streamed with every layer on the GPU at 16,384 total
+tokens, or 8,192 per slot. Qwen3.5-0.8B used 1153 MiB in that probe. The
+Qwen3-8B reference reached 5964 MiB with the same slot allocation. The desk
+winner repeated planted identifiers in 6 of its 12 visible masking replies.
+For known identifiers, I'd keep a deterministic masking step.
 
-Phi-4-mini led the earlier 4B serving sweep at 128.9 output tok/s at
-concurrency 2. It returned 8/36 correct raw replies at the desk. Accepting
-one code fence brought that to 20/36. The same parser recovered useful
-replies from Gemma and GLM.
-
-[Per-task results and timings](docs/home-lab-results.md)
+[Lightweight models and context checks](docs/lightweight.md) · [Per-task results](docs/home-lab-results.md)
 
 ![Correct and timely replies for each deployment, with and without one code fence](docs/assets/figures/home-lab.svg)
 

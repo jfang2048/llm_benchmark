@@ -6,8 +6,9 @@ into one score.
 ## Home Lab
 
 Start with the [local task benchmark](home-lab.md) for the WSL2 setup,
-response budgets and how to reproduce the results. [All nine deployments](home-lab-results.md) are in the scorecard. The serving and coding
-suites below go deeper into capacity, runtime behavior, and task capability.
+response budgets and how to reproduce the results. The [scorecard](home-lab-results.md)
+covers all thirteen deployments. The [lightweight report](lightweight.md)
+compares the four additions and their VRAM at three context settings.
 
 ## 1. Serving benchmark (fixed-hardware inference)
 

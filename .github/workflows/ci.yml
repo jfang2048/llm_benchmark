@@ -31,7 +31,7 @@ jobs:
 
       - name: Home Lab scoring and dataset checks
         run: |
-          python3 -m unittest discover -s tests -p test_home.py
+          python3 -m unittest discover -s tests -p "test_home*.py"
           python3 -m bench.home_report >/dev/null
 
       - name: Capability report generation

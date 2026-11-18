@@ -1,0 +1,215 @@
+{
+  "gpu": "NVIDIA GeForce RTX 3060 Laptop GPU, 6144, 610.74",
+  "platform": "6.18.33.2-microsoft-standard-WSL2",
+  "slots": 2,
+  "contexts": [
+    4096,
+    8192,
+    16384
+  ],
+  "gpu_layers": 999,
+  "auto_fit": false,
+  "rows": [
+    {
+      "arm": "qwen3_4b_compact",
+      "context": 4096,
+      "per_slot_context": 2048,
+      "offloaded_layers": 37,
+      "total_layers": 37,
+      "peak_vram_mib": 3236,
+      "status": "streamed"
+    },
+    {
+      "arm": "qwen3_4b_compact",
+      "context": 8192,
+      "per_slot_context": 4096,
+      "offloaded_layers": 37,
+      "total_layers": 37,
+      "peak_vram_mib": 3814,
+      "status": "streamed"
+    },
+    {
+      "arm": "qwen3_4b_compact",
+      "context": 16384,
+      "per_slot_context": 8192,
+      "offloaded_layers": 37,
+      "total_layers": 37,
+      "peak_vram_mib": 4970,
+      "status": "streamed"
+    },
+    {
+      "arm": "qwen3_5_4b_compact",
+      "context": 4096,
+      "per_slot_context": 2048,
+      "offloaded_layers": 34,
+      "total_layers": 34,
+      "peak_vram_mib": 3262.0,
+      "status": "streamed"
+    },
+    {
+      "arm": "qwen3_5_4b_compact",
+      "context": 8192,
+      "per_slot_context": 4096,
+      "offloaded_layers": 34,
+      "total_layers": 34,
+      "peak_vram_mib": 3392.0,
+      "status": "streamed"
+    },
+    {
+      "arm": "qwen3_5_4b_compact",
+      "context": 16384,
+      "per_slot_context": 8192,
+      "offloaded_layers": 34,
+      "total_layers": 34,
+      "peak_vram_mib": 3652.0,
+      "status": "streamed"
+    },
+    {
+      "arm": "qwen3_8b",
+      "context": 4096,
+      "per_slot_context": 2048,
+      "offloaded_layers": 37,
+      "total_layers": 37,
+      "peak_vram_mib": 4912,
+      "status": "streamed"
+    },
+    {
+      "arm": "qwen3_8b",
+      "context": 8192,
+      "per_slot_context": 4096,
+      "offloaded_layers": 37,
+      "total_layers": 37,
+      "peak_vram_mib": 5490,
+      "status": "streamed"
+    },
+    {
+      "arm": "qwen3_8b",
+      "context": 16384,
+      "per_slot_context": 8192,
+      "offloaded_layers": 37,
+      "total_layers": 37,
+      "peak_vram_mib": 5964,
+      "status": "streamed"
+    },
+    {
+      "arm": "qwen3_5_08b_light",
+      "context": 4096,
+      "per_slot_context": 2048,
+      "offloaded_layers": 26,
+      "total_layers": 26,
+      "baseline_vram_mib": 206,
+      "peak_vram_mib": 1005.0,
+      "status": "streamed"
+    },
+    {
+      "arm": "qwen3_5_08b_light",
+      "context": 8192,
+      "per_slot_context": 4096,
+      "offloaded_layers": 26,
+      "total_layers": 26,
+      "baseline_vram_mib": 206,
+      "peak_vram_mib": 1053.0,
+      "status": "streamed"
+    },
+    {
+      "arm": "qwen3_5_08b_light",
+      "context": 16384,
+      "per_slot_context": 8192,
+      "offloaded_layers": 26,
+      "total_layers": 26,
+      "baseline_vram_mib": 206,
+      "peak_vram_mib": 1153.0,
+      "status": "streamed"
+    },
+    {
+      "arm": "lfm2_5_12b_light",
+      "context": 4096,
+      "per_slot_context": 2048,
+      "offloaded_layers": 17,
+      "total_layers": 17,
+      "baseline_vram_mib": 258,
+      "peak_vram_mib": 1191,
+      "status": "streamed"
+    },
+    {
+      "arm": "lfm2_5_12b_light",
+      "context": 8192,
+      "per_slot_context": 4096,
+      "offloaded_layers": 17,
+      "total_layers": 17,
+      "baseline_vram_mib": 258,
+      "peak_vram_mib": 1241,
+      "status": "streamed"
+    },
+    {
+      "arm": "lfm2_5_12b_light",
+      "context": 16384,
+      "per_slot_context": 8192,
+      "offloaded_layers": 17,
+      "total_layers": 17,
+      "baseline_vram_mib": 258,
+      "peak_vram_mib": 1341,
+      "status": "streamed"
+    },
+    {
+      "arm": "qwen3_5_2b_light",
+      "context": 4096,
+      "per_slot_context": 2048,
+      "offloaded_layers": 26,
+      "total_layers": 26,
+      "baseline_vram_mib": 206,
+      "peak_vram_mib": 1747.0,
+      "status": "streamed"
+    },
+    {
+      "arm": "qwen3_5_2b_light",
+      "context": 8192,
+      "per_slot_context": 4096,
+      "offloaded_layers": 26,
+      "total_layers": 26,
+      "baseline_vram_mib": 206,
+      "peak_vram_mib": 1795.0,
+      "status": "streamed"
+    },
+    {
+      "arm": "qwen3_5_2b_light",
+      "context": 16384,
+      "per_slot_context": 8192,
+      "offloaded_layers": 26,
+      "total_layers": 26,
+      "baseline_vram_mib": 206,
+      "peak_vram_mib": 1895.0,
+      "status": "streamed"
+    },
+    {
+      "arm": "smollm3_3b_light",
+      "context": 4096,
+      "per_slot_context": 2048,
+      "offloaded_layers": 37,
+      "total_layers": 37,
+      "baseline_vram_mib": 206,
+      "peak_vram_mib": 2525.0,
+      "status": "streamed"
+    },
+    {
+      "arm": "smollm3_3b_light",
+      "context": 8192,
+      "per_slot_context": 4096,
+      "offloaded_layers": 37,
+      "total_layers": 37,
+      "baseline_vram_mib": 206,
+      "peak_vram_mib": 2815.0,
+      "status": "streamed"
+    },
+    {
+      "arm": "smollm3_3b_light",
+      "context": 16384,
+      "per_slot_context": 8192,
+      "offloaded_layers": 37,
+      "total_layers": 37,
+      "baseline_vram_mib": 206,
+      "peak_vram_mib": 3395.0,
+      "status": "streamed"
+    }
+  ]
+}

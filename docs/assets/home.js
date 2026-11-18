@@ -5,10 +5,12 @@ if (D.home_lab) {
   const home = D.home_lab;
   const homePlotOptions = {...CONFIG, displayModeBar: false};
   const host = document.getElementById("home-lab");
-  const metricsFor = (scenario, allowFence = false) => home.models.map((model) => {
-    const raw = model.scenarios[scenario];
-    return {...model, ...(allowFence ? raw.with_fence : raw)};
-  });
+  const metricsFor = (scenario, allowFence = false, cohort = "") => home.models
+    .filter((model) => !cohort || model.cohort === cohort)
+    .map((model) => {
+      const raw = model.scenarios[scenario];
+      return {...model, ...(allowFence ? raw.with_fence : raw)};
+    });
   const deskOrder = (a, b) => b.timely - a.timely || b.correct - a.correct ||
     (a.answer_p95_ms ?? Infinity) - (b.answer_p95_ms ?? Infinity);
   const batchOrder = (a, b) => b.goodput_per_min - a.goodput_per_min;
@@ -17,6 +19,9 @@ if (D.home_lab) {
   </div>`;
 
   const storage = home.storage;
+  const lightweightOption = home.models.some((model) => model.cohort === "lightweight_1_3b")
+    ? '<span class="home-control"><label for="home-cohort">Models</label> <select id="home-cohort"><option value="">All deployments</option><option value="lightweight_1_3b">Lightweight additions</option></select></span>'
+    : "";
   const storageBar = (label, milliseconds) => `<div class="home-storage-row">
     <span>${label}</span><span class="home-storage-track"><i style="width:${100 * milliseconds / Math.max(storage.linux.ready_ms, storage.windows_mount.ready_ms)}%"></i></span>
     <strong>${fmt(milliseconds / 1000, 2)} s</strong>
@@ -27,6 +32,18 @@ if (D.home_lab) {
     <div>${storageBar("WSL Linux filesystem", storage.linux.ready_ms)}
       ${storageBar("Windows mount", storage.windows_mount.ready_ms)}</div>
   </aside>` : "";
+  const fit = home.fit;
+  const fitChart = fit ? `<section class="home-fit" aria-labelledby="home-fit-title">
+    <div class="fit-heading">
+      <h3 id="home-fit-title">How much context fits in 6 GiB?</h3>
+      <span class="home-control"><label for="home-fit-context">Total context</label>
+        <select id="home-fit-context">${fit.contexts.map((ctx, i) =>
+          `<option value="${ctx}"${i === fit.contexts.length - 1 ? " selected" : ""}>${ctx.toLocaleString()} tokens</option>`).join("")}</select></span>
+    </div>
+    <p class="note" id="home-fit-note"></p>
+    <div id="home-fit-bars" class="home-fit-bars"></div>
+    <p class="note">Peak device VRAM during startup and one short streamed reply. The probe checks layer offload and context allocation.</p>
+  </section>` : "";
   host.innerHTML = `<div class="home-lead">
     <div>
       <p class="home-kicker">RTX 3060 Laptop · 6 GiB · WSL2</p>
@@ -44,7 +61,7 @@ if (D.home_lab) {
     <label class="home-fence"><input type="checkbox" id="home-fence"> Allow one JSON code fence</label>
     <span class="home-control"><label for="home-breakdown">Breakdown</label>
     <select id="home-breakdown"><option value="by_kind">Task</option><option value="by_language">Language</option></select></span>
-    <p class="note" id="home-budget"></p>
+    ${lightweightOption}<p class="note" id="home-budget"></p>
   </div>
   <div class="grid2 home-charts">
     <div><div id="home-ready-plot"></div><div class="home-key" aria-label="Chart legend">
@@ -63,17 +80,19 @@ if (D.home_lab) {
     </table>
   </div>
   ${storageChart}
+  ${fitChart}
   <p class="note home-footnote">Latency percentiles use correct replies. A masking miss is a visible reply that repeated a planted identifier. The GPU peak covers the full run for each model.</p>`;
 
   function renderHome(scenario) {
     const settings = home.scenarios[scenario];
     const allowFence = document.getElementById("home-fence").checked;
-    const desktop = metricsFor("desk", allowFence).sort(deskOrder)[0];
-    const batch = metricsFor("burst", allowFence).sort(batchOrder)[0];
+    const cohort = document.getElementById("home-cohort")?.value || "";
+    const desktop = metricsFor("desk", allowFence, cohort).sort(deskOrder)[0];
+    const batch = metricsFor("burst", allowFence, cohort).sort(batchOrder)[0];
     host.querySelector(".home-choices").innerHTML =
       card("One person", desktop, `${desktop.timely}/${desktop.n} correct on time · ${fmt(desktop.peak_vram_mib, 0)} MiB peak`) +
-      card("Small batch", batch, `${fmt(batch.goodput_per_min)} correct on time per minute`);
-    const rows = metricsFor(scenario, allowFence).sort(scenario === "burst" ? batchOrder : deskOrder);
+      card("Small batch", batch, `${fmt(batch.goodput_per_min)} correct on time per minute · ${batch.timely}/${batch.n} on time`);
+    const rows = metricsFor(scenario, allowFence, cohort).sort(scenario === "burst" ? batchOrder : deskOrder);
     const displayRows = [...rows].reverse();
     const names = displayRows.map((r) => r.name.replace(" (text-only)", ""));
     document.getElementById("home-budget").textContent =
@@ -81,7 +100,7 @@ if (D.home_lab) {
 
     const layout = baseLayout("Jobs that fit the budget", "Requests", "");
     layout.barmode = "stack";
-    layout.height = 395;
+    layout.height = Math.max(310, rows.length * 31 + 116);
     layout.showlegend = false;
     layout.margin = {l: 145, r: 10, t: 38, b: 47};
     layout.xaxis.range = [0, home.cases * home.repeats + 0.5];
@@ -102,7 +121,7 @@ if (D.home_lab) {
       : [["extract", "Extract"], ["redact", "Mask"], ["lookup", "Find in notes"]];
     const counts = displayRows.map((r) => groups.map(([key]) => r[breakdown][key]));
     const grid = baseLayout(breakdown === "by_language" ? "Correct by language" : "Correct by task", "", "");
-    grid.height = 395;
+    grid.height = layout.height;
     grid.margin = {l: 145, r: 12, t: 38, b: 43};
     grid.yaxis = {automargin: true, tickfont: {size: 10}, showgrid: false};
     grid.xaxis = {side: "bottom", automargin: true};
@@ -124,10 +143,36 @@ if (D.home_lab) {
     </tr>`).join("");
   }
 
+  function renderFit(context) {
+    const target = document.getElementById("home-fit-bars");
+    const rows = fit.rows.filter((r) => r.context === context)
+      .sort((a, b) => (a.peak_vram_mib ?? Infinity) - (b.peak_vram_mib ?? Infinity));
+    document.getElementById("home-fit-note").textContent =
+      `${(context / fit.slots).toLocaleString()} tokens per slot · ${fit.slots} slots · ${fit.vram_total_mib.toLocaleString()} MiB device VRAM · auto-fit off`;
+    target.innerHTML = rows.map((r) => {
+      const peak = r.peak_vram_mib;
+      const name = r.name.replace(" (text-only)", "");
+      const label = !r.fully_offloaded ? (r.status === "streamed" ? "Offload or slots unverified" : r.status.replaceAll("_", " ")) :
+        `${peak?.toLocaleString() ?? "—"} MiB · ${r.offloaded_layers}/${r.total_layers} layers`;
+      const ratio = r.fully_offloaded && peak !== null ? Math.min(100, 100 * peak / fit.vram_total_mib) : 0;
+      return `<div class="home-fit-row">
+        <span>${name}</span><span class="home-storage-track" aria-hidden="true">
+          <i style="width:${ratio}%" class="${ratio >= 90 ? "near-limit" : ""}"></i></span><strong>${label}</strong>
+      </div>`;
+    }).join("");
+  }
+
+  const context = document.getElementById("home-fit-context");
+  if (context) {
+    const updateFit = () => renderFit(Number(context.value));
+    context.addEventListener("change", updateFit);
+    updateFit();
+  }
   const scenario = document.getElementById("home-scenario");
   const rerender = () => renderHome(scenario.value);
   scenario.addEventListener("change", rerender);
   document.getElementById("home-fence").addEventListener("change", rerender);
   document.getElementById("home-breakdown").addEventListener("change", rerender);
+  document.getElementById("home-cohort")?.addEventListener("change", rerender);
   rerender();
 }

@@ -76,3 +76,13 @@ Model weights are governed by their own upstream licenses (Qwen3 and Yi:
 Apache-2.0; DeepSeek-R1-Distill-Llama-8B and GLM-4-9B: MIT). This repository
 does not claim rights over them and does not redistribute them. `models/` and
 its contents are git-ignored (`*.gguf`).
+
+## Lightweight Home Lab models
+
+The [lightweight report](../docs/lightweight.md) lists the four Q4_K_M
+files, their pinned revisions and the measured device VRAM. Download
+one model by ID or prepare the whole Home Lab set with `make setup-home`.
+
+```sh
+./scripts/download_models.sh qwen3_5_2b_light
+```

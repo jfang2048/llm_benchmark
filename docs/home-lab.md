@@ -30,13 +30,13 @@ masking column counts visible replies that repeated at least one planted
 identifier verbatim. JSON escaping, reformatting, and other forms of
 disclosure fall outside that simple substring check.
 
-The Qwen3 and Qwen3.5 deployments use llama.cpp's direct-answer setting.
+The Qwen3, Qwen3.5 and SmolLM3 deployments use llama.cpp's direct-answer setting.
 Other deployments keep their engine defaults. The upstream deployments use
 their registered Q4_K_M or IQ4_XS weights. Spark uses the XHToken fork. This
 compares deployable configurations on one card, including the model's
 tokenizer and chat template.
 
-[Full scorecard and task breakdown](home-lab-results.md)
+[Full scorecard and task breakdown](home-lab-results.md) · [Lightweight deployments and VRAM checks](lightweight.md)
 
 ## How we read the results
 
