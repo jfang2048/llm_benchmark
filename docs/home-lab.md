@@ -36,7 +36,7 @@ their registered Q4_K_M or IQ4_XS weights. Spark uses the XHToken fork. This
 compares deployable configurations on one card, including the model's
 tokenizer and chat template.
 
-[Full scorecard and task breakdown](home-lab-results.md) · [Lightweight deployments and VRAM checks](lightweight.md)
+[Full scorecard and task breakdown](home-lab-results.md) · [Lightweight deployments and VRAM checks](lightweight.md) · [Paired trials](controlled.md)
 
 ## How we read the results
 

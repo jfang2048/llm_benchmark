@@ -11,9 +11,30 @@ planted identifiers, and archive lookups. Every benchmark request goes to a
 local endpoint. We score each reply for correctness and how soon it arrives.
 
 [Open the interactive results](https://jfang2048.github.io/llm_benchmark/#home-lab) ·
+[Explore the paired tests](https://jfang2048.github.io/llm_benchmark/#controlled) ·
 [中文说明](docs/zh/home-lab.md)
 
-## Results
+## The jump from 0.8B to 2B paid off
+
+In six paired runs, Qwen3.5-2B got **11 of 18 jobs right**. Its 0.8B sibling
+got 6 and the 4B sibling also got 11. Going from 2B to 4B took peak VRAM from
+**1,678 to 3,326 MiB** and stretched the first visible answer p95 from 194 to
+440 ms. All three used the same Q4_K_M quantization and upstream llama.cpp build.
+
+**More clients made the desk feel slower.** Going from one to four clients
+raised aggregate output from 83 to 98 tokens/s with two server slots.
+First visible answer p95 rose from 194 to 750 ms. With the same half-second
+target on both sides, usable replies fell from 142 to 46 per minute.
+
+Reserving 16,384 total context tokens for the same prompts cost the 2B model
+**150 MiB more**. With one Qwen3-4B weight file, the two llama.cpp builds
+scored alike and used the same peak VRAM. The median change in first-answer
+p95 was 1.5 ms. Each comparison used six matched pairs and the same deadlines.
+[See the paired ranges and test setup](docs/controlled.md).
+
+![Change in usable jobs per minute across six matched pairs for each setting](docs/assets/figures/controlled.svg)
+
+## The 13-deployment scorecard
 
 **I'd start with Qwen3.5-2B on this laptop.** It returned 22/36 correct
 replies on time at a peak of 1753 MiB. Qwen3-8B returned 24/36 and peaked at
@@ -95,6 +116,8 @@ logging, and any tools in mind before sending it private material.
 
 - [Home Lab details](docs/home-lab.md) explains the task set, the time budgets,
   the masking check, and the WSL2 test.
+- [Paired tests](docs/controlled.md) show what changed when we varied checkpoint size,
+  context, client load, or the engine build one at a time.
 - [Serving results](docs/results.md) covers throughput, tail latency, memory,
   queueing, long inputs, and the short 4B sweep.
 - [Coding results](docs/capability-results.md) covers separate correctness and

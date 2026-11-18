@@ -33,6 +33,7 @@ jobs:
         run: |
           python3 -m unittest discover -s tests -p "test_home*.py"
           python3 -m bench.home_report >/dev/null
+          python3 -m bench.controlled_report >/dev/null
 
       - name: Capability report generation
         run: |
@@ -75,6 +76,7 @@ jobs:
           python3 scripts/generate_current_report.py
           test -s docs/index.html
           test -s docs/assets/figures/home-lab.svg
+          test -s docs/assets/figures/controlled.svg
           echo "Current dashboard regenerated"
 
       - name: Forbidden large files (GitHub 100 MiB guard)

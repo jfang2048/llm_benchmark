@@ -29,6 +29,9 @@ Both engines are pinned (commit/image recorded in `configs/models.json`); the
 engine profile is the reason Spark is reported as a reference, not ranked
 against the upstream-served 8-9B cohort.
 
+The [paired Home Lab engine trial](controlled.md) holds the Qwen3-4B GGUF,
+context, concurrency and requests fixed while switching between these builds.
+
 ## Quantization
 
 The whole cohort uses a single common quantization: **IQ4_XS**, the smallest

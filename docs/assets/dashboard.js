@@ -74,7 +74,8 @@ const CONFIG = { displaylogo: false, responsive: true, modeBarButtonsToRemove: [
 // ---- filter UI -------------------------------------------------------------
 function buildShell() {
   const navItems = [
-    ...(D.home_lab ? [["Home Lab", "home-lab"]] : []), ["Serving overview", "overview"], ...(D.compact_capacity ? [["Compact 4B", "compact"]] : []), ["Capacity", "capacity"], ["Trade-off", "tradeoff"],
+    ...(D.home_lab ? [["Home Lab", "home-lab"]] : []),
+    ...(D.controlled ? [["Paired tests", "controlled"]] : []), ["Serving overview", "overview"], ...(D.compact_capacity ? [["Compact 4B", "compact"]] : []), ["Capacity", "capacity"], ["Trade-off", "tradeoff"],
     ["Open-loop", "openloop"], ["Workload shape", "shape"], ["Reliability", "reliability"],
     ["Resources", "resources"], ["Sessions", "sessions"], ["Startup / soak", "startup"],
     ["llama-bench", "llamabench"], ["Data", "data"],
@@ -102,6 +103,7 @@ function buildShell() {
   </div>
   <main>
     ${D.home_lab ? '<section class="home-lab" id="home-lab"></section>' : ""}
+    ${D.controlled ? '<section class="home-lab paired-tests" id="controlled"></section>' : ""}
     <section id="overview"></section>
   <div class="filterbar" role="group" aria-label="Full sweep controls">
     <span><label for="f-cohort">Cohort</label>

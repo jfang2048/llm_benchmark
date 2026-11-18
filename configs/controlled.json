@@ -1,0 +1,92 @@
+{
+  "pairs": 6,
+  "seed": 10517,
+  "slots": 2,
+  "max_output_tokens": 192,
+  "request_timeout_s": 30,
+  "first_answer_ms": 500,
+  "complete_ms": 5000,
+  "max_start_temperature_c": 60,
+  "experiments": [
+    {
+      "id": "size-small",
+      "factor": "model",
+      "baseline": {
+        "model": "qwen3_5_08b_light",
+        "engine": "upstream_llama_cpp",
+        "context": 4096,
+        "clients": 1
+      },
+      "changed": {
+        "model": "qwen3_5_2b_light",
+        "engine": "upstream_llama_cpp",
+        "context": 4096,
+        "clients": 1
+      }
+    },
+    {
+      "id": "size-medium",
+      "factor": "model",
+      "baseline": {
+        "model": "qwen3_5_2b_light",
+        "engine": "upstream_llama_cpp",
+        "context": 4096,
+        "clients": 1
+      },
+      "changed": {
+        "model": "qwen3_5_4b_compact",
+        "engine": "upstream_llama_cpp",
+        "context": 4096,
+        "clients": 1
+      }
+    },
+    {
+      "id": "context",
+      "factor": "context",
+      "baseline": {
+        "model": "qwen3_5_2b_light",
+        "engine": "upstream_llama_cpp",
+        "context": 4096,
+        "clients": 1
+      },
+      "changed": {
+        "model": "qwen3_5_2b_light",
+        "engine": "upstream_llama_cpp",
+        "context": 16384,
+        "clients": 1
+      }
+    },
+    {
+      "id": "concurrency",
+      "factor": "clients",
+      "baseline": {
+        "model": "qwen3_5_2b_light",
+        "engine": "upstream_llama_cpp",
+        "context": 4096,
+        "clients": 1
+      },
+      "changed": {
+        "model": "qwen3_5_2b_light",
+        "engine": "upstream_llama_cpp",
+        "context": 4096,
+        "clients": 4
+      }
+    },
+    {
+      "id": "engine",
+      "factor": "engine",
+      "baseline": {
+        "model": "qwen3_4b_compact",
+        "engine": "upstream_llama_cpp",
+        "context": 4096,
+        "clients": 1
+      },
+      "changed": {
+        "model": "qwen3_4b_compact",
+        "engine": "xhtoken_llama_cpp",
+        "context": 4096,
+        "clients": 1
+      }
+    }
+  ]
+}

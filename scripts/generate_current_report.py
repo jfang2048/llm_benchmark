@@ -21,12 +21,12 @@ import json
 import sys
 from collections import Counter
 from html import escape
-from math import log10
+from math import ceil, log10
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
-from bench import config, home_report  # noqa: E402
+from bench import config, controlled_report, home_report  # noqa: E402
 
 RESULT_ROOT = ROOT / "results" / "current"
 DOCS = ROOT / "docs"
@@ -464,6 +464,59 @@ def home_figure(run):
     return "\n".join(parts)
 
 
+def controlled_figure(run):
+    """A printable version of the paired usable-jobs plot."""
+    labels = {
+        "size-small": "0.8B → 2B",
+        "size-medium": "2B → 4B",
+        "context": "4K → 16K context",
+        "concurrency": "1 → 4 clients",
+        "engine": "Upstream → XHToken",
+    }
+    width, height = 680, 310
+    left, right, bottom = 184, 570, 260
+    experiments = run["experiments"]
+    limit = max(10, 10 * ceil(max(abs(exp["summary"]["goodput"][bound])
+                                      for exp in experiments
+                                      for bound in ("min_delta", "max_delta")) / 10))
+    center = (left + right) / 2
+
+    def x(value):
+        return center + value * (right - left) / (2 * limit)
+
+    parts = [
+        f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" '
+        f'viewBox="0 0 {width} {height}" font-family="Segoe UI,Arial,sans-serif" '
+        'role="img" aria-labelledby="paired-title paired-desc">',
+        '<title id="paired-title">What changed the number of usable replies?</title>',
+        '<desc id="paired-desc">Median change and observed range in usable replies '
+        'per minute across six matched pairs for each setting.</desc>',
+        f'<rect width="{width}" height="{height}" rx="12" fill="#f4f8f8"/>',
+        '<text x="22" y="36" font-size="22" font-weight="700" fill="#142c38">'
+        'What changed the number of usable replies?</text>',
+        '<text x="22" y="60" font-size="14" fill="#415d65">'
+        'Jobs per minute gained or lost · six matched pairs per row</text>',
+    ]
+    for tick in (-limit, -limit / 2, 0, limit / 2, limit):
+        grid = "#83929c" if tick == 0 else "#dfe8e9"
+        parts.append(f'<path d="M{x(tick):.1f} 82V{bottom}" stroke="{grid}"/>')
+        parts.append(f'<text x="{x(tick):.1f}" y="{bottom+22}" text-anchor="middle" '
+                     f'font-size="13" fill="#415d65">{tick:g}</text>')
+    for row, exp in enumerate(experiments):
+        y = 99 + row * 35
+        stats = exp["summary"]["goodput"]
+        mid = x(stats["median_delta"])
+        x1, x2 = x(stats["min_delta"]), x(stats["max_delta"])
+        parts += [
+            f'<text x="22" y="{y+5}" font-size="14" fill="#142c38">{escape(labels[exp["id"]])}</text>',
+            f'<path d="M{x1:.1f} {y}H{x2:.1f}" stroke="#8eb7b2" stroke-width="4" stroke-linecap="round"/>',
+            f'<path d="M{mid:.1f} {y-6}l6 6l-6 6l-6 -6Z" fill="#08796f"/>',
+            f'<text x="590" y="{y+5}" font-size="14" font-weight="600" fill="#142c38">'
+            f'{stats["median_delta"]:+.1f}</text>',
+        ]
+    return "\n".join(parts + ["</svg>"])
+
+
 def readme_figures(models, cap):
     fig1 = throughput_figure("Mainstream 8-9B output throughput (IQ4_XS)",
                              [m for m in models if not m["is_reference"]], cap["aggregate"])
@@ -534,6 +587,7 @@ def build_data(home_path=home_report.PUBLISHED):
         "capacity": cap,
         "compact_capacity": compact_capacity(),
         "home_lab": home_report.summarize(home_path) if home_path.exists() else None,
+        "controlled": controlled_report.summarize(controlled_report.PUBLISHED),
         "reliability": reliability(),
         "open_loop": open_loop(cap["aggregate"]),
         "shape": shape(profiles),
@@ -566,6 +620,7 @@ def render_html(data):
 <script id="capability-data" type="application/json">{cap_payload}</script>
 <script src="assets/dashboard.js"></script>
 <script src="assets/home.js"></script>
+<script src="assets/controlled.js"></script>
 <script src="assets/capability.js"></script>
 </body>
 </html>
@@ -600,6 +655,8 @@ def main():
         figure = throughput_figure("Compact 4B output throughput (Q4_K_M, short sweep)",
                                    compact["models"], compact["aggregate"])
         (FIG_DIR / "compact-throughput.svg").write_text(figure, encoding="utf-8")
+
+    (FIG_DIR / "controlled.svg").write_text(controlled_figure(data["controlled"]), encoding="utf-8")
 
     if data["home_lab"]:
         (FIG_DIR / "home-lab.svg").write_text(home_figure(data["home_lab"]), encoding="utf-8")

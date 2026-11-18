@@ -9,6 +9,8 @@ Start with the [local task benchmark](home-lab.md) for the WSL2 setup,
 response budgets and how to reproduce the results. The [scorecard](home-lab-results.md)
 covers all thirteen deployments. The [lightweight report](lightweight.md)
 compares the four additions and their VRAM at three context settings.
+The [paired trials](controlled.md) isolate checkpoint size, context allocation,
+client concurrency and the serving build.
 
 ## 1. Serving benchmark (fixed-hardware inference)
 

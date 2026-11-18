@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="680" height="310" viewBox="0 0 680 310" font-family="Segoe UI,Arial,sans-serif" role="img" aria-labelledby="paired-title paired-desc">
+<title id="paired-title">What changed the number of usable replies?</title>
+<desc id="paired-desc">Median change and observed range in usable replies per minute across six matched pairs for each setting.</desc>
+<rect width="680" height="310" rx="12" fill="#f4f8f8"/>
+<text x="22" y="36" font-size="22" font-weight="700" fill="#142c38">What changed the number of usable replies?</text>
+<text x="22" y="60" font-size="14" fill="#415d65">Jobs per minute gained or lost · six matched pairs per row</text>
+<path d="M184.0 82V260" stroke="#dfe8e9"/>
+<text x="184.0" y="282" text-anchor="middle" font-size="13" fill="#415d65">-130</text>
+<path d="M280.5 82V260" stroke="#dfe8e9"/>
+<text x="280.5" y="282" text-anchor="middle" font-size="13" fill="#415d65">-65</text>
+<path d="M377.0 82V260" stroke="#83929c"/>
+<text x="377.0" y="282" text-anchor="middle" font-size="13" fill="#415d65">0</text>
+<path d="M473.5 82V260" stroke="#dfe8e9"/>
+<text x="473.5" y="282" text-anchor="middle" font-size="13" fill="#415d65">65</text>
+<path d="M570.0 82V260" stroke="#dfe8e9"/>
+<text x="570.0" y="282" text-anchor="middle" font-size="13" fill="#415d65">130</text>
+<text x="22" y="104" font-size="14" fill="#142c38">0.8B → 2B</text>
+<path d="M434.5 99H449.0" stroke="#8eb7b2" stroke-width="4" stroke-linecap="round"/>
+<path d="M438.8 93l6 6l-6 6l-6 -6Z" fill="#08796f"/>
+<text x="590" y="104" font-size="14" font-weight="600" fill="#142c38">+41.6</text>
+<text x="22" y="139" font-size="14" fill="#142c38">2B → 4B</text>
+<path d="M274.5 134H292.7" stroke="#8eb7b2" stroke-width="4" stroke-linecap="round"/>
+<path d="M287.7 128l6 6l-6 6l-6 -6Z" fill="#08796f"/>
+<text x="590" y="139" font-size="14" font-weight="600" fill="#142c38">-60.1</text>
+<text x="22" y="174" font-size="14" fill="#142c38">4K → 16K context</text>
+<path d="M373.7 169H386.7" stroke="#8eb7b2" stroke-width="4" stroke-linecap="round"/>
+<path d="M375.7 163l6 6l-6 6l-6 -6Z" fill="#08796f"/>
+<text x="590" y="174" font-size="14" font-weight="600" fill="#142c38">-0.8</text>
+<text x="22" y="209" font-size="14" fill="#142c38">1 → 4 clients</text>
+<path d="M188.6 204H279.7" stroke="#8eb7b2" stroke-width="4" stroke-linecap="round"/>
+<path d="M235.0 198l6 6l-6 6l-6 -6Z" fill="#08796f"/>
+<text x="590" y="209" font-size="14" font-weight="600" fill="#142c38">-95.7</text>
+<text x="22" y="244" font-size="14" fill="#142c38">Upstream → XHToken</text>
+<path d="M375.4 239H378.2" stroke="#8eb7b2" stroke-width="4" stroke-linecap="round"/>
+<path d="M376.6 233l6 6l-6 6l-6 -6Z" fill="#08796f"/>
+<text x="590" y="244" font-size="14" font-weight="600" fill="#142c38">-0.2</text>
+</svg>

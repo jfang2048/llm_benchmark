@@ -1,6 +1,7 @@
 # Benchmark Methodology
 
 For local extraction, masking and notes lookup, see the [Home Lab protocol](home-lab.md).
+For tests that vary one deployment setting per pair, see the [paired Home Lab trials](controlled.md).
 
 ## Purpose
 
