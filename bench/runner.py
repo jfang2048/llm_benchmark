@@ -19,7 +19,7 @@ import time
 from pathlib import Path
 
 from . import config, results, workload
-from .serving import start_server
+from .serving import Telemetry, gpu_vram, oom_check, start_server, wait_for_temperature
 
 ROOT = config.ROOT
 MODEL_DIR = Path(os.environ.get("MODEL_DIR", ROOT / "models"))
@@ -59,34 +59,9 @@ def sh(*args, **kw):
     return subprocess.run(args, capture_output=True, text=True, **kw)
 
 
-def gpu_temp():
-    r = sh("nvidia-smi", "--query-gpu=temperature.gpu",
-           "--format=csv,noheader,nounits")
-    try:
-        return int(r.stdout.strip().splitlines()[0].strip())
-    except Exception:
-        return None
-
-
-def gpu_vram():
-    r = sh("nvidia-smi", "--query-gpu=memory.used",
-           "--format=csv,noheader,nounits")
-    try:
-        return int(r.stdout.strip().splitlines()[0].strip())
-    except Exception:
-        return None
-
-
 def wait_thermal():
-    start = time.time()
-    while True:
-        t = gpu_temp()
-        if t is None or t <= MAX_START_TEMP_C:
-            return
-        if time.time() - start >= 120:
-            log(f"WARN thermal gate timeout at {t}C")
-            return
-        time.sleep(3)
+    if not wait_for_temperature(MAX_START_TEMP_C):
+        log(f"WARN thermal gate timeout at {MAX_START_TEMP_C}C")
 
 
 def docker_run_detached(container, image, port, gguf, alias):
@@ -107,39 +82,6 @@ def wait_ready(url, timeout=STARTUP_TIMEOUT):
         if time.time() - start >= timeout:
             return False
         time.sleep(2)
-
-
-def oom_check(container):
-    r = sh("docker", "logs", container)
-    text = (r.stdout + r.stderr).lower()
-    for pat in ("out of memory", "cuda error", "failed to allocate"):
-        if pat in text:
-            return True
-    return False
-
-
-class Telemetry:
-    def __init__(self, path):
-        self.path = path
-        self.proc = None
-
-    def start(self):
-        f = open(self.path, "w")
-        self.proc = subprocess.Popen(
-            ["nvidia-smi",
-             "--query-gpu=timestamp,name,temperature.gpu,utilization.gpu,"
-             "utilization.memory,memory.used,power.draw,clocks.sm,clocks.mem",
-             "--format=csv", "-lms", "500"],
-            stdout=f, stderr=subprocess.DEVNULL)
-
-    def stop(self):
-        if self.proc:
-            self.proc.terminate()
-            try:
-                self.proc.wait(timeout=5)
-            except subprocess.TimeoutExpired:
-                self.proc.kill()
-            self.proc = None
 
 
 def run_cell(arm, model_name, url, container, conc, rep, out_dir, workload_path,

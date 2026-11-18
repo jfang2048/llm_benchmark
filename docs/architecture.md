@@ -1,5 +1,15 @@
 # Architecture
 
+## Home Lab data flow
+
+`configs/home.json` sets the workloads and budgets. `configs/home_tasks.jsonl`
+holds the public synthetic task corpus. `bench.home` launches each registry
+model and writes request rows plus a manifest. `bench.home_report` checks
+the complete task matrix and summarizes it on any machine. The static
+dashboard reads the curated copy. The Home Lab runner and the AIPerf
+suites share the Docker launch code in `bench/serving.py`.
+
+
 ## Overview
 
 The current benchmark drives OpenAI-compatible llama.cpp servers with NVIDIA

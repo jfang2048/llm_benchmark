@@ -1,5 +1,7 @@
 # Benchmark Methodology
 
+For local extraction, masking and notes lookup, see the [Home Lab protocol](home-lab.md).
+
 ## Purpose
 
 This repository benchmarks **local LLM inference serving** on a constrained

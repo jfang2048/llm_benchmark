@@ -29,6 +29,11 @@ jobs:
       - name: Capability unit tests (Wilson / merge / manifest / report parser)
         run: python3 tests/test_capability.py
 
+      - name: Home Lab scoring and dataset checks
+        run: |
+          python3 -m unittest discover -s tests -p test_home.py
+          python3 -m bench.home_report >/dev/null
+
       - name: Capability report generation
         run: |
           python3 scripts/eval_report.py
@@ -65,10 +70,11 @@ jobs:
           test -s docs/history/v1/data/benchmark.json
           echo "Historical v1 report regenerated"
 
-      - name: Current 8-9B dashboard generation
+      - name: Dashboard generation
         run: |
           python3 scripts/generate_current_report.py
           test -s docs/index.html
+          test -s docs/assets/figures/home-lab.svg
           echo "Current dashboard regenerated"
 
       - name: Forbidden large files (GitHub 100 MiB guard)

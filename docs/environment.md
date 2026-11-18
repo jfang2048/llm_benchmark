@@ -1,5 +1,7 @@
 # Environment
 
+The [Home Lab article](home-lab.md#wsl2-is-part-of-the-machine) records the current WSL2 experiment.
+
 Reproducibility environment for the current 8-9B benchmark. Hardware and
 software values are captured from the machine and also encoded in each suite's
 `results/current/<suite>/manifest.json`.

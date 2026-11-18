@@ -9,6 +9,7 @@ results/current/
   mainstream-8-9b/    # primary 8-9B cohort (IQ4_XS, upstream llama.cpp)
   spark-reference/    # Spark-X2.5-4B reference (IQ4_XS, XHToken fork)
   compact-4b/         # short capacity sweep (Q4_K_M, upstream llama.cpp)
+  home-lab/           # synthetic task outcomes, latency budgets and WSL2 probe
 ```
 
 Each suite directory contains:
@@ -28,3 +29,8 @@ The compact dataset is under `compact-4b/capacity_short/`. Its 64-token
 output cap and 12 requests per repeat are recorded in its manifest. See
 the [results analysis](../../docs/results.md#compact-4b-short-capacity)
 for observations from the run.
+
+The Home Lab directory holds a request TSV, the exact task corpus, a run
+manifest, and a separate storage probe. The request TSV publishes IDs,
+outcome codes and timings. `python3 -m bench.home_report` checks and
+summarizes those rows. See [the scorecard](../../docs/home-lab-results.md).

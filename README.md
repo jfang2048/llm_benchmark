@@ -1,251 +1,106 @@
-# Local LLM Inference Benchmark
+# The six-gigabyte test
 
-A reproducible benchmark for local LLM inference on a constrained consumer GPU
-(NVIDIA RTX 3060 Laptop, 6 GiB VRAM). It measures **two separate things**:
+A model card can tell you how a checkpoint scored on the publisher's test rig.
+At home, the job is often a receipt total, an address to mask, or a detail
+buried in a note you'd rather keep on your own computer. I wanted to know
+which model I'd leave running on a laptop for jobs like those.
 
-1. **Serving performance** — token throughput, TTFT, VRAM, and energy under a
-   controlled serving policy ([docs/methodology.md](docs/methodology.md)).
-2. **Coding / software-engineering capability** — direct coding (EvalPlus,
-   LiveCodeBench) and agentic SWE (SWE-bench Verified, DeepSWE, Multilingual,
-   Terminal-Bench) with mini-swe-agent
-   ([docs/capability-methodology.md](docs/capability-methodology.md)).
+The laptop is an RTX 3060 with **6 GiB of VRAM**, running Ubuntu 24.04 under
+Windows WSL2. Nine local deployments get the same English and Chinese notes,
+planted identifiers, and archive lookups. Every benchmark request goes to a
+local endpoint. We score each reply for correctness and how soon it arrives.
 
-The two layers use different serving profiles (parallel 2 vs parallel 1), are
-reported separately, and are **never** combined into one synthetic score.
-
-- **Current benchmark — mainstream 8-9B cohort:** four dense open-weight
-  8-9B models in IQ4_XS quantization, all served by the same pinned upstream
-  llama.cpp build under an identical resource policy and workload.
-- **Compact 4B comparison:** Qwen3-4B, Qwen3.5-4B (text-only),
-  Phi-4-mini-instruct, and Gemma 3 4B (text-only) in Q4_K_M on the same upstream engine and GPU. The short
-  capacity sweep uses a 64-token output cap and a smaller sample.
-- **Reference baseline — Spark-X2.5-4B:** a 4B model served on the XHToken
-  llama.cpp fork (IQ4_XS). It is shown alongside the cohort as a fixed-hardware
-  cross-cohort reference, never as a size-matched competitor.
-
-> **Dashboard:** https://jfang2048.github.io/llm_benchmark/
-> **Documentation index:** [docs/README.md](docs/README.md)
-> **Capability results:** [docs/capability-results.md](docs/capability-results.md)
-> **Problems & solutions:** [docs/capability-troubleshooting.md](docs/capability-troubleshooting.md)
-> **Frontier references:** [docs/references.md](docs/references.md)
-> **中文文档:** [docs/zh/problems-and-solutions.md](docs/zh/problems-and-solutions.md) · [docs/zh/results-analysis.md](docs/zh/results-analysis.md)
-
-## What this repository does
-
-- Defines a controlled fixed-hardware deployment benchmark
-  ([docs/methodology.md](docs/methodology.md)): it measures serving
-  performance under one GPU/engine/quantization policy, not model quality.
-- Provides two pinned engine profiles (see `configs/models.json`):
-  - `upstream_llama_cpp` (`docker/llama-cpp-upstream/`, tag v0.4.0, CUDA arch
-    86) for the 8-9B cohort;
-  - `xhtoken_llama_cpp` (the Spark-X2.5 XHToken fork) for the reference model.
-- Derives the active model set and sweep parameters from a single registry
-  (`configs/models.json` + `configs/benchmark.json`); the runner and report
-  generator read from it, never from hardcoded model lists.
-- Runs the benchmark through a small registry-driven harness (`bench/`) with
-  AIPerf as the client.
-- Publishes a curated, sanitized dataset under `results/current/` and renders
-  a static dashboard from it — every displayed number comes from
-  machine-readable `.tsv` files.
-
-## Models
-
-### Current benchmark: mainstream 8-9B cohort
-
-| Model | Parameters | Quantization | License |
-|---|---|---|---|
-| Qwen3-8B | 8.19B | IQ4_XS | Apache-2.0 |
-| DeepSeek-R1-Distill-Llama-8B | 8.03B | IQ4_XS | MIT |
-| GLM-4-9B-0414 | 9.40B | IQ4_XS | MIT |
-| Yi-1.5-9B-Chat | 8.83B | IQ4_XS | Apache-2.0 |
-
-All four are served as IQ4_XS GGUF artifacts from the same GGUF publisher
-(bartowski), each pinned by SHA256 in `configs/models.json`, by the same
-pinned upstream `ggml-org/llama.cpp` build. `DeepSeek-R1-Distill-Llama-8B` is
-a DeepSeek-distilled Llama-3.1-8B dense model — not the DeepSeek-R1/V3 MoE
-architecture.
-
-### Reference baseline: Spark-X2.5-4B
-
-| Model | Parameters | Quantization | Engine |
-|---|---|---|---|
-| Spark-X2.5-4B | 4.11B | IQ4_XS | XHToken llama.cpp fork |
-
-Spark differs from the cohort in parameter count, serving fork, and
-quantization provenance (IQ4_XS quantized locally from the official FP16
-GGUF, vs the cohort's Bartowski-published artifacts), so it is reported as a
-fixed-hardware reference — not ranked against the 8-9B models. Its engine
-profile and commit are pinned in `configs/models.json` exactly like the
-upstream build.
-
-See [model selection](docs/model-selection.md#november-2026-model-refresh)
-for the November 2026 model refresh and the opt-in smoke commands.
-
-## Test system
-
-| Component | Value |
-|---|---|
-| GPU | NVIDIA GeForce RTX 3060 Laptop GPU, 6144 MiB VRAM |
-| CPU | AMD Ryzen 7 6800H |
-| Platform | WSL2, Ubuntu 24.04 |
-| Engine (8-9B) | ggml-org/llama.cpp, pinned tag v0.4.0 (CUDA arch 86) |
-| Engine (Spark) | XHToken llama.cpp fork, pinned commit |
-| Serving policy | `--ctx-size 4096 --parallel 2 --n-gpu-layers 999 --cont-batching` |
-| Benchmark tool | NVIDIA AIPerf 0.12.0 |
-
-## Quick start
-
-```bash
-git clone https://github.com/jfang2048/llm_benchmark.git
-cd llm_benchmark
-make setup                 # build both engine images + download/quantize models
-make smoke                 # admission gate for both cohorts (serve + smoke + VRAM)
-make benchmark             # mainstream 8-9B capacity sweep
-make spark                 # Spark reference capacity sweep
-make report                # rebuild the current dashboard
-
-# Optional compact 4B comparison after setup
-./scripts/download_models.sh qwen3_4b_compact qwen3_5_4b_compact phi4_mini_compact gemma3_4b_compact
-make benchmark-compact
-```
-
-## Benchmark suites
-
-Run via the registry-driven harness (`bench/runner.py`); `make` targets wrap it.
-
-- `make benchmark` / `make spark` — capacity: closed-loop throughput/latency/
-  error sweep vs concurrency (1/2/4/6/8, 60 req/cell, 3 repeats, rotated model
-  order).
-- `make benchmark-compact` — short sweep at concurrency 1/2/4, 12 requests
-  per repeat, two repeats, two warmups, and a 64-token output cap.
-- `make reliability` — transport-reliability gate (≥200 requests, Wilson 95%
-  CI on success rate, error classification).
-- `make shape` — token-controlled ISL/OSL workload sweep.
-- `make open-loop` — Poisson load + achieved-throughput sweep.
-- `make startup` / `make soak` / `make sessions` — cold-start latency,
-  sustained-load thermal degradation, multi-turn latency.
-- `make llama-bench` — raw-engine microbenchmark (pp512/tg128) with the same
-  upstream binary; kept separate from the AIPerf end-to-end serving numbers.
-
-Serving is gated on a per-model admission test (`scripts/admit.sh`):
-healthcheck, a generation request, a 20-request smoke test, and a VRAM/OOM
-check before a model enters the benchmark. Capacity results with `FAILED` or
-`UNSTABLE` cells are never presented as valid ranking points.
+[Open the interactive results](https://jfang2048.github.io/llm_benchmark/#home-lab) ·
+[中文说明](docs/zh/home-lab.md)
 
 ## Results
 
-> **Interactive dashboard:** https://jfang2048.github.io/llm_benchmark/
+**For one person, I'd start with Qwen3-8B.** It returned 24/36 correct
+replies on time. Its first visible answer p95 on correct replies was 460 ms.
+It peaked at 4922 MiB.
 
-### Mainstream 8-9B serving results
+**For small batches, Qwen3-4B edged ahead on raw JSON** at 98.0 usable jobs per
+minute, alongside Qwen3-8B at 97.0. I'd take the 4B model for the extra
+headroom. With one JSON code fence allowed, Phi-4-mini-instruct reached
+112.6 usable jobs per minute.
 
-The IQ4_XS sweep uses 60 measured requests per repeat, three repeats,
-and a 128-token output cap. The latency columns show means of each
-repeat's p50. The VRAM column shows mean peak usage at concurrency 8.
+**For more room on the card, try Qwen3-4B.** It delivered 20/36 on-time
+replies at a peak of 3244 MiB. The single-user winner repeated planted
+identifiers in 6 of 12 visible masking replies. For known identifiers, I'd
+add a deterministic masking step.
 
-| Model | TTFT c=1 (ms) | TTFT c=2 (ms) | TTFT c=8 (s) | Output c=2 (tok/s) | Output c=8 (tok/s) | Peak VRAM c=8 (MiB) |
-|---|---:|---:|---:|---:|---:|---:|
-| Qwen3-8B | 104.1 | 161.9 | 7.60 | 96.3 | 94.5 | 4841 |
-| DeepSeek-R1-Distill-Llama-8B | 91.3 | 141.5 | 7.29 | 99.4 | 98.0 | 4725 |
-| GLM-4-9B-0414 | 54.6 | 102.5 | 8.50 | 83.3 | 85.4 | 5099 |
-| Yi-1.5-9B-Chat | 68.6 | 132.7 | 8.21 | 89.3 | 86.7 | 5043 |
+| Deployment | Desk on time | Desk first-answer p95 (ms) | Batch usable/min | Peak VRAM (MiB) |
+|---|---:|---:|---:|---:|
+| Qwen3-8B | 24/36 | 460 | 97.0 | 4922 |
+| Qwen3-4B | 20/36 | 291 | 98.0 | 3244 |
+| Qwen3.5-4B (text-only) | 19/36 | 513 | 77.5 | 3270 |
+| Phi-4-mini-instruct | 8/36 | 276 | 41.5 | 3158 |
+| Yi-1.5-9B-Chat | 2/36 | 132 | 2.4 | 5124 |
+| Spark-X2.5-4B | 0/36 | 2676 | 0.0 | 2926 |
+| DeepSeek-R1-Distill-Llama-8B | 0/36 | 3129 | 0.0 | 4806 |
+| Gemma 3 4B (text-only) | 0/36 | — | 0.0 | 3088 |
+| GLM-4-9B-0414 | 0/36 | — | 0.0 | 5180 |
 
-- **Interactive latency.** GLM-4-9B reached the first token in 54.6 ms
-  at concurrency 1. DeepSeek delivered the highest output throughput at
-  concurrency 2 and used the least VRAM at concurrency 8 in this cohort.
-- **Queueing.** Throughput was already close to saturation at concurrency 2.
-  At concurrency 8 the first-token median was 7.29–8.50 seconds, with roughly
-  the same throughput. The server has two parallel slots.
-- **Reliability depends on workload.** Each model completed 200/200 requests
-  at concurrency 1 and 4 in the reliability suite. Qwen3-8B and DeepSeek
-  had unstable or timed-out cells in the separate 768-input-token workload.
+Phi-4-mini led the earlier 4B serving sweep at 128.9 output tok/s at
+concurrency 2. It returned 8/36 correct raw replies at the desk. Accepting
+one code fence brought that to 20/36. The same parser recovered useful
+replies from Gemma and GLM.
 
-![Output throughput vs concurrency for the mainstream 8–9B models](docs/assets/figures/throughput-vs-concurrency.svg)
+[Per-task results and timings](docs/home-lab-results.md)
 
-### Compact 4B short sweep
+![Correct and timely replies for each deployment, with and without one code fence](docs/assets/figures/home-lab.svg)
 
-The four Q4_K_M models ran on the same upstream llama.cpp build, with
-context 4096 and two server slots. Each model completed 72/72 measured
-requests across concurrency 1, 2, and 4. TTFT is the mean of the two
-per-repeat medians. Peak VRAM is averaged across repeats at concurrency 4.
+## What makes a model worth running?
 
-| Model | TTFT c=1 (ms) | TTFT c=2 (ms) | Output c=2 (tok/s) | Output c=4 (tok/s) | Peak VRAM c=4 (MiB) |
-|---|---:|---:|---:|---:|---:|
-| Qwen3-4B | 84.8 | 141.6 | 120.3 | 121.5 | 3230 |
-| Qwen3.5-4B (text-only) | 210.7 | 483.1 | 75.6 | 76.6 | 3264 |
-| Phi-4-mini-instruct | 42.4 | 83.1 | 128.9 | 127.8 | 3144 |
-| Gemma 3 4B (text-only) | 98.5 | 164.3 | 108.2 | 109.6 | 3078 |
+For one person, the target is a first visible answer within **500 ms** and a
+finished reply within **5 seconds**. For a small batch with four requests in
+flight, those limits are **2 seconds** and **8 seconds**. **Usable jobs per
+minute** counts replies that meet both limits and get the task right. Peak
+VRAM tells you how much of the 6 GiB card is still available.
 
-At concurrency 2, Phi-4-mini-instruct had the lowest median TTFT (83.1 ms)
-and the highest output throughput (128.9 tok/s). Gemma 3 4B (text-only) used
-the least VRAM at concurrency 4 (3078 MiB). At concurrency 4, median TTFT
-reached 1.08–2.14 s. The largest throughput change from concurrency 2 to 4
-was 1.3 tok/s.
+The test uses 18 synthetic cases, two repeats per workload, and two
+workloads per model. The starting score uses JSON exactly as returned.
+The dashboard can accept one Markdown code fence from the same response so
+you can see what a small parser changes. The older serving sweeps show how
+the same machine behaves when it keeps generating tokens under load.
+[Home Lab protocol](docs/home-lab.md) · [Serving results](docs/results.md)
 
-At concurrency 2, Qwen3-4B and Qwen3.5-4B had median TTFT of 141.6 and 483.1
-ms, respectively, and output throughput of 120.3 and 75.6 tok/s.
-The 64-token cap and sample size apply to this compact sweep.
-[Full compact results](docs/results.md#compact-4b-short-capacity)
+## What changes under WSL2?
 
-![Output throughput vs concurrency for the compact 4B models](docs/assets/figures/compact-throughput.svg)
+In a same-laptop check, Phi-4-mini reached health in a median of **3.36 s**
+from the WSL Linux filesystem and **22.85 s** from the Windows mount. We
+pre-read the same weight and launched it three times per path. Both paths
+used the same WSL2 GPU and image. Native Linux would be a separate paired
+test.
+[Setup and measurement notes](docs/home-lab.md#wsl2-is-part-of-the-machine)
 
-### Spark reference and coding capability
-
-Spark-X2.5-4B reached 112.2 tok/s and 186.8 ms median TTFT at concurrency 2,
-using about 2847 MiB. At concurrency 8 it held 111.1 tok/s while median TTFT
-rose to 7.09 s. This reference uses the XHToken fork and locally quantized
-IQ4_XS weights.
-
-![First-token latency vs request throughput for the full sweep](docs/assets/figures/ttft-vs-throughput.svg)
-
-Serving latency and throughput describe speed on this hardware. For
-task correctness and coding performance, see [capability results](docs/capability-results.md).
-Definitions, exact conditions, and the remaining serving suites are in
-[the results guide](docs/results.md).
-
-## Reproduce
+## Try it on your own machine
 
 ```bash
-make reproduce              # full: both cohorts + dashboard
-REPRODUCE_MODE=smoke make reproduce   # fast admission path
+make setup-home
+make benchmark-home RUN=.agent/home-local
+make home-summary RUN=.agent/home-local
+make report HOME_RUN=.agent/home-local
 ```
 
-## Methodology
+The model registry pins the weights and serving images. The benchmark binds
+to loopback and uses public, invented records. Keep your model client,
+logging, and any tools in mind before sending it private material.
+[Start with one model](docs/home-lab.md#start-with-one-model) ·
+[Reproduce the full test](docs/home-lab.md#reproduce) ·
+[Model and weight sources](docs/model-selection.md)
 
-See [docs/methodology.md](docs/methodology.md) for metric definitions (TTFT,
-ITL, E2E latency, throughput), aggregation, and limitations. This is
-a fixed-hardware deployment benchmark: numbers are representative of this
-exact GPU/engine/quantization envelope, not a general model ranking.
+## Follow the results
 
-## Data
+- [Home Lab details](docs/home-lab.md) explains the task set, the time budgets,
+  the masking check, and the WSL2 test.
+- [Serving results](docs/results.md) covers throughput, tail latency, memory,
+  queueing, long inputs, and the short 4B sweep.
+- [Coding results](docs/capability-results.md) covers separate correctness and
+  software-engineering evaluations.
+- [Published run files](results/current/home-lab/) hold request outcomes,
+  timings, the synthetic cases, and machine and model metadata.
+- [Documentation index](docs/README.md) links the rest of the project.
 
-- Current 8-9B dataset: `results/current/mainstream-8-9b/`.
-- Current Spark reference: `results/current/spark-reference/`.
-- Compact short sweep: `results/current/compact-4b/capacity_short/`.
-- Historical ~4B cohort: `results/v2/final/` and `docs/history/`.
-- Normalized dashboard dataset: `docs/data/current.json` (generated by
-  `make report`); the interactive dashboard is `docs/index.html`.
-
-## Limitations
-
-- One GPU, one laptop, one driver version.
-- Serving cost, not model quality (accuracy/reasoning).
-- Cross-model tokens/s is secondary because tokenizers differ.
-- IQ4_XS fits the whole 8-9B cohort at ctx=4096/parallel=2, but the largest
-  model (GLM-4-9B) sits near the VRAM ceiling; any CPU-offload variant would
-  be recorded explicitly as such.
-- Compact results have 24 requests per model and concurrency. The output
-  length, quantization, and sample size differ from the full sweeps.
-- Spark-X2.5-4B is a reasoning model (emits `reasoning_content`), so its
-  output latency reflects reasoning tokens, not only final content.
-
-## License
-
-No source-code license is asserted for this repository. Model weights are
-governed by their own upstream licenses and are not redistributed here.
-
-## Security
-
-Model weights, caches, credentials, raw benchmark cell artifacts, and private
-machine paths are excluded (see `.gitignore`). A pre-push gate
-(`./scripts/security_check.sh`, also run in CI) checks for secrets, private
-paths, oversized files, and non-English text.
+Model weights follow their upstream licenses. This repository publishes
+measurements and fixtures. The weights come from their publishers.

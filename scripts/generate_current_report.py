@@ -20,12 +20,13 @@ import csv
 import json
 import sys
 from collections import Counter
+from html import escape
 from math import log10
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
-from bench import config  # noqa: E402
+from bench import config, home_report  # noqa: E402
 
 RESULT_ROOT = ROOT / "results" / "current"
 DOCS = ROOT / "docs"
@@ -417,6 +418,52 @@ def throughput_figure(title, models, rows):
     return _svg_line(title, series, "Concurrent requests", "Output tokens/s", xticks=ticks)
 
 
+def home_figure(run):
+    """The strict result plus replies recovered by one fence on the desk workload."""
+    budget = run["scenarios"]["desk"]
+    rows = sorted(
+        ((m["name"], m["scenarios"]["desk"]) for m in run["models"]),
+        key=lambda item: (-item[1]["timely"], -item[1]["with_fence"]["timely"], item[0]),
+    )
+    count = run["cases"] * run["repeats"]
+    width, left, bar = 760, 247, 420
+    height = 166 + 31 * len(rows)
+    parts = [
+        f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" '
+        f'viewBox="0 0 {width} {height}" font-family="Segoe UI,Arial,sans-serif" role="img" '
+        'aria-labelledby="title description">',
+        '<title id="title">Which replies were ready to use?</title>',
+        '<desc id="description">Correct replies within the desk workload budget, '
+        'with and without accepting one JSON code fence.</desc>',
+        f'<rect width="{width}" height="{height}" rx="12" fill="#f4f8f8"/>',
+        '<text x="25" y="40" font-size="24" font-weight="700" fill="#142c38">'
+        'Which replies were ready to use?</text>',
+        f'<text x="25" y="66" font-size="13" fill="#415d65">{count} requests per deployment · '
+        f'first answer ≤ {budget["first_answer_ms"]} ms · finish ≤ {budget["complete_ms"]/1000:g} s</text>',
+    ]
+    for index, (name, result) in enumerate(rows):
+        y = 94 + index * 31
+        strict, adapted = result["timely"], result["with_fence"]["timely"]
+        strict_width, extra_width = bar * strict / count, bar * (adapted - strict) / count
+        parts += [
+            f'<text x="25" y="{y+15}" font-size="13" fill="#142c38">{escape(name)}</text>',
+            f'<rect x="{left}" y="{y}" width="{bar}" height="20" rx="3" fill="#dde7e7"/>',
+            f'<rect x="{left}" y="{y}" width="{strict_width:.2f}" height="20" fill="#08796f"/>',
+            f'<rect x="{left+strict_width:.2f}" y="{y}" width="{extra_width:.2f}" height="20" fill="#75c8b4"/>',
+            f'<text x="{left+bar+10}" y="{y+15}" font-size="12" fill="#142c38">{strict} / {adapted}</text>',
+        ]
+    y = height - 30
+    parts += [
+        f'<rect x="25" y="{y-10}" width="13" height="13" fill="#08796f"/>'
+        f'<text x="44" y="{y+1}" font-size="12" fill="#142c38">Raw JSON</text>',
+        f'<rect x="130" y="{y-10}" width="13" height="13" fill="#75c8b4"/>'
+        f'<text x="150" y="{y+1}" font-size="12" fill="#142c38">Additional with one code fence</text>',
+        f'<text x="{left+bar+10}" y="{y+1}" font-size="10" fill="#415d65">raw / adapted</text>',
+        '</svg>',
+    ]
+    return "\n".join(parts)
+
+
 def readme_figures(models, cap):
     fig1 = throughput_figure("Mainstream 8-9B output throughput (IQ4_XS)",
                              [m for m in models if not m["is_reference"]], cap["aggregate"])
@@ -456,7 +503,7 @@ def _plotly_meta():
             "plotly_file": "assets/plotly.min.js"}
 
 
-def build_data():
+def build_data(home_path=home_report.PUBLISHED):
     m = manifest()
     models = models_meta()
     id_to_arm = {mm["id"]: mm["arm"] for mm in models}
@@ -486,6 +533,7 @@ def build_data():
         "models": models,
         "capacity": cap,
         "compact_capacity": compact_capacity(),
+        "home_lab": home_report.summarize(home_path) if home_path.exists() else None,
         "reliability": reliability(),
         "open_loop": open_loop(cap["aggregate"]),
         "shape": shape(profiles),
@@ -508,7 +556,7 @@ def render_html(data):
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Local LLM Inference Benchmark</title>
+<title>Home Lab LLM Benchmark</title>
 <link rel="stylesheet" href="assets/dashboard.css">
 <script src="assets/plotly.min.js"></script>
 </head>
@@ -517,6 +565,7 @@ def render_html(data):
 <script id="bench-data" type="application/json">{payload}</script>
 <script id="capability-data" type="application/json">{cap_payload}</script>
 <script src="assets/dashboard.js"></script>
+<script src="assets/home.js"></script>
 <script src="assets/capability.js"></script>
 </body>
 </html>
@@ -526,9 +575,12 @@ def render_html(data):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--out", default=str(DOCS / "index.html"))
+    ap.add_argument("--home-run", type=Path, help="Use a local Home Lab run in the dashboard")
     args = ap.parse_args()
+    if args.home_run is not None and not args.home_run.is_dir():
+        ap.error("Home Lab run directory does not exist")
 
-    data, models, cap = build_data()
+    data, models, cap = build_data(args.home_run or home_report.PUBLISHED)
 
     DATA_PATH.parent.mkdir(parents=True, exist_ok=True)
     DATA_PATH.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
@@ -548,6 +600,9 @@ def main():
         figure = throughput_figure("Compact 4B output throughput (Q4_K_M, short sweep)",
                                    compact["models"], compact["aggregate"])
         (FIG_DIR / "compact-throughput.svg").write_text(figure, encoding="utf-8")
+
+    if data["home_lab"]:
+        (FIG_DIR / "home-lab.svg").write_text(home_figure(data["home_lab"]), encoding="utf-8")
 
     model_count = len(models) + (len(compact["models"]) if compact else 0)
     print(f"wrote {out} ({model_count} models)")

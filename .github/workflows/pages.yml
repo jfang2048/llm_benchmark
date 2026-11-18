@@ -53,7 +53,7 @@ jobs:
       - name: Regenerate capability dataset (before the dashboard)
         run: python3 scripts/eval_report.py
 
-      - name: Regenerate current 8-9B report artifacts
+      - name: Regenerate Home Lab and serving dashboards
         run: python3 scripts/generate_current_report.py
 
       - name: Setup Pages

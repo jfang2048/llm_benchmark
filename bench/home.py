@@ -15,8 +15,7 @@ from urllib.error import URLError
 from urllib.request import ProxyHandler, Request, build_opener
 
 from . import config, results
-from .runner import Telemetry, gpu_vram, oom_check, wait_thermal
-from .serving import start_server
+from .serving import Telemetry, gpu_vram, oom_check, start_server, wait_for_temperature
 
 ROOT = config.ROOT
 SETTINGS = ROOT / "configs/home.json"
@@ -89,7 +88,7 @@ def grade(answer, expected, finish_reason):
 
 def request_task(url, alias, task, settings):
     user = prompt(task)
-    # Gemma's template maps system messages into the first user turn.
+    # A single user turn works with the registered chat templates.
     payload = {
         "model": alias, "messages": [{"role": "user", "content": SYSTEM + "\n\n" + user}],
         "temperature": 0, "max_tokens": settings["max_output_tokens"], "stream": True,
@@ -168,7 +167,8 @@ def run_arm(model, tasks, settings, output, model_dir):
              "--cont-batching", "--metrics", "--n-gpu-layers", str(settings["gpu_layers"])]
     if arm in settings["disable_reasoning_for"]:
         flags += ["--reasoning", "off"]
-    wait_thermal()
+    if not wait_for_temperature(70):
+        print(f"{arm}: GPU remained above 70 C at launch", flush=True)
     start = time.perf_counter()
     telemetry = Telemetry(output / f"{arm}.gpu.csv")
     try:
@@ -220,6 +220,7 @@ def run_arm(model, tasks, settings, output, model_dir):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path, default=ROOT / ".agent/home-run")
+    parser.add_argument("--list-models", action="store_true", help="Print selected model IDs for setup")
     parser.add_argument("--model", action="append", help="Select an arm; can be repeated")
     args = parser.parse_args()
     settings = json.loads(SETTINGS.read_text(encoding="utf-8"))
@@ -230,6 +231,9 @@ def main():
         if unknown:
             parser.error(f"unknown arms: {', '.join(sorted(unknown))}")
         models = [m for m in models if m["arm"] in args.model]
+    if args.list_models:
+        print("\n".join(model["id"] for model in models))
+        return
     model_dir = Path(os.environ.get("MODEL_DIR", ROOT / "models")).resolve()
     args.output.mkdir(parents=True, exist_ok=True)
     if any(args.output.iterdir()):

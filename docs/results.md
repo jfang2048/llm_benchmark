@@ -1,5 +1,7 @@
 # Results
 
+For a deployment choice based on real task contracts, start with the [Home Lab test](home-lab.md).
+
 The full serving datasets cover the mainstream 8-9B cohort and the
 Spark-X2.5-4B reference. The compact 4B cohort has a short capacity sweep.
 See the [curated results](../results/current/) and the [interactive dashboard](index.html).

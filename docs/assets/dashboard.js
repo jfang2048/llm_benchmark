@@ -74,7 +74,7 @@ const CONFIG = { displaylogo: false, responsive: true, modeBarButtonsToRemove: [
 // ---- filter UI -------------------------------------------------------------
 function buildShell() {
   const navItems = [
-    ["Overview", "overview"], ...(D.compact_capacity ? [["Compact 4B", "compact"]] : []), ["Capacity", "capacity"], ["Trade-off", "tradeoff"],
+    ...(D.home_lab ? [["Home Lab", "home-lab"]] : []), ["Serving overview", "overview"], ...(D.compact_capacity ? [["Compact 4B", "compact"]] : []), ["Capacity", "capacity"], ["Trade-off", "tradeoff"],
     ["Open-loop", "openloop"], ["Workload shape", "shape"], ["Reliability", "reliability"],
     ["Resources", "resources"], ["Sessions", "sessions"], ["Startup / soak", "startup"],
     ["llama-bench", "llamabench"], ["Data", "data"],
@@ -95,9 +95,14 @@ function buildShell() {
   document.getElementById("app").innerHTML = `
   <div class="sticky-header">
   <div class="topbar">
-    <h1>Local LLM Inference Benchmark</h1>
+    <h1>Home Lab LLM Benchmark</h1>
     <nav>${nav}</nav>
   </div>
+
+  </div>
+  <main>
+    ${D.home_lab ? '<section class="home-lab" id="home-lab"></section>' : ""}
+    <section id="overview"></section>
   <div class="filterbar" role="group" aria-label="Full sweep controls">
     <span><label for="f-cohort">Cohort</label>
       <select id="f-cohort">
@@ -111,9 +116,6 @@ function buildShell() {
       <select id="f-pct"><option value="p50">p50</option><option value="p95">p95</option></select></span>
     <button id="f-reset">Reset</button>
   </div>
-  </div>
-  <main>
-    <section id="overview"></section>
     ${D.compact_capacity ? '<section id="compact"></section>' : ""}
     <section id="capacity"></section>
     <section id="tradeoff"></section>
@@ -173,16 +175,22 @@ function syncChips() {
   });
 }
 
-function plot(id, traces, layout) {
+function plot(id, traces, layout, options = CONFIG) {
+  const host = document.getElementById(id);
+  let el = document.getElementById(id + "-chart");
   if (traces.length === 0) {
-    document.getElementById(id).innerHTML = '<div class="note">No data for the current selection.</div>';
+    if (el) Plotly.purge(el);
+    host.innerHTML = '<div class="note">No data for the current selection.</div>';
     return;
   }
-  const el = document.createElement("div");
+  if (el) {
+    Plotly.react(el, traces, layout, options);
+    return;
+  }
+  el = document.createElement("div");
   el.id = id + "-chart"; el.className = "chart";
-  const host = document.getElementById(id);
-  host.innerHTML = ""; host.appendChild(el);
-  Plotly.newPlot(el, traces, layout, CONFIG);
+  host.replaceChildren(el);
+  Plotly.newPlot(el, traces, layout, options);
 }
 
 // ---- Overview --------------------------------------------------------------

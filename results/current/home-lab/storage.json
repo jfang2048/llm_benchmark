@@ -1,0 +1,64 @@
+{
+  "model": "Phi-4-mini-instruct",
+  "gguf_sha256": "01999f17c39cc3074afae5e9c539bc82d45f2dd7faa3917c66cbef76fce8c0c2",
+  "engine_image": "llama-cpp-upstream:v0.4.0",
+  "platform": "6.18.33.2-microsoft-standard-WSL2",
+  "flags": [
+    "--ctx-size",
+    "4096",
+    "--parallel",
+    "2",
+    "--cont-batching",
+    "--metrics",
+    "--n-gpu-layers",
+    "999"
+  ],
+  "filesystems": {
+    "linux": "ext4",
+    "windows_mount": "9p"
+  },
+  "repeats": [
+    {
+      "storage": "linux",
+      "repeat": 1,
+      "ready_ms": 3355.4146599999513,
+      "first_answer_ms": 55.19774399999733,
+      "finished_ms": 401.85827700042864
+    },
+    {
+      "storage": "windows_mount",
+      "repeat": 1,
+      "ready_ms": 22477.482542999496,
+      "first_answer_ms": 59.62631399961538,
+      "finished_ms": 400.97172199966735
+    },
+    {
+      "storage": "windows_mount",
+      "repeat": 2,
+      "ready_ms": 23184.07563799974,
+      "first_answer_ms": 61.93407200044021,
+      "finished_ms": 412.2670169999765
+    },
+    {
+      "storage": "linux",
+      "repeat": 2,
+      "ready_ms": 3952.3464929998227,
+      "first_answer_ms": 53.6701750006614,
+      "finished_ms": 401.6959800001132
+    },
+    {
+      "storage": "linux",
+      "repeat": 3,
+      "ready_ms": 2701.6560860001846,
+      "first_answer_ms": 51.711993999560946,
+      "finished_ms": 396.4384829996561
+    },
+    {
+      "storage": "windows_mount",
+      "repeat": 3,
+      "ready_ms": 22850.610084000436,
+      "first_answer_ms": 60.847126000226126,
+      "finished_ms": 404.6496490000209
+    }
+  ]
+}

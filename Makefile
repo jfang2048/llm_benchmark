@@ -35,7 +35,7 @@ COHORTS = mainstream_8_9b spark_reference
 # Capability-evaluation python (.venv-eval/, created by eval-setup).
 EVALPY ?= .venv-eval/bin/python
 
-.PHONY: help setup smoke benchmark benchmark-compact spark reliability shape open-loop startup \
+.PHONY: setup-home benchmark-home home-summary help setup smoke benchmark benchmark-compact spark reliability shape open-loop startup \
 	soak sessions llama-bench report reproduce clean benchmark-v1 \
 	eval-setup eval-admit eval-code eval-livecodebench eval-swe eval-deepswe \
 	eval-multilingual eval-terminal eval-live eval-frontier eval-report \
@@ -50,6 +50,7 @@ help:
 	  "  make setup        Download models and build serving images" \
 	  "  make smoke        Fast admission sanity check" \
 	  "  make benchmark    Mainstream 8-9B capacity sweep" \
+	  "  make benchmark-home     Measure synthetic private-workflow tasks" \
 	  "  make benchmark-compact  Compact 4B short capacity sweep" \
 	  "  make spark        Spark reference capacity sweep" \
 	  "  make reliability  Transport-reliability gate (both cohorts)" \
@@ -88,6 +89,18 @@ smoke:
 benchmark:
 	$(RUNNER) --cohort mainstream_8_9b --suite capacity
 
+# Keep raw run files in an ignored directory. RUN can point to a new empty directory.
+RUN ?= .agent/home-run
+setup-home:
+	./scripts/build.sh
+	@ids="$$(python3 -m bench.home --list-models)" && ./scripts/download_models.sh $$ids
+
+benchmark-home:
+	python3 -m bench.home --output "$(RUN)"
+
+home-summary:
+	python3 -m bench.home_report "$(RUN)"
+
 benchmark-compact:
 	$(RUNNER) --cohort compact_4b --suite capacity_short
 
@@ -116,7 +129,7 @@ llama-bench:
 	python3 -m bench.llama_bench
 
 report:
-	python3 scripts/generate_current_report.py
+	python3 scripts/generate_current_report.py $(if $(HOME_RUN),--home-run "$(HOME_RUN)")
 
 # --- Coding / SWE capability evaluation (separate from serving) ---
 # Canonical model arms (short form; see configs/models.json).

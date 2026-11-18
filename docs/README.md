@@ -3,6 +3,12 @@
 This repository runs two independent evaluation layers. They are never merged
 into one score.
 
+## Home Lab
+
+Start with the [local task benchmark](home-lab.md) for the WSL2 setup,
+response budgets and how to reproduce the results. [All nine deployments](home-lab-results.md) are in the scorecard. The serving and coding
+suites below go deeper into capacity, runtime behavior, and task capability.
+
 ## 1. Serving benchmark (fixed-hardware inference)
 
 Measures serving performance under one GPU / engine / quantization policy:
@@ -40,5 +46,6 @@ Measures model coding ability, split into direct coding and agentic SWE.
 
 | Doc | 内容 |
 |---|---|
+| [zh/home-lab.md](zh/home-lab.md) | 6 GiB 笔记本上的本地模型选择。 |
 | [zh/problems-and-solutions.md](zh/problems-and-solutions.md) | 问题与解决方法总结（设计问题 + 实现问题 + 为什么）。 |
 | [zh/results-analysis.md](zh/results-analysis.md) | 结果分析：模型差异、原因、推理框架对比、前沿调研。 |

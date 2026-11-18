@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="445" viewBox="0 0 760 445" font-family="Segoe UI,Arial,sans-serif" role="img" aria-labelledby="title description">
+<title id="title">Which replies were ready to use?</title>
+<desc id="description">Correct replies within the desk workload budget, with and without accepting one JSON code fence.</desc>
+<rect width="760" height="445" rx="12" fill="#f4f8f8"/>
+<text x="25" y="40" font-size="24" font-weight="700" fill="#142c38">Which replies were ready to use?</text>
+<text x="25" y="66" font-size="13" fill="#415d65">36 requests per deployment · first answer ≤ 500 ms · finish ≤ 5 s</text>
+<text x="25" y="109" font-size="13" fill="#142c38">Qwen3-8B</text>
+<rect x="247" y="94" width="420" height="20" rx="3" fill="#dde7e7"/>
+<rect x="247" y="94" width="280.00" height="20" fill="#08796f"/>
+<rect x="527.00" y="94" width="0.00" height="20" fill="#75c8b4"/>
+<text x="677" y="109" font-size="12" fill="#142c38">24 / 24</text>
+<text x="25" y="140" font-size="13" fill="#142c38">Qwen3-4B</text>
+<rect x="247" y="125" width="420" height="20" rx="3" fill="#dde7e7"/>
+<rect x="247" y="125" width="233.33" height="20" fill="#08796f"/>
+<rect x="480.33" y="125" width="0.00" height="20" fill="#75c8b4"/>
+<text x="677" y="140" font-size="12" fill="#142c38">20 / 20</text>
+<text x="25" y="171" font-size="13" fill="#142c38">Qwen3.5-4B (text-only)</text>
+<rect x="247" y="156" width="420" height="20" rx="3" fill="#dde7e7"/>
+<rect x="247" y="156" width="221.67" height="20" fill="#08796f"/>
+<rect x="468.67" y="156" width="0.00" height="20" fill="#75c8b4"/>
+<text x="677" y="171" font-size="12" fill="#142c38">19 / 19</text>
+<text x="25" y="202" font-size="13" fill="#142c38">Phi-4-mini-instruct</text>
+<rect x="247" y="187" width="420" height="20" rx="3" fill="#dde7e7"/>
+<rect x="247" y="187" width="93.33" height="20" fill="#08796f"/>
+<rect x="340.33" y="187" width="140.00" height="20" fill="#75c8b4"/>
+<text x="677" y="202" font-size="12" fill="#142c38">8 / 20</text>
+<text x="25" y="233" font-size="13" fill="#142c38">Yi-1.5-9B-Chat</text>
+<rect x="247" y="218" width="420" height="20" rx="3" fill="#dde7e7"/>
+<rect x="247" y="218" width="23.33" height="20" fill="#08796f"/>
+<rect x="270.33" y="218" width="46.67" height="20" fill="#75c8b4"/>
+<text x="677" y="233" font-size="12" fill="#142c38">2 / 6</text>
+<text x="25" y="264" font-size="13" fill="#142c38">Gemma 3 4B (text-only)</text>
+<rect x="247" y="249" width="420" height="20" rx="3" fill="#dde7e7"/>
+<rect x="247" y="249" width="0.00" height="20" fill="#08796f"/>
+<rect x="247.00" y="249" width="233.33" height="20" fill="#75c8b4"/>
+<text x="677" y="264" font-size="12" fill="#142c38">0 / 20</text>
+<text x="25" y="295" font-size="13" fill="#142c38">GLM-4-9B-0414</text>
+<rect x="247" y="280" width="420" height="20" rx="3" fill="#dde7e7"/>
+<rect x="247" y="280" width="0.00" height="20" fill="#08796f"/>
+<rect x="247.00" y="280" width="221.67" height="20" fill="#75c8b4"/>
+<text x="677" y="295" font-size="12" fill="#142c38">0 / 19</text>
+<text x="25" y="326" font-size="13" fill="#142c38">DeepSeek-R1-Distill-Llama-8B</text>
+<rect x="247" y="311" width="420" height="20" rx="3" fill="#dde7e7"/>
+<rect x="247" y="311" width="0.00" height="20" fill="#08796f"/>
+<rect x="247.00" y="311" width="0.00" height="20" fill="#75c8b4"/>
+<text x="677" y="326" font-size="12" fill="#142c38">0 / 0</text>
+<text x="25" y="357" font-size="13" fill="#142c38">Spark-X2.5-4B</text>
+<rect x="247" y="342" width="420" height="20" rx="3" fill="#dde7e7"/>
+<rect x="247" y="342" width="0.00" height="20" fill="#08796f"/>
+<rect x="247.00" y="342" width="0.00" height="20" fill="#75c8b4"/>
+<text x="677" y="357" font-size="12" fill="#142c38">0 / 0</text>
+<rect x="25" y="405" width="13" height="13" fill="#08796f"/><text x="44" y="416" font-size="12" fill="#142c38">Raw JSON</text>
+<rect x="130" y="405" width="13" height="13" fill="#75c8b4"/><text x="150" y="416" font-size="12" fill="#142c38">Additional with one code fence</text>
+<text x="677" y="416" font-size="10" fill="#415d65">raw / adapted</text>
+</svg>

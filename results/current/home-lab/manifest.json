@@ -1,0 +1,453 @@
+{
+  "settings": {
+    "schema_version": 1,
+    "cohorts": [
+      "compact_4b",
+      "mainstream_8_9b",
+      "spark_reference"
+    ],
+    "context": 4096,
+    "slots": 2,
+    "gpu_layers": 999,
+    "repeats": 2,
+    "max_output_tokens": 192,
+    "request_timeout_s": 30,
+    "disable_reasoning_for": [
+      "qwen3_4b_compact",
+      "qwen3_5_4b_compact",
+      "qwen3_8b"
+    ],
+    "scenarios": {
+      "desk": {
+        "label": "One person",
+        "concurrency": 1,
+        "first_answer_ms": 500,
+        "complete_ms": 5000
+      },
+      "burst": {
+        "label": "Small batch",
+        "concurrency": 4,
+        "first_answer_ms": 2000,
+        "complete_ms": 8000
+      }
+    }
+  },
+  "tasks_sha256": "0c345543631478fb7889dfc8571a3a13df2c5fb35f931060c76863a8c58bab8b",
+  "settings_sha256": "95ceff96a120a7915112e123a8e06de61f8c300d5235c1f0f042e3bb11b87438",
+  "gpu": "NVIDIA GeForce RTX 3060 Laptop GPU, 6144, 610.74",
+  "platform": "6.18.33.2-microsoft-standard-WSL2",
+  "source_commit": "0136db855f40d7303587d8b9677b34fb86a08359",
+  "arms": [
+    {
+      "arm": "qwen3_4b_compact",
+      "name": "Qwen3-4B",
+      "cohort": "compact_4b",
+      "quantization": "Q4_K_M",
+      "engine_image": "llama-cpp-upstream:v0.4.0",
+      "image_id": "sha256:427c7b1be34bd9fb0d817eab9d372947fcc63204fa43e9a3f369e15cc91be4bc",
+      "gguf_sha256": "7485fe6f11af29433bc51cab58009521f205840f5b4ae3a32fa7f92e8534fdf5",
+      "flags": [
+        "--ctx-size",
+        "4096",
+        "--parallel",
+        "2",
+        "--cont-batching",
+        "--metrics",
+        "--n-gpu-layers",
+        "999",
+        "--reasoning",
+        "off"
+      ],
+      "startup_ms": 3627.0072329998584,
+      "ready_vram_mib": 3236,
+      "peak_vram_mib": 3244.0,
+      "peak_temperature_c": 67.0,
+      "windows": [
+        {
+          "scenario": "desk",
+          "repeat": 1,
+          "seconds": 7.918174593000003
+        },
+        {
+          "scenario": "burst",
+          "repeat": 1,
+          "seconds": 6.01112973499994
+        },
+        {
+          "scenario": "burst",
+          "repeat": 2,
+          "seconds": 6.237445664000006
+        },
+        {
+          "scenario": "desk",
+          "repeat": 2,
+          "seconds": 7.806996806999905
+        }
+      ]
+    },
+    {
+      "arm": "phi4_mini_compact",
+      "name": "Phi-4-mini-instruct",
+      "cohort": "compact_4b",
+      "quantization": "Q4_K_M",
+      "engine_image": "llama-cpp-upstream:v0.4.0",
+      "image_id": "sha256:427c7b1be34bd9fb0d817eab9d372947fcc63204fa43e9a3f369e15cc91be4bc",
+      "gguf_sha256": "01999f17c39cc3074afae5e9c539bc82d45f2dd7faa3917c66cbef76fce8c0c2",
+      "flags": [
+        "--ctx-size",
+        "4096",
+        "--parallel",
+        "2",
+        "--cont-batching",
+        "--metrics",
+        "--n-gpu-layers",
+        "999"
+      ],
+      "startup_ms": 4510.230157000024,
+      "ready_vram_mib": 3150,
+      "peak_vram_mib": 3158.0,
+      "peak_temperature_c": 68.0,
+      "windows": [
+        {
+          "scenario": "desk",
+          "repeat": 1,
+          "seconds": 7.353990725000131
+        },
+        {
+          "scenario": "burst",
+          "repeat": 1,
+          "seconds": 5.108682703999875
+        },
+        {
+          "scenario": "burst",
+          "repeat": 2,
+          "seconds": 5.018047818000014
+        },
+        {
+          "scenario": "desk",
+          "repeat": 2,
+          "seconds": 6.733163346999845
+        }
+      ]
+    },
+    {
+      "arm": "gemma3_4b_compact",
+      "name": "Gemma 3 4B (text-only)",
+      "cohort": "compact_4b",
+      "quantization": "Q4_K_M",
+      "engine_image": "llama-cpp-upstream:v0.4.0",
+      "image_id": "sha256:427c7b1be34bd9fb0d817eab9d372947fcc63204fa43e9a3f369e15cc91be4bc",
+      "gguf_sha256": "882e8d2db44dc554fb0ea5077cb7e4bc49e7342a1f0da57901c0802ea21a0863",
+      "flags": [
+        "--ctx-size",
+        "4096",
+        "--parallel",
+        "2",
+        "--cont-batching",
+        "--metrics",
+        "--n-gpu-layers",
+        "999"
+      ],
+      "startup_ms": 3813.2338519999394,
+      "ready_vram_mib": 3080,
+      "peak_vram_mib": 3088.0,
+      "peak_temperature_c": 69.0,
+      "windows": [
+        {
+          "scenario": "desk",
+          "repeat": 1,
+          "seconds": 10.773909234999792
+        },
+        {
+          "scenario": "burst",
+          "repeat": 1,
+          "seconds": 8.974047676999817
+        },
+        {
+          "scenario": "burst",
+          "repeat": 2,
+          "seconds": 8.797882510999898
+        },
+        {
+          "scenario": "desk",
+          "repeat": 2,
+          "seconds": 10.529487133999737
+        }
+      ]
+    },
+    {
+      "arm": "qwen3_5_4b_compact",
+      "name": "Qwen3.5-4B (text-only)",
+      "cohort": "compact_4b",
+      "quantization": "Q4_K_M",
+      "engine_image": "llama-cpp-upstream:v0.4.0",
+      "image_id": "sha256:427c7b1be34bd9fb0d817eab9d372947fcc63204fa43e9a3f369e15cc91be4bc",
+      "gguf_sha256": "13c16f426047e2de38cd075bdade4a7bcbc8c774384876f677740cda65f8a983",
+      "flags": [
+        "--ctx-size",
+        "4096",
+        "--parallel",
+        "2",
+        "--cont-batching",
+        "--metrics",
+        "--n-gpu-layers",
+        "999",
+        "--reasoning",
+        "off"
+      ],
+      "startup_ms": 4975.926912999967,
+      "ready_vram_mib": 3246,
+      "peak_vram_mib": 3270.0,
+      "peak_temperature_c": 69.0,
+      "windows": [
+        {
+          "scenario": "desk",
+          "repeat": 1,
+          "seconds": 9.494199619000028
+        },
+        {
+          "scenario": "burst",
+          "repeat": 1,
+          "seconds": 8.878614018000007
+        },
+        {
+          "scenario": "burst",
+          "repeat": 2,
+          "seconds": 8.922352785000385
+        },
+        {
+          "scenario": "desk",
+          "repeat": 2,
+          "seconds": 9.347947128000214
+        }
+      ]
+    },
+    {
+      "arm": "qwen3_8b",
+      "name": "Qwen3-8B",
+      "cohort": "mainstream_8_9b",
+      "quantization": "IQ4_XS",
+      "engine_image": "llama-cpp-upstream:v0.4.0",
+      "image_id": "sha256:427c7b1be34bd9fb0d817eab9d372947fcc63204fa43e9a3f369e15cc91be4bc",
+      "gguf_sha256": "0f69fe02ca9764c93bcc12ac96509bee53488114d6a7fe47764f80990c28751a",
+      "flags": [
+        "--ctx-size",
+        "4096",
+        "--parallel",
+        "2",
+        "--cont-batching",
+        "--metrics",
+        "--n-gpu-layers",
+        "999",
+        "--reasoning",
+        "off"
+      ],
+      "startup_ms": 6346.663235000051,
+      "ready_vram_mib": 4912,
+      "peak_vram_mib": 4922.0,
+      "peak_temperature_c": 70.0,
+      "windows": [
+        {
+          "scenario": "desk",
+          "repeat": 1,
+          "seconds": 10.070860190000076
+        },
+        {
+          "scenario": "burst",
+          "repeat": 1,
+          "seconds": 7.531400243999997
+        },
+        {
+          "scenario": "burst",
+          "repeat": 2,
+          "seconds": 7.312795243999972
+        },
+        {
+          "scenario": "desk",
+          "repeat": 2,
+          "seconds": 9.948898799999824
+        }
+      ]
+    },
+    {
+      "arm": "deepseek_r1_8b",
+      "name": "DeepSeek-R1-Distill-Llama-8B",
+      "cohort": "mainstream_8_9b",
+      "quantization": "IQ4_XS",
+      "engine_image": "llama-cpp-upstream:v0.4.0",
+      "image_id": "sha256:427c7b1be34bd9fb0d817eab9d372947fcc63204fa43e9a3f369e15cc91be4bc",
+      "gguf_sha256": "a076a5f7e48a054067d420c32740e1e63b425e1318a9a4eba89024906d67adcd",
+      "flags": [
+        "--ctx-size",
+        "4096",
+        "--parallel",
+        "2",
+        "--cont-batching",
+        "--metrics",
+        "--n-gpu-layers",
+        "999"
+      ],
+      "startup_ms": 7089.195017000293,
+      "ready_vram_mib": 4796,
+      "peak_vram_mib": 4806.0,
+      "peak_temperature_c": 73.0,
+      "windows": [
+        {
+          "scenario": "desk",
+          "repeat": 1,
+          "seconds": 67.16779377400007
+        },
+        {
+          "scenario": "burst",
+          "repeat": 1,
+          "seconds": 37.703671960000065
+        },
+        {
+          "scenario": "burst",
+          "repeat": 2,
+          "seconds": 37.57337424900015
+        },
+        {
+          "scenario": "desk",
+          "repeat": 2,
+          "seconds": 65.83444872400014
+        }
+      ]
+    },
+    {
+      "arm": "glm4_9b",
+      "name": "GLM-4-9B-0414",
+      "cohort": "mainstream_8_9b",
+      "quantization": "IQ4_XS",
+      "engine_image": "llama-cpp-upstream:v0.4.0",
+      "image_id": "sha256:427c7b1be34bd9fb0d817eab9d372947fcc63204fa43e9a3f369e15cc91be4bc",
+      "gguf_sha256": "c85b661ed11c36f8b5a4f75da8bc1672b011febf8d71f098feab41186ad1767e",
+      "flags": [
+        "--ctx-size",
+        "4096",
+        "--parallel",
+        "2",
+        "--cont-batching",
+        "--metrics",
+        "--n-gpu-layers",
+        "999"
+      ],
+      "startup_ms": 9824.40422199943,
+      "ready_vram_mib": 5170,
+      "peak_vram_mib": 5180.0,
+      "peak_temperature_c": 73.0,
+      "windows": [
+        {
+          "scenario": "desk",
+          "repeat": 1,
+          "seconds": 17.71791202699933
+        },
+        {
+          "scenario": "burst",
+          "repeat": 1,
+          "seconds": 11.062982440999804
+        },
+        {
+          "scenario": "burst",
+          "repeat": 2,
+          "seconds": 11.171763538999585
+        },
+        {
+          "scenario": "desk",
+          "repeat": 2,
+          "seconds": 16.981135734000418
+        }
+      ]
+    },
+    {
+      "arm": "yi_15_9b",
+      "name": "Yi-1.5-9B-Chat",
+      "cohort": "mainstream_8_9b",
+      "quantization": "IQ4_XS",
+      "engine_image": "llama-cpp-upstream:v0.4.0",
+      "image_id": "sha256:427c7b1be34bd9fb0d817eab9d372947fcc63204fa43e9a3f369e15cc91be4bc",
+      "gguf_sha256": "acf005319fa455ea91f6c8954d5beb1a08138114ea0cb88be718cdbfc8b1c5ba",
+      "flags": [
+        "--ctx-size",
+        "4096",
+        "--parallel",
+        "2",
+        "--cont-batching",
+        "--metrics",
+        "--n-gpu-layers",
+        "999"
+      ],
+      "startup_ms": 7049.309297999571,
+      "ready_vram_mib": 5114,
+      "peak_vram_mib": 5124.0,
+      "peak_temperature_c": 73.0,
+      "windows": [
+        {
+          "scenario": "desk",
+          "repeat": 1,
+          "seconds": 18.417254613000296
+        },
+        {
+          "scenario": "burst",
+          "repeat": 1,
+          "seconds": 12.181320120999771
+        },
+        {
+          "scenario": "burst",
+          "repeat": 2,
+          "seconds": 12.609064858999773
+        },
+        {
+          "scenario": "desk",
+          "repeat": 2,
+          "seconds": 18.211423657000523
+        }
+      ]
+    },
+    {
+      "arm": "spark_llama",
+      "name": "Spark-X2.5-4B",
+      "cohort": "spark_reference",
+      "quantization": "IQ4_XS",
+      "engine_image": "spark-x25-llama:cuda13",
+      "image_id": "sha256:5759abb339c9c6c1258d571b4d7ba540571ae69ae53306ef4a858dcd28a6f76b",
+      "gguf_sha256": "e164454ef60b72af5f2dd544fafd754f2e30f6133cbab0506b925cc863070b38",
+      "flags": [
+        "--ctx-size",
+        "4096",
+        "--parallel",
+        "2",
+        "--cont-batching",
+        "--metrics",
+        "--n-gpu-layers",
+        "999"
+      ],
+      "startup_ms": 5165.984540999489,
+      "ready_vram_mib": 2918,
+      "peak_vram_mib": 2926.0,
+      "peak_temperature_c": 74.0,
+      "windows": [
+        {
+          "scenario": "desk",
+          "repeat": 1,
+          "seconds": 49.97881432200029
+        },
+        {
+          "scenario": "burst",
+          "repeat": 1,
+          "seconds": 31.747539446999326
+        },
+        {
+          "scenario": "burst",
+          "repeat": 2,
+          "seconds": 32.1482462010008
+        },
+        {
+          "scenario": "desk",
+          "repeat": 2,
+          "seconds": 49.1076734799999
+        }
+      ]
+    }
+  ]
+}
