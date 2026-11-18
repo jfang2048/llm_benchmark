@@ -57,6 +57,24 @@ class ControlledBenchmarkTests(unittest.TestCase):
             key = run["experiment"], run["pair"], run["arm"]
             self.assertEqual(max(run["ready_vram_mib"], *peaks[key]), run["peak_vram_mib"])
 
+    def test_plot_data_matches_archived_pairs(self):
+        data = summarize(PUBLISHED)
+        path = config.ROOT / "docs/data/controlled-pairs.tsv"
+        with path.open(newline="", encoding="utf-8") as source:
+            rows = {(row["comparison"], int(row["pair"]), row["metric"]): row
+                    for row in csv.DictReader(source, delimiter="\t")}
+        self.assertEqual(len(rows), 5 * 6 * len(data["metrics"]))
+        for experiment in data["experiments"]:
+            for pair in experiment["pairs"]:
+                for metric, (_, unit) in data["metrics"].items():
+                    row = rows[experiment["id"], pair["number"], metric]
+                    a, b = pair["baseline"][metric], pair["changed"][metric]
+                    self.assertEqual(row["first_arm"], pair["order"][0])
+                    self.assertEqual(row["unit"], unit)
+                    self.assertEqual(float(row["a"]), a)
+                    self.assertEqual(float(row["b"]), b)
+                    self.assertEqual(float(row["b_minus_a"]), b - a)
+
     def test_published_archive(self):
         data = summarize(PUBLISHED)
         self.assertEqual(data["request_count"], 1080)

@@ -9,6 +9,18 @@ manifest records the original source runs and their timed windows.
 
 ## One person
 
+![Paired scoring rules for 36 desk requests per deployment](assets/figures/home-lab.svg)
+
+**Figure 1 | Desk requests scored under two parsing rules.** Each row
+summarizes 36 requests (18 fixtures, two repeats). Both markers use the
+same replies and deadlines of 500 ms to the first visible answer and 5 s
+to completion. Vertical offsets separate the two markers. The line
+connects the raw-JSON count to the count after accepting one JSON fence.
+
+**Table 1 | Single-client results.** Latency p95 uses the number of correct
+raw replies shown in its row, with a dash for rows with zero correct replies.
+Peak VRAM is measured across both workloads for each deployment.
+
 | Deployment | Raw correct | Raw on time | On time with fence | Raw usable/min | Output tok/s | Visible p95 (ms) | Finish p95 (ms) | Peak MiB |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
 | Qwen3-8B | 24/36 | 24/36 | 24/36 | 71.9 | 35.2 | 460 | 752 | 4922 |
@@ -28,6 +40,9 @@ manifest records the original source runs and their timed windows.
 Latency percentiles use correct raw replies. Token rate includes reported reasoning tokens.
 
 ## Small batch
+
+**Table 2 | Four-client results.** The first-answer and completion
+deadlines are 2 s and 8 s. Each row summarizes 36 requests.
 
 | Deployment | Raw correct | Raw on time | On time with fence | Raw usable/min | Output tok/s | Visible p95 (ms) | Finish p95 (ms) | Peak MiB |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|

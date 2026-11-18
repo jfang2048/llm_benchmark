@@ -34,6 +34,7 @@ COHORTS = mainstream_8_9b spark_reference
 
 # Capability-evaluation python (.venv-eval/, created by eval-setup).
 EVALPY ?= .venv-eval/bin/python
+REPORTPY ?= python3
 
 .PHONY: setup-home benchmark-home home-summary help setup smoke benchmark benchmark-compact spark reliability shape open-loop startup \
 	soak sessions llama-bench report reproduce clean benchmark-v1 \
@@ -129,7 +130,7 @@ llama-bench:
 	python3 -m bench.llama_bench
 
 report:
-	python3 scripts/generate_current_report.py $(if $(HOME_RUN),--home-run "$(HOME_RUN)")
+	$(REPORTPY) scripts/generate_current_report.py $(if $(HOME_RUN),--home-run "$(HOME_RUN)")
 
 # --- Coding / SWE capability evaluation (separate from serving) ---
 # Canonical model arms (short form; see configs/models.json).

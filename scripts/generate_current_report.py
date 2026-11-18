@@ -21,8 +21,10 @@ import json
 import sys
 from collections import Counter
 from html import escape
-from math import ceil, log10
+from math import log10
 from pathlib import Path
+
+from current_figures import home_figure, paired_figure, write_paired_tsv
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
@@ -418,105 +420,6 @@ def throughput_figure(title, models, rows):
     return _svg_line(title, series, "Concurrent requests", "Output tokens/s", xticks=ticks)
 
 
-def home_figure(run):
-    """The strict result plus replies recovered by one fence on the desk workload."""
-    budget = run["scenarios"]["desk"]
-    rows = sorted(
-        ((m["name"], m["scenarios"]["desk"]) for m in run["models"]),
-        key=lambda item: (-item[1]["timely"], -item[1]["with_fence"]["timely"], item[0]),
-    )
-    count = run["cases"] * run["repeats"]
-    width, left, bar = 760, 247, 420
-    height = 166 + 31 * len(rows)
-    parts = [
-        f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" '
-        f'viewBox="0 0 {width} {height}" font-family="Segoe UI,Arial,sans-serif" role="img" '
-        'aria-labelledby="title description">',
-        '<title id="title">Which replies were ready to use?</title>',
-        '<desc id="description">Correct replies within the desk workload budget, '
-        'with and without accepting one JSON code fence.</desc>',
-        f'<rect width="{width}" height="{height}" rx="12" fill="#f4f8f8"/>',
-        '<text x="25" y="40" font-size="24" font-weight="700" fill="#142c38">'
-        'Which replies were ready to use?</text>',
-        f'<text x="25" y="66" font-size="13" fill="#415d65">{count} requests per deployment · '
-        f'first answer ≤ {budget["first_answer_ms"]} ms · finish ≤ {budget["complete_ms"]/1000:g} s</text>',
-    ]
-    for index, (name, result) in enumerate(rows):
-        y = 94 + index * 31
-        strict, adapted = result["timely"], result["with_fence"]["timely"]
-        strict_width, extra_width = bar * strict / count, bar * (adapted - strict) / count
-        parts += [
-            f'<text x="25" y="{y+15}" font-size="13" fill="#142c38">{escape(name)}</text>',
-            f'<rect x="{left}" y="{y}" width="{bar}" height="20" rx="3" fill="#dde7e7"/>',
-            f'<rect x="{left}" y="{y}" width="{strict_width:.2f}" height="20" fill="#08796f"/>',
-            f'<rect x="{left+strict_width:.2f}" y="{y}" width="{extra_width:.2f}" height="20" fill="#75c8b4"/>',
-            f'<text x="{left+bar+10}" y="{y+15}" font-size="12" fill="#142c38">{strict} / {adapted}</text>',
-        ]
-    y = height - 30
-    parts += [
-        f'<rect x="25" y="{y-10}" width="13" height="13" fill="#08796f"/>'
-        f'<text x="44" y="{y+1}" font-size="12" fill="#142c38">Raw JSON</text>',
-        f'<rect x="130" y="{y-10}" width="13" height="13" fill="#75c8b4"/>'
-        f'<text x="150" y="{y+1}" font-size="12" fill="#142c38">Additional with one code fence</text>',
-        f'<text x="{left+bar+10}" y="{y+1}" font-size="10" fill="#415d65">raw / adapted</text>',
-        '</svg>',
-    ]
-    return "\n".join(parts)
-
-
-def controlled_figure(run):
-    """A printable version of the paired usable-jobs plot."""
-    labels = {
-        "size-small": "0.8B → 2B",
-        "size-medium": "2B → 4B",
-        "context": "4K → 16K context",
-        "concurrency": "1 → 4 clients",
-        "engine": "Upstream → XHToken",
-    }
-    width, height = 680, 310
-    left, right, bottom = 184, 570, 260
-    experiments = run["experiments"]
-    limit = max(10, 10 * ceil(max(abs(exp["summary"]["goodput"][bound])
-                                      for exp in experiments
-                                      for bound in ("min_delta", "max_delta")) / 10))
-    center = (left + right) / 2
-
-    def x(value):
-        return center + value * (right - left) / (2 * limit)
-
-    parts = [
-        f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" '
-        f'viewBox="0 0 {width} {height}" font-family="Segoe UI,Arial,sans-serif" '
-        'role="img" aria-labelledby="paired-title paired-desc">',
-        '<title id="paired-title">What changed the number of usable replies?</title>',
-        '<desc id="paired-desc">Median change and observed range in usable replies '
-        'per minute across six matched pairs for each setting.</desc>',
-        f'<rect width="{width}" height="{height}" rx="12" fill="#f4f8f8"/>',
-        '<text x="22" y="36" font-size="22" font-weight="700" fill="#142c38">'
-        'What changed the number of usable replies?</text>',
-        '<text x="22" y="60" font-size="14" fill="#415d65">'
-        'Jobs per minute gained or lost · six matched pairs per row</text>',
-    ]
-    for tick in (-limit, -limit / 2, 0, limit / 2, limit):
-        grid = "#83929c" if tick == 0 else "#dfe8e9"
-        parts.append(f'<path d="M{x(tick):.1f} 82V{bottom}" stroke="{grid}"/>')
-        parts.append(f'<text x="{x(tick):.1f}" y="{bottom+22}" text-anchor="middle" '
-                     f'font-size="13" fill="#415d65">{tick:g}</text>')
-    for row, exp in enumerate(experiments):
-        y = 99 + row * 35
-        stats = exp["summary"]["goodput"]
-        mid = x(stats["median_delta"])
-        x1, x2 = x(stats["min_delta"]), x(stats["max_delta"])
-        parts += [
-            f'<text x="22" y="{y+5}" font-size="14" fill="#142c38">{escape(labels[exp["id"]])}</text>',
-            f'<path d="M{x1:.1f} {y}H{x2:.1f}" stroke="#8eb7b2" stroke-width="4" stroke-linecap="round"/>',
-            f'<path d="M{mid:.1f} {y-6}l6 6l-6 6l-6 -6Z" fill="#08796f"/>',
-            f'<text x="590" y="{y+5}" font-size="14" font-weight="600" fill="#142c38">'
-            f'{stats["median_delta"]:+.1f}</text>',
-        ]
-    return "\n".join(parts + ["</svg>"])
-
-
 def readme_figures(models, cap):
     fig1 = throughput_figure("Mainstream 8-9B output throughput (IQ4_XS)",
                              [m for m in models if not m["is_reference"]], cap["aggregate"])
@@ -656,10 +559,11 @@ def main():
                                    compact["models"], compact["aggregate"])
         (FIG_DIR / "compact-throughput.svg").write_text(figure, encoding="utf-8")
 
-    (FIG_DIR / "controlled.svg").write_text(controlled_figure(data["controlled"]), encoding="utf-8")
+    paired_figure(data["controlled"], FIG_DIR / "controlled.svg")
+    write_paired_tsv(data["controlled"], DATA_PATH.with_name("controlled-pairs.tsv"))
 
     if data["home_lab"]:
-        (FIG_DIR / "home-lab.svg").write_text(home_figure(data["home_lab"]), encoding="utf-8")
+        home_figure(data["home_lab"], FIG_DIR / "home-lab.svg")
 
     model_count = len(models) + (len(compact["models"]) if compact else 0)
     home_count = len(data["home_lab"]["models"]) if data["home_lab"] else 0

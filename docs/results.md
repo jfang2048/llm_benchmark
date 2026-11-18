@@ -193,4 +193,4 @@ sampling). Not full-system energy, not MLPerf Power compliant.
   `manifest.json` (engine/image/flags/workload hash), plus `reliability.tsv`
   and `startup.tsv` where applicable.
 
-Regenerate the dashboard with `make report`.
+Install the [report dependencies](controlled.md#5-data-and-reproduction) and run `make report REPORTPY=.agent/report-env/bin/python`.

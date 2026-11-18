@@ -1,106 +1,120 @@
-# Change one thing on a 6 GiB GPU
+# Paired local inference benchmark
 
-The Home Lab scorecard compares complete deployments and shows what worked
-on this laptop. These five follow-up comparisons change one setting per
-pair and replay the same jobs. The laptop stays in WSL2 for every run.
+## 1. Experimental design
 
-| Change | Settings held steady |
+Five comparisons vary one deployment setting per pair. Each comparison
+contains six pairs of fresh server launches (three A→B and three B→A).
+Each launch replays 18 synthetic cases. The run comprised 60 launches,
+120 warm-up requests and 1,080 measured requests. The unit of analysis for
+each effect is one launch pair (n = 6 per comparison).
+
+**Table 1 | Experimental conditions.** A is the baseline and B is the
+changed setting. Context is measured in total tokens across two server slots.
+
+| Factor | A | B | Held fixed |
+|---|---|---|---|
+| Checkpoint size | Qwen3.5-0.8B | Qwen3.5-2B | Text-only Qwen3.5, Bartowski Q4_K_M, upstream llama.cpp, one client, 4,096 tokens |
+| Checkpoint size | Qwen3.5-2B | Qwen3.5-4B | Same settings as the 0.8B–2B comparison |
+| Context allocation | 4,096 tokens | 16,384 tokens | Qwen3.5-2B, upstream llama.cpp, one client |
+| Client concurrency | One client | Four clients | Qwen3.5-2B, upstream llama.cpp, 4,096 tokens |
+| Serving build | Upstream llama.cpp | XHToken llama.cpp | Same Qwen3-4B Q4_K_M GGUF, one client, 4,096 tokens |
+
+The size contrasts compare checkpoints within one family. Each checkpoint
+includes its architecture and training. The engine contrast includes the
+chat formatter, GPU kernels and scheduler of each build. Both report the
+same token counts and scoring outcome in all 108 matched request pairs.
+
+## 2. Execution and instrumentation
+
+- **Host.** RTX 3060 Laptop GPU (6,144 MiB), NVIDIA driver 610.74, Ubuntu
+  24.04 on WSL2 (kernel `6.18.33.2-microsoft-standard-WSL2`). The two
+  llama.cpp images use CUDA 13.3.1. The manifest records container IDs,
+  source commits, GGUF checksums and runner and fixture hashes.
+- **Workload.** The 18 cases span extraction, masking and archive lookup,
+  with three English and three Chinese cases per task. Both arms receive
+  the same permutation, generated from seed `10517 + pair number`. Input
+  lengths range from 51 to 809 tokens in the measured runs.
+- **Launch sequence.** One server runs at a time. Launches start at or below
+  60 °C. Each server completes one short warm-up and one archive warm-up.
+  The timed window begins before dispatch and ends when all 18 results
+  have arrived. A closed-loop pool replenishes requests as workers free up.
+- **Runtime.** Two server slots, F16 K/V caches, greedy decoding, reasoning
+  off, a 192-token output cap and a 30 s client timeout. The runner verifies
+  full GPU layer offload, the allocated context per slot and zero reused
+  prompt tokens at the start of every measured and warm-up request.
+- **Sampling.** All times use the client monotonic clock. The GPU sampler
+  records whole-device VRAM at 500 ms intervals during warm-up and
+  measurement. Peak VRAM is the maximum of those samples and the
+  reading at server readiness.
+
+[Design and seed](../configs/controlled.json) · [Manifest](../results/current/controlled/manifest.json) · [Task contract](home-lab.md) · [ACM SIGPLAN empirical evaluation guidelines](https://sigplan-pages.sigplan.hosting.acm.org/Resources/EmpiricalEvaluation/)
+
+## 3. Measures and analysis
+
+| Measure | Run-level definition |
 |---|---|
-| Qwen3.5-0.8B → 2B | Qwen3.5 text-only family, Bartowski Q4_K_M, upstream llama.cpp, one client, 4,096 total context |
-| Qwen3.5-2B → 4B | Same controls as the 0.8B → 2B comparison |
-| Context 4,096 → 16,384 | Same Qwen3.5-2B GGUF, upstream llama.cpp, one client and two slots |
-| One client → four clients | Same Qwen3.5-2B GGUF, upstream llama.cpp, 4,096 total context and two slots |
-| Upstream → XHToken llama.cpp | Same Qwen3-4B Q4_K_M file, one client, 4,096 total context and two slots |
+| Correct replies (count) | Response matches the expected JSON fields, types and values. The denominator is 18 requests. |
+| Correct on-time replies (count) | Correct, first visible content within 500 ms and stream complete within 5 s. Both workloads use these thresholds. |
+| Usable job rate (jobs/min) | 60 × correct on-time replies / timed window in seconds. |
+| Output throughput (tokens/s) | Sum of reported completion tokens / timed window in seconds. |
+| First visible answer and end-to-end latency (ms) | Time from dispatch to visible content or stream end, respectively. The p95 uses linear interpolation between ordered observations, following `bench.stats.percentile`. |
+| Peak device VRAM (MiB) | Whole-device sampled maximum. The dashboard also reports the peak minus the pre-launch device reading. |
 
-A model-size change here means switching to another checkpoint in the same
-family. Each checkpoint brings its own architecture and training. The two
-engine builds share a CUDA 13.3.1 base and use identical launch flags.
-The engine comparison includes each build's chat formatting, GPU kernels
-and scheduling. Both builds reported the same input and output token counts
-and the same scoring outcome for each of the 108 matched requests.
+All 1,080 measured streams completed and provided visible text and usage,
+so each reported run-level latency p95 uses 18 observations. Each paired
+effect is B minus A within the same launch pair. We summarize the six
+differences by their median and observed minimum and maximum. The same
+18 fixtures are replayed throughout. The spans describe variation across
+launch pairs on this machine and workload.
 
-## What changed
+## 4. Results
 
-Correct and on-time counts show the median of six runs per arm, out of 18
-tasks per run. The delta columns show the median of six B−A differences
-with the observed low and high in brackets.
+![Four panels of paired changes in correct on-time replies, usable job rate, first-answer p95 and peak VRAM](assets/figures/controlled.svg)
 
-| Change | Correct A → B | On time A → B | First visible p95 Δ (ms) | Usable jobs/min Δ | Peak VRAM Δ (MiB) |
+**Figure 1 | Paired effects of deployment settings.** Panels (a–d) show
+correct on-time replies, usable job rate, first-visible-answer p95 and peak
+device VRAM, respectively. Each circle or square is one launch pair
+(n = 6 per comparison per panel). Circles denote A first and open squares
+denote B first. Diamonds mark paired medians. Horizontal segments span
+the observed minimum and maximum. Small vertical offsets separate pairs
+within a comparison. The vertical reference at zero denotes equal
+measured values. Horizontal scales vary by panel.
+
+**Table 2 | Run-level correctness and paired changes.** Correct and
+on-time columns show arm medians out of 18 requests. The remaining
+columns report the median paired change [minimum, maximum] over six pairs.
+
+| Change | Correct A → B | On time A → B | First visible p95 Δ (ms) | Usable job rate Δ (jobs/min) | Peak VRAM Δ (MiB) |
 |---|---:|---:|---:|---:|---:|
-| Qwen3.5-0.8B → 2B | 6.0 → 11.0 | 6.0 → 11.0 | +57.2 [+45.8, +60.0] | +41.6 [+38.7, +48.5] | +744.0 [+744.0, +744.0] |
-| Qwen3.5-2B → 4B | 11.0 → 11.0 | 11.0 → 11.0 | +246.1 [+233.0, +267.6] | -60.1 [-69.0, -56.8] | +1648.0 [+1648.0, +1648.0] |
-| Context 4,096 → 16,384 | 11.0 → 11.0 | 11.0 → 11.0 | +0.6 [-0.5, +15.4] | -0.8 [-2.2, +6.5] | +150.0 [+150.0, +150.0] |
-| One → four clients | 11.0 → 11.0 | 11.0 → 3.0 | +556.0 [+540.5, +645.8] | -95.7 [-126.9, -65.6] | +0.0 [+0.0, +0.0] |
-| Upstream → XHToken llama.cpp | 10.0 → 10.0 | 10.0 → 10.0 | +1.5 [-3.3, +3.4] | -0.2 [-1.1, +0.8] | +0.0 [+0.0, +0.0] |
+| Qwen3.5-0.8B → 2B | 6 → 11 | 6 → 11 | +57.2 [+45.8, +60.0] | +41.6 [+38.7, +48.5] | +744 [+744, +744] |
+| Qwen3.5-2B → 4B | 11 → 11 | 11 → 11 | +246.1 [+233.0, +267.6] | −60.1 [−69.0, −56.8] | +1,648 [+1,648, +1,648] |
+| Context 4,096 → 16,384 | 11 → 11 | 11 → 11 | +0.6 [−0.5, +15.4] | −0.8 [−2.2, +6.5] | +150 [+150, +150] |
+| One → four clients | 11 → 11 | 11 → 3 | +556.0 [+540.5, +645.8] | −95.7 [−126.9, −65.6] | 0 [0, 0] |
+| Upstream → XHToken | 10 → 10 | 10 → 10 | +1.5 [−3.3, +3.4] | −0.2 [−1.1, +0.8] | 0 [0, 0] |
 
-1,080 measured requests ran across 60 launches, with
-0 transport errors. The four-client result has
-the same 500 ms and 5 s targets as the one-client result. The 13-deployment
-scorecard gave its four-client batch more time, which answers a different
-question about work you can leave running in the background.
+Four clients increased median aggregate output throughput from 82.76 to
+98.13 tokens/s. The paired change was +15.25 tokens/s, with an observed
+range of +14.96 to +16.69 tokens/s. Client latency includes queueing at
+two server slots. The context contrast measures the memory reserved for
+the same 51–809-token inputs. The
+[deployment scorecard](home-lab-results.md) has a separate four-client budget
+of 2 s and 8 s and computes its latency percentiles on correct replies.
 
-## How the runs were matched
+The vLLM 0.26.0 GGUF preflight stopped at worker initialization with
+`RuntimeError: UVA is not available`. It used the Qwen3-4B GGUF, eager
+execution, 2,048 tokens per sequence and two sequences. Table 2 covers
+the two llama.cpp images that completed both arms.
 
-Each comparison has six pairs. A runs first in pairs 1, 3 and 5. B runs first
-in pairs 2, 4 and 6. Both sides of a pair get the same seeded shuffle of the
-18 English and Chinese fixtures. Each arm starts a fresh container after the
-GPU reaches 60 °C or cooler. It does two warm-up requests, one short and one
-archive lookup, before the timed workload. Only one benchmark server runs
-at a time. The manifest records device VRAM and temperature before each launch.
+## 5. Data and reproduction
 
-The shared settings include two server slots, F16 key and value caches,
-greedy decoding, reasoning disabled, 192 output tokens at most, and a
-30-second client timeout. Every launch checks full GPU layer offload and the
-expected context allocation per slot. Server prompt cache storage is off.
-The client also sends `cache_prompt=false`. The runner verifies that
-every warm-up and measured request starts with zero cached prompt tokens.
+The request archive records task IDs, scoring and streaming timings.
+The launch manifest records per-run durations, settings and provenance.
+The GPU archive contains all 767 samples. The plot-data file provides A,
+B and B−A for each pair and metric.
 
-Four closed-loop clients can submit up to four requests while the server
-has two slots. Client latency includes the queue. Each arm keeps the same
-first-answer target of 500 ms and completion target of 5 seconds. This
-gives the concurrency comparison a fixed definition of an on-time job.
+[Plot data (TSV)](data/controlled-pairs.tsv) · [Request rows](../results/current/controlled/requests.tsv) · [GPU samples](../results/current/controlled/gpu.tsv) · [Interactive results](https://jfang2048.github.io/llm_benchmark/#controlled)
 
-## How to read the numbers
-
-- **Correct** means strict JSON matching on the defined fields, values and
-  types. **On time** adds both client-side deadlines. **Usable jobs/minute**
-  divides the on-time count by the time to dispatch and finish the whole
-  measured batch. **Output tokens/s** uses that same window and counts every
-  completed reply with usage.
-- Both latency percentiles use completed streams. First visible answer p95
-  also requires visible text. End-to-end p95 includes the full stream. The
-  deployment scorecard's latency columns use correct replies, so compare
-  numbers within each view.
-- **Peak VRAM** is the larger of device-wide VRAM at readiness and the
-  largest 500 ms sample during warm-up and the workload. The paired
-  dashboard also shows peak minus the pre-launch reading, which includes
-  the server and any change in background usage. A brief spike between
-  samples may escape the probe.
-- Each arm's p95 is calculated on one run of 18 cases. The comparison
-  subtracts A from B within each pair, then reports the median and observed
-  range of those six changes. Each point in the chart is one paired change.
-  The range describes these six trials. The same 18 cases repeat across
-  runs, so the total request count does not enlarge the set of tasks.
-- The context test tells us the cost of reserving more room while serving
-  the same short jobs. The longest inputs in this suite are the archive
-  lookups. Throughput at a filled 8,192-token slot needs a workload designed
-  for that length.
-
-The warm-up and repeat policy follows the measurement principles in the
-[pyperf run guide](https://github.com/psf/pyperf/blob/main/doc/run_benchmark.rst).
-The Home Lab protocol defines the [tasks and strict scoring](home-lab.md).
-
-## Engine launch outside the matched trials
-
-A vLLM 0.26.0 GGUF preflight with the same Qwen3-4B file failed during worker
-initialization with `RuntimeError: UVA is not available`. That run used the
-locally built GGUF plugin image, an eager runner, a 2,048-token maximum per
-sequence and two sequences. It yielded a startup outcome only. The paired
-engine results cover the two llama.cpp builds named above.
-
-## Replay
-
-From the repository root on a Docker host with a CUDA GPU:
+Run the following from the repository root on a Docker host with a CUDA GPU.
 
 ```bash
 ./scripts/build.sh
@@ -109,6 +123,14 @@ python3 -m bench.controlled --output .agent/controlled-local
 python3 -m bench.controlled_report .agent/controlled-local
 ```
 
-[Experiment settings](../configs/controlled.json) ·
-[Request rows, launch manifest and raw GPU samples](../results/current/controlled/) ·
-[Interactive paired results](https://jfang2048.github.io/llm_benchmark/#controlled)
+To regenerate the published dashboard, SVG figures and plot data, install
+the report dependencies and run the generator.
+
+```bash
+python3 -m venv .agent/report-env
+.agent/report-env/bin/python -m pip install -r requirements-report.txt
+make report REPORTPY=.agent/report-env/bin/python
+```
+
+The vector figures use labeled axes, distinct marker shapes and captions
+that define the sample and interval. [Nature research figure specifications](https://research-figure-guide.nature.com/figures/preparing-figures-our-specifications/)

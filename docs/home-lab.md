@@ -136,11 +136,13 @@ give you inputs to try first.
 
 ## Reproduce
 
+Set up the [report environment](controlled.md#5-data-and-reproduction) for the dashboard step.
+
 ```bash
 make setup-home
 make benchmark-home RUN=.agent/home-local
 make home-summary RUN=.agent/home-local
-make report HOME_RUN=.agent/home-local
+make report HOME_RUN=.agent/home-local REPORTPY=.agent/report-env/bin/python
 ```
 
 Use a fresh output directory for a run. To check one model, pass its arm

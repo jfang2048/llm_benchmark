@@ -204,8 +204,10 @@ td.na { color: var(--muted); font-style: italic; text-align: center; }
 .paired-key { display: flex; flex-wrap: wrap; gap: 18px; color: #526370; font-size: .86rem; margin: 0 0 12px; }
 .paired-key span { display: inline-flex; align-items: center; gap: 8px; }
 .paired-key i { display: inline-block; width: 8px; height: 8px; }
-.paired-dot { border-radius: 50%; background: #08796f; }
-.paired-diamond { background: #153341; transform: rotate(45deg); }
+.paired-dot { border-radius: 50%; background: #175a87; }
+.paired-square { border: 1.5px solid #175a87; }
+.paired-key .paired-range { width: 14px; height: 1.5px; background: #666666; }
+.paired-diamond { background: #181818; transform: rotate(45deg); }
 @media (max-width: 700px) {
   .paired-heading { align-items: start; flex-direction: column; }
 }

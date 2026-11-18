@@ -15,6 +15,7 @@ on:
       - "scripts/generate_report.py"
       - "scripts/generate_v2_report.py"
       - "scripts/generate_current_report.py"
+      - "scripts/current_figures.py"
       - "scripts/eval_report.py"
       - "scripts/curate_v2_final.py"
       - "requirements-report.txt"

@@ -15,10 +15,10 @@ if (D.controlled) {
   const signed = (v) => (v > 0 ? "+" : "") + number(v);
   host.innerHTML = `
     <div class="paired-heading">
-      <div><h2>Change one thing</h2>
-        <p>${data.request_count.toLocaleString()} requests. Both sides of each comparison replayed the same
-          ${data.task_count} jobs over ${data.pair_count} pairs of fresh launches.</p>
-        <a href="https://github.com/jfang2048/llm_benchmark/blob/main/docs/controlled.md">Read the protocol and results</a>
+      <div><h2>Paired inference experiments</h2>
+        <p>${data.request_count.toLocaleString()} measured requests across five comparisons. Each comparison uses
+          ${data.pair_count} launch pairs and ${data.task_count} cases per launch.</p>
+        <a href="https://github.com/jfang2048/llm_benchmark/blob/main/docs/controlled.md">Methods and results</a> · <a href="data/controlled-pairs.tsv" download>Plot data (TSV)</a>
       </div>
       <label class="home-control" for="paired-metric">Metric
         <select id="paired-metric">${Object.entries(data.metrics).map(([key, [label]]) =>
@@ -27,18 +27,20 @@ if (D.controlled) {
     </div>
     <div id="paired-plot"></div>
     <div class="paired-key">
-      <span><i class="paired-dot"></i>One matched pair</span>
-      <span><i class="paired-diamond"></i>Median of the changes</span>
+      <span><i class="paired-dot"></i>A first</span>
+      <span><i class="paired-square"></i>B first</span>
+      <span><i class="paired-diamond"></i>Paired median</span>
+      <span><i class="paired-range"></i>Observed min–max</span>
     </div>
     <div class="datatable-wrap home-table" role="region" tabindex="0" aria-label="Paired comparisons summary">
       <table class="datatable">
         <thead><tr><th scope="col">Change</th><th scope="col">A median</th><th scope="col">B median</th>
-          <th scope="col">Paired Δ</th><th scope="col">Observed Δ range</th><th scope="col">Pairs</th></tr></thead>
+          <th scope="col">Median B−A</th><th scope="col">Observed min–max</th><th scope="col">Pairs</th></tr></thead>
         <tbody id="paired-summary"></tbody>
       </table>
     </div>
-    <p class="note">Each dot is B minus A within one pair. The line spans the observed changes.
-      Launch order alternates between A first and B first.</p>`;
+    <p class="note">Each circle or square is one B−A difference within a launch pair.
+      Vertical offsets separate observations. The reference line marks zero change.</p>`;
 
   const selector = document.getElementById("paired-metric");
   const plot = document.getElementById("paired-plot");
@@ -48,6 +50,7 @@ if (D.controlled) {
     const narrow = plot.clientWidth < 610;
     const labels = data.experiments.map(({id}) => names[id]?.[narrow ? 1 : 0] || id);
     const points = {x: [], y: [], customdata: []};
+    const pairSymbols = [];
     const ranges = {x: [], y: []};
     const center = {x: [], y: [], customdata: []};
     document.getElementById("paired-summary").innerHTML = data.experiments.map((experiment, i) => {
@@ -65,7 +68,9 @@ if (D.controlled) {
         const a = pair.baseline[metric], b = pair.changed[metric];
         if (a === null || b === null) continue;
         points.x.push(b - a);
-        points.y.push(row + (pair.number - (data.pair_count + 1) / 2) * 0.08);
+        pairSymbols.push(pair.order[0] === "baseline" ? "circle" : "square-open");
+        const centered = pair.number - (data.pair_count + 1) / 2;
+        points.y.push(row + 0.13 * (centered + 0.5 * Math.sign(centered)));
         points.customdata.push([label, pair.number, pair.order[0] === "baseline" ? "A then B" : "B then A", a, b]);
       }
       const span = stats.pairs ? signed(stats.min_delta) + " to " + signed(stats.max_delta) : "—";
@@ -74,7 +79,7 @@ if (D.controlled) {
         <td>${span}</td><td>${stats.pairs}</td></tr>`;
     }).join("");
 
-    const layout = baseLayout("", "Change from A to B (" + unit + ")", "");
+    const layout = baseLayout("", "Paired change, B − A (" + unit + ")", "");
     layout.margin = {l: narrow ? 54 : 212, r: 22, b: 54, t: 12};
     layout.height = 290;
     layout.yaxis = {
@@ -88,10 +93,10 @@ if (D.controlled) {
     const details = "%{customdata[0]}<br>Pair %{customdata[1]} · %{customdata[2]}" +
       "<br>A %{customdata[3]:.2f} · B %{customdata[4]:.2f}<br>Δ %{x:+.2f} " + unit + "<extra></extra>";
     Plotly.react(plot, [
-      {...ranges, type: "scatter", mode: "lines", line: {color: "#8eb7b2", width: 3}, hoverinfo: "skip"},
-      {...points, type: "scatter", mode: "markers", marker: {color: "#08796f", size: 7},
+      {...ranges, type: "scatter", mode: "lines", line: {color: "#666666", width: 1.5}, hoverinfo: "skip"},
+      {...points, type: "scatter", mode: "markers", marker: {color: "#175a87", size: 6, symbol: pairSymbols, line: {width: 1.1}},
         hovertemplate: details},
-      {...center, type: "scatter", mode: "markers", marker: {color: "#153341", size: 11, symbol: "diamond"},
+      {...center, type: "scatter", mode: "markers", marker: {color: "#181818", size: 9, symbol: "diamond"},
         hovertemplate: "%{customdata}<br>Median Δ %{x:+.2f} " + unit + "<extra></extra>"},
     ], {...layout, showlegend: false}, {...CONFIG, displayModeBar: false});
   }
