@@ -3,7 +3,8 @@
   "cohorts": [
     "compact_4b",
     "mainstream_8_9b",
-    "spark_reference"
+    "spark_reference",
+    "lightweight_1_3b"
   ],
   "context": 4096,
   "slots": 2,
@@ -14,7 +15,10 @@
   "disable_reasoning_for": [
     "qwen3_4b_compact",
     "qwen3_5_4b_compact",
-    "qwen3_8b"
+    "qwen3_8b",
+    "qwen3_5_08b_light",
+    "qwen3_5_2b_light",
+    "smollm3_3b_light"
   ],
   "scenarios": {
     "desk": {
