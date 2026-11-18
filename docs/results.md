@@ -1,10 +1,8 @@
 # Results
 
-Results for the current benchmark: the mainstream 8-9B cohort plus the
-Spark-X2.5-4B reference baseline. All numbers are generated from the
-machine-readable data under [`results/current/`](../results/current/); the
-interactive dashboard is at [`docs/index.html`](../index.html). Nothing here
-is hand-edited.
+The full serving datasets cover the mainstream 8-9B cohort and the
+Spark-X2.5-4B reference. The compact 4B cohort has a short capacity sweep.
+See the [curated results](../results/current/) and the [interactive dashboard](index.html).
 
 ## Serving conditions
 
@@ -12,6 +10,7 @@ is hand-edited.
 |---|---|---|
 | Mainstream 8-9B | ggml-org/llama.cpp v0.4.0 (CUDA arch 86) | IQ4_XS |
 | Spark reference | XHToken llama.cpp fork (pinned) | IQ4_XS |
+| Compact 4B short sweep | ggml-org/llama.cpp v0.4.0 (CUDA arch 86) | Q4_K_M |
 
 Serving: `--ctx-size 4096 --parallel 2 --n-gpu-layers 999 --cont-batching`,
 GPU RTX 3060 Laptop (6 GiB), no CPU offload.
@@ -23,7 +22,7 @@ GPU RTX 3060 Laptop (6 GiB), no CPU offload.
 All four models completed the sweep with 0 failures and 0% error at every
 concurrency (1/2/4/6/8). Aggregate means over 3 repeats:
 
-| Model | TTFT p50 @ c=1 (ms) | Output tok/s @ c=8 | Peak VRAM (MiB) |
+| Model | TTFT p50 @ c=1 (ms) | Output tok/s @ c=8 | Peak VRAM @ c=1 (MiB) |
 |---|---|---|---|
 | Qwen3-8B | 104.1 | 94.5 | 4837 |
 | DeepSeek-R1-Distill-Llama-8B | 91.3 | 98.0 | 4721 |
@@ -80,6 +79,39 @@ no request errors at any load fraction.
 
 Per-turn TTFT p50 (ms): nocache 681-835 ms, cache 400-434 ms. `cache_prompt`
 roughly halves per-turn TTFT.
+
+## Compact 4B short capacity
+
+Measured on 2026-11-18 with the pinned upstream engine, Q4_K_M, two
+server slots, and a 64-token output cap. Each of the nine conditions
+contains two AIPerf repeats of 12 measured requests, plus two warmups per
+repeat. The latency percentiles and peak VRAM are means of the individual
+repeat summaries. All 216 measured requests succeeded and averaged 64
+output tokens in every repeat.
+
+| Model | Concurrency | TTFT p50 (ms) | TTFT p95 (ms) | Output tok/s | Peak VRAM (MiB) | Requests |
+|---|---:|---:|---:|---:|---:|---:|
+| Qwen3-4B | 1 | 84.8 | 96.2 | 71.8 | 3226 | 24/24 |
+| Qwen3-4B | 2 | 141.6 | 152.6 | 120.3 | 3230 | 24/24 |
+| Qwen3-4B | 4 | 1172.5 | 1213.3 | 121.5 | 3230 | 24/24 |
+| Phi-4-mini-instruct | 1 | 42.4 | 48.3 | 76.6 | 3140 | 24/24 |
+| Phi-4-mini-instruct | 2 | 83.1 | 102.5 | 128.9 | 3144 | 24/24 |
+| Phi-4-mini-instruct | 4 | 1077.0 | 1105.4 | 127.8 | 3144 | 24/24 |
+| Gemma 3 4B (text-only) | 1 | 98.5 | 110.2 | 65.2 | 3078 | 24/24 |
+| Gemma 3 4B (text-only) | 2 | 164.3 | 184.5 | 108.2 | 3078 | 24/24 |
+| Gemma 3 4B (text-only) | 4 | 1323.8 | 1358.0 | 109.6 | 3078 | 24/24 |
+
+- **Lowest latency and highest throughput at concurrency 2:** Phi-4-mini
+  delivered 128.9 tok/s with 83.1 ms p50 and 102.5 ms p95 TTFT.
+- **Lowest VRAM:** Gemma used 3078 MiB at every tested concurrency.
+  Qwen used 3230 MiB at concurrency 4, the highest mean peak in this group.
+- **Queueing:** All three models gained throughput from concurrency 1 to 2.
+  At concurrency 4, TTFT exceeded one second for every model while
+  throughput stayed within 1.4 tok/s of its concurrency-2 value.
+
+Each condition has 24 requests, so 24/24 is an observed success count.
+See the [protocol](methodology.md#compact-4b-short-capacity-sweep), the
+[interactive comparison](index.html#compact), and the [aggregate TSV](../results/current/compact-4b/capacity_short/aggregate.tsv).
 
 ## Reference baseline: Spark-X2.5-4B (IQ4_XS)
 
@@ -142,6 +174,7 @@ sampling). Not full-system energy, not MLPerf Power compliant.
 
 - `results/current/mainstream-8-9b/` — 8-9B cohort suites.
 - `results/current/spark-reference/` — Spark reference suites.
+- `results/current/compact-4b/capacity_short/` — compact 4B short capacity sweep.
 - `results/history/spark-q4-km/` — historical Spark Q4_K_M run.
 - Each suite dir: `aggregate.tsv` (mean + CI95), `repeats.tsv` (raw repeats),
   `manifest.json` (engine/image/flags/workload hash), plus `reliability.tsv`

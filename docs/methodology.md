@@ -40,6 +40,30 @@ The single **independent variable** is the model package — checkpoint,
 architecture, and tokenizer together. Model order is rotated between repeats
 to reduce temporal/thermal order bias.
 
+## Compact 4B short capacity sweep
+
+The compact sweep uses the same RTX 3060 Laptop GPU, pinned upstream
+llama.cpp binary, prompt bytes, and sampling policy as the full 8-9B sweep.
+All three text-serving artifacts use Q4_K_M with the same 4096 context
+and two server slots. The GGUF publishers and their quantization inputs
+vary by model and are identified in the manifest.
+
+| Setting | Compact sweep |
+|---|---|
+| Suite | `capacity_short` |
+| Client concurrency | 1, 2, 4 |
+| Requests per repeat | 12 measured, plus 2 warmup |
+| Repeats per model and concurrency | 2, with rotated model order |
+| Output cap | 64 generated tokens |
+| Transport | Streaming chat, no connection reuse |
+
+The short run estimates serving trade-offs within the compact cohort.
+The different output cap, sample size, and quantization prevent a
+controlled comparison against the full 8-9B or Spark figures. Each condition
+has 24 measured requests, so report the observed successes alongside latency
+and throughput. The separate 200-request reliability protocol applies to
+the full sweeps. See [measured results](results.md#compact-4b-short-capacity).
+
 ## Reference baseline (Spark-X2.5-4B)
 
 In addition to the size-matched 8-9B cohort, Spark-X2.5-4B is benchmarked with
@@ -117,6 +141,7 @@ Runs are classified explicitly, and a parsed-but-unstable run is never called
 
 | Suite | Question it answers | Key metrics |
 |---|---|---|
+| `capacity_short` | How do compact models serve a short workload? | TTFT, output tok/s, peak VRAM, observed successes |
 | `reliability` | Is transport stable enough to measure? | success rate, Wilson CI, error classification |
 | `capacity` | What throughput does the model sustain vs concurrency? | request throughput, error rate, latency |
 | `shape` | How does the model behave under controlled ISL/OSL? | TTFT/ITL vs token shape |

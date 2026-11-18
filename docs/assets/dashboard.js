@@ -74,7 +74,7 @@ const CONFIG = { displaylogo: false, responsive: true, modeBarButtonsToRemove: [
 // ---- filter UI -------------------------------------------------------------
 function buildShell() {
   const navItems = [
-    ["Overview", "overview"], ["Capacity", "capacity"], ["Trade-off", "tradeoff"],
+    ["Overview", "overview"], ...(D.compact_capacity ? [["Compact 4B", "compact"]] : []), ["Capacity", "capacity"], ["Trade-off", "tradeoff"],
     ["Open-loop", "openloop"], ["Workload shape", "shape"], ["Reliability", "reliability"],
     ["Resources", "resources"], ["Sessions", "sessions"], ["Startup / soak", "startup"],
     ["llama-bench", "llamabench"], ["Data", "data"],
@@ -90,30 +90,31 @@ function buildShell() {
     `<span class="navsep" title="Serving / coding split">·</span>` +
     capNavItems.map(([t, id]) => `<a class="cap-link" href="#${id}">${t}</a>`).join("");
   const chips = D.models.map((mm) =>
-    `<span class="chip ${mm.is_reference ? "ref" : ""}" id="chip-${mm.arm}" data-arm="${mm.arm}">` +
-    `<span class="dot" style="background:${mm.color}"></span>${mm.display_name}</span>`).join("");
+    `<button type="button" class="chip ${mm.is_reference ? "ref" : ""}" data-arm="${mm.arm}" aria-pressed="true">` +
+    `<span class="dot" style="background:${mm.color}"></span>${mm.display_name}</button>`).join("");
   document.getElementById("app").innerHTML = `
   <div class="sticky-header">
   <div class="topbar">
     <h1>Local LLM Inference Benchmark</h1>
     <nav>${nav}</nav>
   </div>
-  <div class="filterbar">
-    <span><label>Cohort</label>
+  <div class="filterbar" role="group" aria-label="Full sweep controls">
+    <span><label for="f-cohort">Cohort</label>
       <select id="f-cohort">
         <option value="all">All</option>
         <option value="mainstream">Mainstream 8-9B</option>
         <option value="spark">Spark reference</option>
       </select></span>
     <span><label>Models</label></span>
-    <div class="modelchips">${chips}</div>
-    <span><label>Percentile</label>
+    <div class="modelchips" role="group" aria-label="Main capacity models">${chips}</div>
+    <span><label for="f-pct">Percentile</label>
       <select id="f-pct"><option value="p50">p50</option><option value="p95">p95</option></select></span>
     <button id="f-reset">Reset</button>
   </div>
   </div>
   <main>
     <section id="overview"></section>
+    ${D.compact_capacity ? '<section id="compact"></section>' : ""}
     <section id="capacity"></section>
     <section id="tradeoff"></section>
     <section id="openloop"></section>
@@ -140,6 +141,14 @@ function buildShell() {
     <section id="cap-explorer"></section>
     <footer>Generated from results/current/ &middot; Plotly ${D.meta.plotly_version} (sha256 ${D.meta.plotly_sha256.slice(0, 12)}&hellip;) &middot; GPU-side energy is an estimate, not full-system power.</footer>
   </main>`;
+  const header = document.querySelector(".sticky-header");
+  const topbar = header.querySelector(".topbar");
+  const headerResize = new ResizeObserver(() => {
+    const sticky = getComputedStyle(header).display === "contents" ? topbar : header;
+    document.documentElement.style.setProperty("--sticky-header-height", sticky.offsetHeight + "px");
+  });
+  headerResize.observe(header);
+  headerResize.observe(topbar);
   document.getElementById("f-cohort").addEventListener("change", (e) => { state.cohort = e.target.value; refresh(); });
   document.getElementById("f-pct").addEventListener("change", (e) => { state.percentile = e.target.value; refresh(); });
   document.getElementById("f-reset").addEventListener("click", () => {
@@ -158,7 +167,9 @@ function buildShell() {
 }
 function syncChips() {
   document.querySelectorAll(".chip").forEach((el) => {
-    el.classList.toggle("off", !state.models.has(el.dataset.arm));
+    const selected = state.models.has(el.dataset.arm);
+    el.classList.toggle("off", !selected);
+    el.setAttribute("aria-pressed", selected);
   });
 }
 
@@ -201,11 +212,78 @@ function renderOverview() {
       <div class="row"><span class="k">TTFT p50 @ c=1</span><span>${fmt(c1.ttft_p50)} ms</span></div>
       <div class="row"><span class="k">Peak output tok/s</span><span>${fmt(peak.output_tps)}</span></div>
       <div class="row"><span class="k">Peak VRAM</span><span>${fmt(peak.peak_vram_mib)} MiB</span></div>
-      <div class="row"><span class="k">Reliability gate</span><span>${relOk ? "PASS" : "FAIL"}</span></div>
+      <div class="row"><span class="k">Reliability gate</span><span>${rel.length ? (relOk ? "PASS" : "FAIL") : "—"}</span></div>
     </div>`;
   }).join("");
   document.getElementById("overview").innerHTML =
-    `<h2>Overview</h2><p class="note">Fixed-hardware deployment benchmark on ${md.gpu}. Primary cohort: 4 mainstream 8-9B models (${md.quantization}, upstream llama.cpp); Spark-X2.5-4B is a fixed-hardware reference baseline, never size-matched against the 8-9B cohort.</p>${kpis}<div class="cards">${cards}</div>`;
+    `<h2>Overview</h2><p class="note">Fixed-hardware deployment benchmark on ${md.gpu}. The full serving sweep covers the 8–9B cohort and Spark reference. ${D.compact_capacity ? "See the separate compact 4B short sweep below." : ""}</p>${kpis}<div class="cards">${cards}</div>`;
+}
+
+
+function renderCompact() {
+  const run = D.compact_capacity;
+  if (!run) return;
+
+  const {models, protocol, aggregate} = run;
+  const chosen = protocol.concurrency.at(-1);
+  const host = document.getElementById("compact");
+  host.innerHTML = `
+    <h2>Compact 4B capacity comparison</h2>
+    <p class="note">${run.quantization} · ${run.image} · context ${protocol.ctx_size}, ${protocol.parallel} server slots ·
+      ${protocol.requests_per_cell} requests per repeat · ${protocol.repeats} repeats · ${protocol.output_tokens} output tokens.
+      Latency percentiles and peak VRAM are averaged across repeats. <a href="results.md#compact-4b-short-capacity">Protocol and results</a>.</p>
+    <div class="grid2"><div id="compact-throughput"></div><div id="compact-ttft"></div></div>
+    <div class="filterline">
+      <label for="compact-concurrency">Table concurrency</label>
+      <select id="compact-concurrency">${protocol.concurrency.map((c) =>
+        `<option value="${c}"${c === chosen ? " selected" : ""}>${c}</option>`).join("")}</select>
+    </div>
+    <div class="datatable-wrap" tabindex="0" role="region" aria-label="Compact model results">
+      <table class="datatable" id="compact-table">
+        <thead><tr><th scope="col">Model</th><th scope="col">TTFT p50 (ms)</th><th scope="col">TTFT p95 (ms)</th>
+          <th scope="col">Output tok/s</th><th scope="col">Peak VRAM (MiB)</th>
+          <th scope="col">Successful</th><th scope="col">Status</th></tr></thead><tbody></tbody>
+      </table>
+    </div>`;
+
+  const draw = (id, title, unit, field) => {
+    const traces = models.map((model) => {
+      const byConcurrency = new Map(aggregate.filter((r) => r.arm === model.arm)
+        .map((r) => [r.concurrency, r]));
+      const rows = protocol.concurrency.map((c) => byConcurrency.get(c));
+      return {
+        name: model.display_name, mode: "lines+markers", type: "scatter",
+        line: {color: model.color, width: 2.5},
+        marker: {size: 8},
+        x: protocol.concurrency,
+        y: rows.map((r) => r?.status === "PASS" ? r[field] : null),
+        customdata: rows.map((r) => [r?.successful_requests, r?.attempted_requests]),
+        hovertemplate: `Concurrent requests %{x}<br>%{y:.1f} ${unit}<br>Successful %{customdata[0]}/%{customdata[1]}<extra>%{fullData.name}</extra>`,
+      };
+    });
+    const layout = baseLayout(title, "Concurrent requests", unit);
+    layout.xaxis.tickvals = protocol.concurrency;
+    layout.yaxis.rangemode = "tozero";
+    layout.legend = {orientation: "h", x: 0, y: -0.26};
+    layout.margin.b = 85;
+    plot(id, traces, layout);
+  };
+  draw("compact-throughput", "Output throughput", "tok/s", "output_tps");
+  draw("compact-ttft", "Time to first token (p50)", "ms", "ttft_p50");
+
+  const updateTable = (concurrency) => {
+    host.querySelector("tbody").innerHTML = models.map((model) => {
+      const row = aggregate.find((r) => r.arm === model.arm && r.concurrency === concurrency);
+      const metric = (key, digits) => fmt(row?.status === "PASS" ? row[key] : null, digits);
+      const status = row?.status || "EXCLUDED";
+      const requests = row?.attempted_requests ? `${row.successful_requests}/${row.attempted_requests}` : "—";
+      return `<tr><th scope="row">${model.display_name}</th><td>${metric("ttft_p50")}</td>
+        <td>${metric("ttft_p95")}</td><td>${metric("output_tps")}</td><td>${metric("peak_vram_mib", 0)}</td>
+        <td>${requests}</td><td class="st-${status}">${row?.status || "No run"}</td></tr>`;
+    }).join("");
+  };
+  document.getElementById("compact-concurrency").addEventListener("change", (e) => updateTable(Number(e.target.value)));
+  updateTable(chosen);
 }
 
 // ---- Capacity --------------------------------------------------------------
@@ -692,4 +770,5 @@ function refresh() {
 }
 
 buildShell();
+renderCompact();
 refresh();

@@ -11,7 +11,7 @@ latency, throughput, VRAM, reliability.
 | Doc | What it covers |
 |---|---|
 | [methodology.md](methodology.md) | How the serving benchmark works: workload, fairness views, metrics. |
-| [results.md](results.md) | Measured serving results (capacity, reliability, shape, open-loop). |
+| [results.md](results.md) | Measured serving results, including the compact 4B comparison. |
 | [engine.md](engine.md) | Engine setup: upstream llama.cpp v0.4.0 vs the XHToken fork. |
 | [environment.md](environment.md) | Hardware/software environment and reproducibility. |
 | [model-selection.md](model-selection.md) | Why these models; size-controlled cohort rationale. |

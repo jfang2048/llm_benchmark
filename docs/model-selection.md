@@ -34,6 +34,14 @@ not marketing names. All four models are MIT or Apache-2.0 and ungated.
   quantization. It is reported alongside the cohort for hardware-efficiency
   context and never compared as a size-matched winner.
 
+## Compact 4B cohort
+
+Three existing weights were remeasured on the pinned upstream llama.cpp
+image in Q4_K_M. Qwen3-4B uses Qwen's official GGUF, Phi-4-mini-instruct
+uses Bartowski's GGUF, and Gemma 3 4B uses the ggml-org text-only GGUF.
+Their exact source revisions and checksums are recorded in the registry.
+See the [short capacity results](results.md#compact-4b-short-capacity).
+
 ## November 2026 model refresh
 
 The registry includes three opt-in candidates. Their GGUF source revisions

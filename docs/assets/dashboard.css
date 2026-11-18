@@ -23,13 +23,13 @@ a:hover { text-decoration: underline; }
   position: sticky; top: 0; z-index: 50;
   background: #ffffff; border-bottom: 1px solid var(--border);
 }
-.topbar { }
 .topbar h1 { font-size: 1.05rem; margin: 0; padding: 0.7rem 1rem 0.4rem; }
 nav {
-  display: flex; flex-wrap: wrap; gap: 0.25rem; padding: 0 1rem 0.6rem;
-  overflow-x: auto; white-space: nowrap;
+  display: flex; gap: 0.25rem; padding: 0 1rem 0.6rem;
+  overflow-x: auto; white-space: nowrap; scrollbar-width: thin;
 }
 nav a {
+  flex: 0 0 auto;
   color: var(--muted); padding: 0.25rem 0.6rem; border-radius: 6px; font-size: 0.85rem;
 }
 nav a:hover { color: var(--fg); background: var(--grid); }
@@ -40,7 +40,7 @@ nav a:hover { color: var(--fg); background: var(--grid); }
   font-size: 0.85rem;
 }
 .filterbar label { color: var(--muted); margin-right: 0.25rem; }
-.filterbar select, .filterbar button {
+.filterbar select, .filterbar button:not(.chip) {
   font-size: 0.85rem; padding: 0.2rem 0.45rem; border: 1px solid var(--border);
   border-radius: 6px; background: #fff; color: var(--fg);
 }
@@ -48,14 +48,14 @@ nav a:hover { color: var(--fg); background: var(--grid); }
 .chip {
   display: inline-flex; align-items: center; gap: 0.35rem;
   padding: 0.15rem 0.5rem; border: 1px solid var(--border); border-radius: 999px;
-  cursor: pointer; user-select: none; font-size: 0.8rem; background: #fff;
+  cursor: pointer; user-select: none; font: inherit; font-size: 0.8rem; background: #fff; color: var(--fg);
 }
 .chip .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
-.chip.off { opacity: 0.35; }
+.chip.off { color: var(--muted); background: var(--grid); text-decoration: line-through; }
 .chip.ref { border-style: dashed; border-color: var(--ref); }
 
 main { padding: 0 1rem 3rem; max-width: 1240px; margin: 0 auto; }
-section { padding-top: 1rem; margin-top: 0.5rem; scroll-margin-top: 96px; }
+section { padding-top: 1rem; margin-top: 0.5rem; scroll-margin-top: calc(var(--sticky-header-height, 9rem) + 0.5rem); }
 section h2 {
   font-size: 1.2rem; border-bottom: 1px solid var(--border);
   padding-bottom: 0.35rem; margin: 0.5rem 0 0.75rem;
@@ -108,10 +108,29 @@ a.cap-link { color: #6a1b9a; }
   border-top: 2px solid var(--border);
   margin: 2.5rem 0 1rem;
   padding-top: 1rem;
-  scroll-margin-top: 96px;
+  scroll-margin-top: calc(var(--sticky-header-height, 9rem) + 0.5rem);
 }
 .cap-divider h1 { font-size: 1.4rem; margin: 0 0 0.35rem; }
 .cap-divider p { color: var(--muted); margin: 0; max-width: 60rem; }
 td.na { color: var(--muted); font-style: italic; text-align: center; }
 .filterline { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center; margin: 0.5rem 0; }
 .filterline select { padding: 0.2rem 0.4rem; }
+
+#compact .grid2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+#compact .filterline { margin-top: 0.75rem; }
+#compact .datatable tbody th { font-weight: 600; background: #fff; }
+#compact .datatable tbody tr:nth-child(even) > * { background: #f8fafc; }
+
+@media (max-width: 900px) {
+  #compact .grid2 { grid-template-columns: minmax(0, 1fr); }
+}
+
+@media (max-width: 600px) {
+  .sticky-header { display: contents; }
+  .topbar {
+    position: sticky; top: 0; z-index: 50;
+    background: #fff; border-bottom: 1px solid var(--border);
+  }
+  .filterbar { gap: 0.4rem 0.75rem; }
+  .filterbar .modelchips { order: 1; flex-basis: 100%; }
+}

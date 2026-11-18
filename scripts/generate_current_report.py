@@ -6,7 +6,7 @@ results/current/ and produces:
 
   docs/data/current.json   - one normalized dashboard dataset (all charts read it)
   docs/index.html          - static shell that loads plotly.min.js + dashboard.js
-  docs/assets/figures/*.svg - 2 static summary figures for the README
+  docs/assets/figures/*.svg - static summary figures for the README
 
 Every rendered number comes from the machine-readable data above; nothing is
 hand-authored. The interactive rendering lives in docs/assets/dashboard.js
@@ -19,6 +19,8 @@ import argparse
 import csv
 import json
 import sys
+from collections import Counter
+from math import log10
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -33,6 +35,7 @@ FIG_DIR = DOCS / "assets" / "figures"
 # (filesystem dir, registry cohort) for the current cohorts.
 COHORT_DIRS = [("mainstream-8-9b", "mainstream_8_9b"),
                ("spark-reference", "spark_reference")]
+COMPACT_DIRS = [("compact-4b", "compact_4b")]
 
 # Colorblind-safe palette (Okabe-Ito). One stable, unique color per model arm.
 MODEL_COLOR = {
@@ -41,6 +44,9 @@ MODEL_COLOR = {
     "glm4_9b": "#009E73",
     "yi_15_9b": "#E69F00",
     "spark_llama": "#CC79A7",
+    "qwen3_4b_compact": "#0072B2",
+    "phi4_mini_compact": "#D55E00",
+    "gemma3_4b_compact": "#008768",
 }
 # Fallback palette for any model not in MODEL_COLOR.
 _FALLBACK = ["#0072B2", "#D55E00", "#009E73", "#E69F00", "#CC79A7", "#56B4E9"]
@@ -67,9 +73,9 @@ def fnum(s):
         return None
 
 
-def load_suite(suite, *globs):
+def load_suite(suite, *globs, cohorts=COHORT_DIRS):
     rows = []
-    for cdir, cname in COHORT_DIRS:
+    for cdir, cname in cohorts:
         base = RESULT_ROOT / cdir / suite
         for g in globs:
             for p in base.glob(g):
@@ -93,12 +99,12 @@ def cell_status(r):
 # --------------------------------------------------------------------------
 # Model metadata
 # --------------------------------------------------------------------------
-def models_meta():
+def models_meta(cohorts=("mainstream_8_9b", "spark_reference")):
     out = []
     for i, m in enumerate(config.models()):
         if not m.get("enabled"):
             continue
-        if m.get("cohort") not in ("mainstream_8_9b", "spark_reference"):
+        if m.get("cohort") not in cohorts:
             continue
         pc = m.get("actual_parameter_count")
         arm = m.get("arm")
@@ -131,11 +137,11 @@ def manifest():
 # --------------------------------------------------------------------------
 # Suite normalizers
 # --------------------------------------------------------------------------
-def capacity():
-    agg = [r for r in load_suite("capacity", "aggregate.tsv")
-           if r.get("suite") == "capacity"]
-    rep = [r for r in load_suite("capacity", "repeats.tsv")
-           if r.get("suite") == "capacity"]
+def capacity(suite="capacity", cohorts=COHORT_DIRS):
+    agg = [r for r in load_suite(suite, "aggregate.tsv", cohorts=cohorts)
+           if r.get("suite") == suite]
+    rep = [r for r in load_suite(suite, "repeats.tsv", cohorts=cohorts)
+           if r.get("suite") == suite]
     agg_out = []
     for r in agg:
         agg_out.append({
@@ -179,7 +185,31 @@ def capacity():
             "gpu_j_per_request": fnum(r.get("gpu_j_per_request")),
             "gpu_j_per_output_token": fnum(r.get("gpu_j_per_output_token")),
         })
+    if suite == "capacity_short":
+        attempts, successes = Counter(), Counter()
+        for r in rep:
+            key = (r["arm"], int(r["concurrency"]))
+            attempts[key] += int(r.get("attempted_requests") or 0)
+            successes[key] += int(r.get("successful_requests") or 0)
+        for row in agg_out:
+            key = (row["arm"], row["concurrency"])
+            row.update(attempted_requests=attempts[key], successful_requests=successes[key])
     return {"aggregate": agg_out, "repeats": rep_out}
+
+
+def compact_capacity():
+    path = RESULT_ROOT / "compact-4b" / "capacity_short" / "manifest.json"
+    if not path.exists():
+        return None
+    run = json.loads(path.read_text(encoding="utf-8"))
+    data = capacity(suite="capacity_short", cohorts=COMPACT_DIRS)
+    expected_repeats = run["config"]["repeats"]
+    for row in data["aggregate"]:
+        if row["status"] == "PASS" and row["pass_runs"] != expected_repeats:
+            row["status"] = "EXCLUDED"
+    return {"models": models_meta(("compact_4b",)), "protocol": run["config"],
+            "image": run["image"], "quantization": run["quantization"],
+            "gpu": run["gpu"], "aggregate": data["aggregate"]}
 
 
 def reliability():
@@ -316,36 +346,43 @@ def llama_bench(id_to_arm):
 # --------------------------------------------------------------------------
 # Static summary figures (README)
 # --------------------------------------------------------------------------
-def _svg_line(title, series, xlabel, ylabel, w=760, h=380, yfmt="{:.0f}"):
+def _svg_line(title, series, xlabel, ylabel, w=760, h=390, xfmt="{:.0f}", xticks=None, log_y=False):
     """Minimal clean line chart. series = list of (label, color, [(x,y),...], dashed)."""
-    pad_l, pad_r, pad_t, pad_b = 60, 20, 40, 50
+    pad_l, pad_r, pad_t, pad_b = 64, 22, 48, 98
     xs = [p[0] for _l, _c, pts, _d in series for p in pts if p[1] is not None]
     ys = [p[1] for _l, _c, pts, _d in series for p in pts if p[1] is not None]
     if not xs or not ys:
         return ""
+    scale = log10 if log_y else float
     xmin, xmax = min(xs), max(xs)
-    ymin, ymax = min(ys), max(ys)
+    ymin, ymax = scale(min(ys)), scale(max(ys))
     xspan = (xmax - xmin) or 1.0
     yspan = (ymax - ymin) or 1.0
     xmin, xmax = xmin - 0.05 * xspan, xmax + 0.05 * xspan
     ymin, ymax = ymin - 0.08 * yspan, ymax + 0.08 * yspan
     px = lambda v: pad_l + (v - xmin) / (xmax - xmin) * (w - pad_l - pad_r)
-    py = lambda v: h - pad_b - (v - ymin) / (ymax - ymin) * (h - pad_t - pad_b)
+    py = lambda v: h - pad_b - (scale(v) - ymin) / (ymax - ymin) * (h - pad_t - pad_b)
     parts = []
     parts.append(f'<svg xmlns="http://www.w3.org/2000/svg" width="{w}" height="{h}" '
-                 f'viewBox="0 0 {w} {h}" font-family="-apple-system,Segoe UI,Roboto,sans-serif">')
+                 f'viewBox="0 0 {w} {h}" role="img" aria-labelledby="title" font-family="-apple-system,Segoe UI,Roboto,sans-serif">')
+    parts.append(f'<title id="title">{title}</title>')
     parts.append(f'<rect width="{w}" height="{h}" fill="#ffffff"/>')
     parts.append(f'<text x="{pad_l}" y="24" font-size="14" font-weight="600" fill="#222">{title}</text>')
     # grid + axes
-    for i in range(6):
-        gy = pad_t + (h - pad_t - pad_b) * i / 5
+    if log_y:
+        candidates = (50, 100, 200, 500, 1000, 2000, 5000, 10000)
+        yticks = [v for v in candidates if ymin <= scale(v) <= ymax]
+    else:
+        yticks = [ymin + (ymax - ymin) * i / 5 for i in range(6)]
+    for tick in yticks:
+        gy = py(tick)
         parts.append(f'<line x1="{pad_l}" y1="{gy:.1f}" x2="{w-pad_r}" y2="{gy:.1f}" stroke="#ececec"/>')
-        parts.append(f'<text x="{pad_l-8}" y="{gy+4:.1f}" font-size="10" text-anchor="end" fill="#777">{yfmt.format(ymax-(ymax-ymin)*i/5)}</text>')
-    for i in range(6):
-        gx = pad_l + (w - pad_l - pad_r) * i / 5
+        parts.append(f'<text x="{pad_l-8}" y="{gy+4:.1f}" font-size="10" text-anchor="end" fill="#777">{tick:,.0f}</text>')
+    for tick in xticks or [xmin + (xmax - xmin) * i / 5 for i in range(6)]:
+        gx = px(tick)
         parts.append(f'<line x1="{gx:.1f}" y1="{pad_t}" x2="{gx:.1f}" y2="{h-pad_b}" stroke="#f2f2f2"/>')
-        parts.append(f'<text x="{gx:.1f}" y="{h-pad_b+16}" font-size="10" text-anchor="middle" fill="#777">{xmin+(xmax-xmin)*i/5:.0f}</text>')
-    parts.append(f'<text x="{w/2}" y="{h-8}" font-size="11" text-anchor="middle" fill="#555">{xlabel}</text>')
+        parts.append(f'<text x="{gx:.1f}" y="{h-pad_b+16}" font-size="10" text-anchor="middle" fill="#777">{xfmt.format(tick)}</text>')
+    parts.append(f'<text x="{w/2}" y="{h-pad_b+42}" font-size="11" text-anchor="middle" fill="#555">{xlabel}</text>')
     parts.append(f'<text x="16" y="{h/2}" font-size="11" fill="#555" transform="rotate(-90 16 {h/2})" text-anchor="middle">{ylabel}</text>')
     for label, color, pts, dashed in series:
         pts = [p for p in pts if p[1] is not None]
@@ -357,41 +394,45 @@ def _svg_line(title, series, xlabel, ylabel, w=760, h=380, yfmt="{:.0f}"):
         for x, y in pts:
             parts.append(f'<circle cx="{px(x):.1f}" cy="{py(y):.1f}" r="3" fill="{color}"/>')
     # legend
-    lx = pad_l
-    for label, color, _pts, dashed in series:
+    for i, (label, color, _pts, dashed) in enumerate(series):
+        x = pad_l + (i % 3) * 230
+        y = h - 35 + (i // 3) * 17
         dash = ' stroke-dasharray="6 4"' if dashed else ""
-        parts.append(f'<line x1="{lx}" y1="{h-34}" x2="{lx+16}" y2="{h-34}" stroke="{color}" stroke-width="2"{dash}/>')
-        parts.append(f'<text x="{lx+20}" y="{h-30}" font-size="10" fill="#444">{label}</text>')
-        lx += 20 + len(label) * 6.2 + 24
+        parts.append(f'<line x1="{x}" y1="{y}" x2="{x+16}" y2="{y}" stroke="{color}" stroke-width="2"{dash}/>')
+        parts.append(f'<text x="{x+20}" y="{y+4}" font-size="11" fill="#444">{label}</text>')
     parts.append("</svg>")
     return "".join(parts)
 
 
-def readme_figures(models, cap):
-    # 1. Output tok/s vs concurrency (primary cohort only, aggregate line).
+def throughput_figure(title, models, rows):
     series = []
-    for m in models:
-        if m["is_reference"]:
-            continue
-        pts = [(c["concurrency"], c["output_tps"])
-               for c in sorted(cap["aggregate"], key=lambda x: x["concurrency"])
-               if c["arm"] == m["arm"] and c["output_tps"] is not None]
-        if pts:
-            series.append((m["display_name"], m["color"], pts, False))
-    fig1 = _svg_line("Output throughput vs concurrency (IQ4_XS, upstream llama.cpp)",
-                     series, "concurrency", "output tokens/s", yfmt="{:.0f}")
+    for model in models:
+        points = sorted((row["concurrency"], row["output_tps"]) for row in rows
+                        if row["arm"] == model["arm"] and row["status"] == "PASS"
+                        and row["output_tps"] is not None)
+        if points:
+            series.append((model["display_name"], model["color"], points, False))
+    ticks = sorted({x for _, _, points, _ in series for x, _ in points})
+    return _svg_line(title, series, "Concurrent requests", "Output tokens/s", xticks=ticks)
+
+
+def readme_figures(models, cap):
+    fig1 = throughput_figure("Mainstream 8-9B output throughput (IQ4_XS)",
+                             [m for m in models if not m["is_reference"]], cap["aggregate"])
 
     # 2. TTFT p50 vs request throughput trade-off (scatter, one point per c).
     series = []
     for m in models:
         pts = [(c["request_tps"], c["ttft_p50"])
                for c in sorted(cap["aggregate"], key=lambda x: x["concurrency"])
-               if c["arm"] == m["arm"] and c["request_tps"] is not None and c["ttft_p50"] is not None]
+               if c["arm"] == m["arm"] and c["status"] == "PASS"
+               and c["request_tps"] is not None and (c["ttft_p50"] or 0) > 0]
         if pts:
             series.append((m["display_name"] + (" (reference)" if m["is_reference"] else ""),
                            m["color"], pts, m["is_reference"]))
     fig2 = _svg_line("TTFT p50 vs request throughput trade-off",
-                     series, "request throughput (req/s)", "TTFT p50 (ms)", yfmt="{:.0f}")
+                     series, "Request throughput (req/s)", "TTFT p50 (ms, log scale)",
+                     xfmt="{:.2f}", log_y=True)
     return fig1, fig2
 
 
@@ -443,6 +484,7 @@ def build_data():
         },
         "models": models,
         "capacity": cap,
+        "compact_capacity": compact_capacity(),
         "reliability": reliability(),
         "open_loop": open_loop(cap["aggregate"]),
         "shape": shape(profiles),
@@ -500,9 +542,16 @@ def main():
     (FIG_DIR / "throughput-vs-concurrency.svg").write_text(fig1, encoding="utf-8")
     (FIG_DIR / "ttft-vs-throughput.svg").write_text(fig2, encoding="utf-8")
 
-    print(f"wrote {out} ({len(models)} models)")
+    compact = data["compact_capacity"]
+    if compact:
+        figure = throughput_figure("Compact 4B output throughput (Q4_K_M, short sweep)",
+                                   compact["models"], compact["aggregate"])
+        (FIG_DIR / "compact-throughput.svg").write_text(figure, encoding="utf-8")
+
+    model_count = len(models) + (len(compact["models"]) if compact else 0)
+    print(f"wrote {out} ({model_count} models)")
     print(f"wrote {DATA_PATH}")
-    print(f"wrote 2 README figures under {FIG_DIR}")
+    print(f"wrote README figures under {FIG_DIR}")
 
 
 if __name__ == "__main__":

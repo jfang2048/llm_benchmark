@@ -1,0 +1,75 @@
+{
+  "suite": "capacity_short",
+  "cohort": "compact_4b",
+  "git_commit": "fa0e387a51715dbd083d34901cefb3724697dc08",
+  "aiperf_version": "0.12.0",
+  "engine": "upstream_llama_cpp",
+  "engine_source": "ggml-org/llama.cpp",
+  "engine_commit": "5ac847190e979e0da7c4a21806630805f396d487",
+  "image": "llama-cpp-upstream:v0.4.0",
+  "gpu": "NVIDIA GeForce RTX 3060 Laptop GPU, 610.74, 6144",
+  "serving_flags": [
+    "--ctx-size",
+    "4096",
+    "--parallel",
+    "2",
+    "--cont-batching",
+    "--metrics",
+    "--n-gpu-layers",
+    "999"
+  ],
+  "quantization": "Q4_K_M",
+  "workload_sha256": "294866ca6a5c118b52f34d0e97a7facc625d2e1b5cfb859fa7a8e348bae91263",
+  "config": {
+    "concurrency": [
+      1,
+      2,
+      4
+    ],
+    "repeats": 2,
+    "requests_per_cell": 12,
+    "warmup_requests": 2,
+    "output_tokens": 64,
+    "seed": 42,
+    "temperature": 0,
+    "ignore_eos": true,
+    "cache_prompt": false,
+    "connection_reuse": "never",
+    "ctx_size": 4096,
+    "parallel": 2,
+    "n_gpu_layers": "999"
+  },
+  "models": {
+    "Qwen3-4B-Q4_K_M.gguf": {
+      "display_name": "Qwen3-4B",
+      "actual_parameter_count": 4000000000,
+      "sha256": "7485fe6f11af29433bc51cab58009521f205840f5b4ae3a32fa7f92e8534fdf5",
+      "quantization": "Q4_K_M",
+      "gguf_source": "Qwen/Qwen3-4B-GGUF",
+      "gguf_source_revision": "bc640142c66e1fdd12af0bd68f40445458f3869b",
+      "upstream_repo": "Qwen/Qwen3-4B",
+      "license": "Apache-2.0"
+    },
+    "microsoft_Phi-4-mini-instruct-Q4_K_M.gguf": {
+      "display_name": "Phi-4-mini-instruct",
+      "actual_parameter_count": 3836021856,
+      "sha256": "01999f17c39cc3074afae5e9c539bc82d45f2dd7faa3917c66cbef76fce8c0c2",
+      "quantization": "Q4_K_M",
+      "gguf_source": "bartowski/microsoft_Phi-4-mini-instruct-GGUF",
+      "gguf_source_revision": "7ff82c2aaa4dde30121698a973765f39be5288c0",
+      "upstream_repo": "microsoft/Phi-4-mini-instruct",
+      "license": "MIT"
+    },
+    "gemma-3-4b-it-Q4_K_M.gguf": {
+      "display_name": "Gemma 3 4B (text-only)",
+      "actual_parameter_count": 3880099328,
+      "sha256": "882e8d2db44dc554fb0ea5077cb7e4bc49e7342a1f0da57901c0802ea21a0863",
+      "quantization": "Q4_K_M",
+      "gguf_source": "ggml-org/gemma-3-4b-it-GGUF",
+      "gguf_source_revision": "d0976223747697cb51e056d85c532013931fe52e",
+      "upstream_repo": "ggml-org/gemma-3-4b-it-GGUF",
+      "license": "Gemma Terms of Use"
+    }
+  },
+  "generated_at": "2026-11-18T19:16:45.816327+00:00"
+}
