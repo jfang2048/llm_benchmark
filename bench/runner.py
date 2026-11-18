@@ -453,7 +453,7 @@ def _write_startup_summary(rows, path):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--suite", default="capacity",
-                    choices=["capacity", "reliability", "shape", "startup",
+                    choices=["capacity", "capacity_short", "reliability", "shape", "startup",
                              "soak", "open-loop", "sessions"])
     ap.add_argument("--cohort", default="mainstream_8_9b")
     ap.add_argument("--dry-run", action="store_true")
@@ -485,9 +485,10 @@ def main():
 
     cohort_dir = args.cohort.replace("_", "-")
     suite_root = RESULT_ROOT / cohort_dir / args.suite
-    suite_root.mkdir(parents=True, exist_ok=True)
     workload_path = str(suite_root / "model_workload.jsonl")
-    workload_sha = workload.write_workload_jsonl(workload_path)
+    if not args.dry_run:
+        suite_root.mkdir(parents=True, exist_ok=True)
+        workload_sha = workload.write_workload_jsonl(workload_path)
 
     rows_jsonl = suite_root / "rows.jsonl"
     completed = set()
@@ -625,10 +626,11 @@ def main():
         return 0
 
     # --- capacity / reliability / shape (plan-based) ---
-    if args.suite == "capacity":
-        plan = [("capacity", "raw", osl_default,
-                 bench["concurrency"]["capacity"], bench["requests"]["capacity"],
-                 bench["repeats"]["capacity"], bench["warmup"]["capacity"])]
+    if args.suite in ("capacity", "capacity_short"):
+        suite = args.suite
+        plan = [(suite, "raw", bench["output_length"].get(suite, osl_default),
+                 bench["concurrency"][suite], bench["requests"][suite],
+                 bench["repeats"][suite], bench["warmup"][suite])]
     elif args.suite == "reliability":
         plan = [("reliability", "raw", osl_default,
                  bench["concurrency"]["reliability"],
@@ -709,6 +711,7 @@ def _write_manifest(suite_dir, bench, arms, quant, workload_sha, suite, seed,
             "sha256": sha,
             "quantization": m["quantization"],
             "gguf_source": m.get("gguf_source"),
+            "gguf_source_revision": m.get("gguf_source_revision"),
             "upstream_repo": m["upstream_repo"],
             "license": m.get("license"),
         }
@@ -729,7 +732,8 @@ def _write_manifest(suite_dir, bench, arms, quant, workload_sha, suite, seed,
             "concurrency": bench["concurrency"].get(suite),
             "repeats": bench["repeats"].get(suite),
             "requests_per_cell": bench["requests"].get(suite),
-            "output_tokens": bench["output_length"]["default"],
+            "warmup_requests": bench["warmup"].get(suite),
+            "output_tokens": bench["output_length"].get(suite, bench["output_length"]["default"]),
             "seed": seed,
             "temperature": 0, "ignore_eos": True, "cache_prompt": False,
             "connection_reuse": CONNECTION_REUSE,

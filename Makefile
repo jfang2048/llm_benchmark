@@ -9,6 +9,7 @@
 #   make setup        Download models and build serving images
 #   make smoke        Fast admission sanity check (serve + smoke)
 #   make benchmark    Mainstream 8-9B capacity sweep
+#   make benchmark-compact   Compact 4B short capacity sweep
 #   make spark        Spark reference capacity sweep
 #   make reliability  Transport-reliability gate (both cohorts)
 #   make shape        Token-controlled ISL/OSL workload sweep (both cohorts)
@@ -34,7 +35,7 @@ COHORTS = mainstream_8_9b spark_reference
 # Capability-evaluation python (.venv-eval/, created by eval-setup).
 EVALPY ?= .venv-eval/bin/python
 
-.PHONY: help setup smoke benchmark spark reliability shape open-loop startup \
+.PHONY: help setup smoke benchmark benchmark-compact spark reliability shape open-loop startup \
 	soak sessions llama-bench report reproduce clean benchmark-v1 \
 	eval-setup eval-admit eval-code eval-livecodebench eval-swe eval-deepswe \
 	eval-multilingual eval-terminal eval-live eval-frontier eval-report \
@@ -49,6 +50,7 @@ help:
 	  "  make setup        Download models and build serving images" \
 	  "  make smoke        Fast admission sanity check" \
 	  "  make benchmark    Mainstream 8-9B capacity sweep" \
+	  "  make benchmark-compact  Compact 4B short capacity sweep" \
 	  "  make spark        Spark reference capacity sweep" \
 	  "  make reliability  Transport-reliability gate (both cohorts)" \
 	  "  make shape        ISL/OSL workload sweep (both cohorts)" \
@@ -85,6 +87,9 @@ smoke:
 
 benchmark:
 	$(RUNNER) --cohort mainstream_8_9b --suite capacity
+
+benchmark-compact:
+	$(RUNNER) --cohort compact_4b --suite capacity_short
 
 spark:
 	$(RUNNER) --cohort spark_reference --suite capacity

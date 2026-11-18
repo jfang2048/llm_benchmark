@@ -14,14 +14,16 @@
     "capacity": [1, 2, 4, 6, 8],
     "shape": [1, 4],
     "reliability": [1, 4],
-    "backend": [1, 2, 4]
+    "backend": [1, 2, 4],
+    "capacity_short": [1, 2, 4]
   },
   "repeats": {
     "capacity": 3,
     "shape": 1,
     "reliability": 1,
     "backend": 4,
-    "startup": 3
+    "startup": 3,
+    "capacity_short": 2
   },
   "requests": {
     "capacity": 60,
@@ -31,7 +33,8 @@
     "sessions": 80,
     "open_loop": 200,
     "startup": 1,
-    "soak": 1
+    "soak": 1,
+    "capacity_short": 12
   },
   "warmup": {
     "capacity": 5,
@@ -40,12 +43,14 @@
     "backend": 5,
     "sessions": 5,
     "open_loop": 10,
-    "startup": 0
+    "startup": 0,
+    "capacity_short": 2
   },
   "output_length": {
     "default": 128,
     "sessions": 64,
-    "startup": 16
+    "startup": 16,
+    "capacity_short": 64
   },
   "reliability": {
     "min_success_pct": 99.5,
