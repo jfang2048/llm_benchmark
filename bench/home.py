@@ -8,6 +8,7 @@ import random
 import subprocess
 import time
 from concurrent.futures import ThreadPoolExecutor
+from http.client import HTTPException
 from pathlib import Path
 from urllib.error import URLError
 from urllib.request import ProxyHandler, Request, build_opener
@@ -22,6 +23,7 @@ TASKS = ROOT / "configs/home_tasks.jsonl"
 COLUMNS = [
     "arm", "scenario", "repeat", "task", "kind", "language", "status", "finish_reason",
     "first_token_ms", "first_answer_ms", "complete_ms", "input_tokens", "output_tokens",
+    "redaction_leak",
 ]
 ARCHIVE_LINE = (
     "{i:02d} | Paper inventory check: plain folders counted at the front shelf. "
@@ -120,17 +122,20 @@ def request_task(url, alias, task, settings):
                 if content:
                     chunks.append((stamp, content))
                 finish = choice.get("finish_reason") or finish
-    except (OSError, URLError, ValueError, KeyError):
+    except (OSError, HTTPException, ValueError, KeyError):
         pass
     else:
         if finish:
             status = None
     complete = (time.perf_counter() - start) * 1000
     answer, visible = answer_text(chunks)
+    markers = task.get("sensitive", [])
+    leak = int(any(span.casefold() in answer.casefold() for span in markers)) if markers and answer else None
     return {
         "status": status or grade(answer, task["expected"], finish), "finish_reason": finish,
         "first_token_ms": first_token, "first_answer_ms": visible, "complete_ms": complete,
         "input_tokens": usage.get("prompt_tokens"), "output_tokens": usage.get("completion_tokens"),
+        "redaction_leak": leak,
     }
 
 
@@ -187,6 +192,7 @@ def run_arm(model, tasks, settings, output, model_dir):
                 print(f"{arm} {scenario} repeat {repeat}: "
                       f"{sum(row['status'] == 'correct' for row in rows)}/{len(rows)} correct "
                       f"in {elapsed:.1f}s", flush=True)
+        telemetry.stop()
         peak, _, _, temperature, _ = results.parse_gpu_csv(output / f"{arm}.gpu.csv")
         if oom_check(name):
             raise RuntimeError(f"{arm} emitted an allocation error")
