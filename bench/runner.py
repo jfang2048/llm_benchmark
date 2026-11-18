@@ -19,6 +19,7 @@ import time
 from pathlib import Path
 
 from . import config, results, workload
+from .serving import start_server
 
 ROOT = config.ROOT
 MODEL_DIR = Path(os.environ.get("MODEL_DIR", ROOT / "models"))
@@ -91,18 +92,7 @@ def wait_thermal():
 def docker_run_detached(container, image, port, gguf, alias):
     # Drop any stale container with the same name first (resume/restart safety).
     sh("docker", "rm", "-f", container)
-    args = [
-        "docker", "run", "-d", "--name", container,
-        "--gpus", "all", "--ipc", "host",
-        "-p", f"127.0.0.1:{port}:8000",
-        "-v", f"{MODEL_DIR}:/models:ro",
-        "--entrypoint", "/src/build/bin/llama-server",
-        image,
-        "--model", f"/models/{gguf}", "--alias", alias,
-        "--host", "0.0.0.0", "--port", "8000",
-        *SERVING_FLAGS,
-    ]
-    r = sh(*args)
+    r = start_server(container, image, port, gguf, alias, MODEL_DIR, SERVING_FLAGS)
     if r.returncode != 0:
         log(f"ERROR docker run: {r.stderr.strip()}")
         return False

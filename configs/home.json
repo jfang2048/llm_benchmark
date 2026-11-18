@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "cohorts": [
+    "compact_4b",
+    "mainstream_8_9b",
+    "spark_reference"
+  ],
+  "context": 4096,
+  "slots": 2,
+  "gpu_layers": 999,
+  "repeats": 2,
+  "max_output_tokens": 192,
+  "request_timeout_s": 30,
+  "disable_reasoning_for": [
+    "qwen3_4b_compact",
+    "qwen3_5_4b_compact",
+    "qwen3_8b"
+  ],
+  "scenarios": {
+    "desk": {
+      "label": "One person",
+      "concurrency": 1,
+      "first_answer_ms": 500,
+      "complete_ms": 5000
+    },
+    "burst": {
+      "label": "Small batch",
+      "concurrency": 4,
+      "first_answer_ms": 2000,
+      "complete_ms": 8000
+    }
+  }
+}
