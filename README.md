@@ -75,6 +75,9 @@ fixed-hardware reference — not ranked against the 8-9B models. Its engine
 profile and commit are pinned in `configs/models.json` exactly like the
 upstream build.
 
+See [model selection](docs/model-selection.md#november-2026-model-refresh)
+for the November 2026 model refresh and the opt-in smoke commands.
+
 ## Test system
 
 | Component | Value |

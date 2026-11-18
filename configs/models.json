@@ -15,6 +15,16 @@
       "description": "Historical ~4B cohort (Qwen3-4B/Phi-4/Gemma 3), preserved for reproduction",
       "engine": "xhtoken_llama_cpp",
       "quantization": "Q4_K_M"
+    },
+    "mainstream_candidates": {
+      "description": "Opt-in dense model refresh candidates",
+      "engine": "upstream_llama_cpp",
+      "quantization": "IQ4_XS"
+    },
+    "spark_candidate": {
+      "description": "Opt-in Spark reference refresh candidate",
+      "engine": "xhtoken_llama_cpp",
+      "quantization": "Q4_K_M"
     }
   },
   "models": [
@@ -123,7 +133,8 @@
       "port": 8200,
       "notes": "IQ4_XS GGUF from bartowski/Qwen_Qwen3-8B-GGUF (SHA256 recorded). Primary cohort, served via pinned upstream llama.cpp v0.4.0.",
       "gguf_source": "bartowski/Qwen_Qwen3-8B-GGUF",
-      "gguf_source_file": "Qwen_Qwen3-8B-IQ4_XS.gguf"
+      "gguf_source_file": "Qwen_Qwen3-8B-IQ4_XS.gguf",
+      "gguf_source_revision": "0b69f75b7472688e6808490aa2b85efdb81b5ce7"
     },
     {
       "id": "deepseek_r1_distill_llama_8b",
@@ -145,7 +156,8 @@
       "port": 8201,
       "notes": "IQ4_XS GGUF from bartowski/DeepSeek-R1-Distill-Llama-8B-GGUF (SHA256 recorded). Primary cohort. Base is Llama 3.1 8B; never describe as DeepSeek-V3/R1 MoE.",
       "gguf_source": "bartowski/DeepSeek-R1-Distill-Llama-8B-GGUF",
-      "gguf_source_file": "DeepSeek-R1-Distill-Llama-8B-IQ4_XS.gguf"
+      "gguf_source_file": "DeepSeek-R1-Distill-Llama-8B-IQ4_XS.gguf",
+      "gguf_source_revision": "935d400c2ed1a29cc2a1045df25ec7998fb4dfe4"
     },
     {
       "id": "glm4_9b_0414",
@@ -167,7 +179,8 @@
       "port": 8202,
       "notes": "IQ4_XS GGUF from bartowski/THUDM_GLM-4-9B-0414-GGUF (SHA256 recorded). Primary cohort. 9.40B is the largest of the cohort; watch VRAM.",
       "gguf_source": "bartowski/THUDM_GLM-4-9B-0414-GGUF",
-      "gguf_source_file": "THUDM_GLM-4-9B-0414-IQ4_XS.gguf"
+      "gguf_source_file": "THUDM_GLM-4-9B-0414-IQ4_XS.gguf",
+      "gguf_source_revision": "211924cd949e153b1017ed635e5b127d0b594e6f"
     },
     {
       "id": "yi_15_9b_chat",
@@ -189,7 +202,77 @@
       "port": 8203,
       "notes": "IQ4_XS GGUF from bartowski/Yi-1.5-9B-Chat-GGUF (SHA256 recorded). Primary cohort. Yi loads as llama arch; 4K native context.",
       "gguf_source": "bartowski/Yi-1.5-9B-Chat-GGUF",
-      "gguf_source_file": "Yi-1.5-9B-Chat-IQ4_XS.gguf"
+      "gguf_source_file": "Yi-1.5-9B-Chat-IQ4_XS.gguf",
+      "gguf_source_revision": "818987823fe7567eb636bd17c49e9a17567e25d8"
+    },
+    {
+      "id": "deepseek_r1_0528_qwen3_8b",
+      "display_name": "DeepSeek-R1-0528-Qwen3-8B",
+      "arm": "deepseek_r1_0528_qwen3_8b",
+      "cohort": "mainstream_candidates",
+      "upstream_repo": "deepseek-ai/DeepSeek-R1-0528-Qwen3-8B",
+      "model_revision": "6e8885a6ff5c1dc5201574c8fd700323f23c25fa",
+      "actual_parameter_count": 8190735360,
+      "architecture": "dense GQA (qwen3)",
+      "context_length": 131072,
+      "license": "MIT",
+      "gguf_filename": "DeepSeek-R1-0528-Qwen3-8B-IQ4_XS.gguf",
+      "quantization": "IQ4_XS",
+      "sha256": "ce3ed47e622d5d331d251069814fc45745637242715306641766946fc8de4940",
+      "chat_template": "chat",
+      "enabled": true,
+      "primary": false,
+      "port": 8210,
+      "notes": "Opt-in reasoning model. Distilled from R1-0528 onto Qwen3-8B Base with a DeepSeek tokenizer.",
+      "gguf_source": "bartowski/deepseek-ai_DeepSeek-R1-0528-Qwen3-8B-GGUF",
+      "gguf_source_file": "deepseek-ai_DeepSeek-R1-0528-Qwen3-8B-IQ4_XS.gguf",
+      "gguf_source_revision": "75b8e3d4ecafa21b1f9a06209712f726d0ed77bc"
+    },
+    {
+      "id": "qwen3_5_9b",
+      "display_name": "Qwen3.5-9B (text-only)",
+      "arm": "qwen3_5_9b",
+      "cohort": "mainstream_candidates",
+      "upstream_repo": "Qwen/Qwen3.5-9B",
+      "model_revision": "c202236235762e1c871ad0ccb60c8ee5ba337b9a",
+      "actual_parameter_count": 9653104368,
+      "architecture": "dense hybrid Gated DeltaNet and full attention (qwen35)",
+      "context_length": 262144,
+      "license": "Apache-2.0",
+      "gguf_filename": "Qwen3.5-9B-IQ4_XS.gguf",
+      "quantization": "IQ4_XS",
+      "sha256": "7d977cc96c2e08616016d967f232083e354691a8a16f345b26f7d782ee5c9601",
+      "chat_template": "chat",
+      "enabled": true,
+      "primary": false,
+      "port": 8211,
+      "notes": "Opt-in text-only GGUF. The upstream parameter count includes the vision encoder.",
+      "gguf_source": "bartowski/Qwen_Qwen3.5-9B-GGUF",
+      "gguf_source_file": "Qwen_Qwen3.5-9B-IQ4_XS.gguf",
+      "gguf_source_revision": "182be2fd6c7bc44887d88a91cb03ff009cc9f549"
+    },
+    {
+      "id": "spark_x2_6_4b",
+      "display_name": "Spark-X2.6-4B",
+      "arm": "spark_x2_6_4b",
+      "cohort": "spark_candidate",
+      "upstream_repo": "XHToken/Spark-X2.6-4B",
+      "model_revision": "64ca8f2a295b8ceb2757b9d4749a6558c4759e5b",
+      "actual_parameter_count": 4112079360,
+      "architecture": "dense, hybrid attention (1 full + 3 sliding-window)",
+      "context_length": 1048576,
+      "license": "Apache-2.0",
+      "gguf_filename": "Spark-X2.6-4B-Q4_K_M.gguf",
+      "quantization": "Q4_K_M",
+      "sha256": "91cb2811aebb47ac916aa619d27d4cdd7f4143106b7917accb8ead4cd7f5cbd9",
+      "chat_template": "none",
+      "enabled": true,
+      "primary": false,
+      "port": 8212,
+      "notes": "Opt-in reference candidate using the official Q4_K_M GGUF.",
+      "gguf_source": "XHToken/Spark-X2.6-4B-GGUF",
+      "gguf_source_file": "Spark-X2.6-4B-Q4_K_M.gguf",
+      "gguf_source_revision": "9d716770ac7477776de5f891f70cdf98b003a5cd"
     }
   ],
   "engine_comparison_arms": [

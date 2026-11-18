@@ -102,13 +102,13 @@
 
 4. **summary.tsv / tasks.tsv 被覆盖。** 每个数据集 run 都把别的 run 覆盖。解决：`_merge_rows` 按关键列（如 `model+dataset`、`task_id+model`）upsert。
 
-5. **security_check 误报 `/home/jfang`。** 某 docstring 示例里的绝对路径触发告警。解决：改成 `$HOME`。
+5. **security_check 标记了用户目录的绝对路径。** 某 docstring 示例里的路径触发告警。解决：改用 `$HOME`。
 
 6. **XHToken（Spark）fork 在某些 prompt 上卡住。** Spark fork 偶尔停止解码。解决：挂死自动重启 + 续跑（每个任务的采样已缓存，续跑跳过已完成部分）。
 
 7. **DeepSeek-R1-Distill 在 reasoning-off 下退化。** 关掉 reasoning 后，R1-distill 频繁输出 `"\nWait,"` 之类被截断的思考片段，导致它的 EvalPlus 分数（HumanEval 20.1%、MBPP 31.2%）是下限，不能代表它真实（带思考）的能力。解决：在结果里如实标注，不隐藏。
 
-8. **mini-swe-agent 首次启动卡住。** `mini` 首次运行弹交互式设置向导、无 TTY 时阻塞。解决：子进程环境里设 `MSWEA_CONFIGURED=true` + `OPENAI_API_KEY=sk-local`。
+8. **mini-swe-agent 首次启动卡住。** `mini` 首次运行弹交互式设置向导、无 TTY 时阻塞。解决：在子进程环境里设 `MSWEA_CONFIGURED=true`，将 `OPENAI_API_KEY` 设为占位值 `sk-local`。
 
 9. **litellm 成本统计报错。** 本地模型名不在 litellm 价格表里，算成本时抛 `RuntimeError`。解决：`MSWEA_COST_TRACKING=ignore_errors`。
 

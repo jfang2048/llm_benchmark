@@ -44,7 +44,7 @@ def load_evals_cfg():
 def current_models():
     """Current serving cohort + Spark reference (enabled, current cohorts)."""
     data = load_models()
-    cur = set(data["cohorts"].keys()) - {"historical_4b"}
+    cur = ("mainstream_8_9b", "spark_reference")
     return [m for m in data["models"]
             if m.get("enabled") and m.get("cohort") in cur]
 

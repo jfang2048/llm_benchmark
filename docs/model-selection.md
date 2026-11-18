@@ -34,6 +34,44 @@ not marketing names. All four models are MIT or Apache-2.0 and ungated.
   quantization. It is reported alongside the cohort for hardware-efficiency
   context and never compared as a size-matched winner.
 
+## November 2026 model refresh
+
+The registry includes three opt-in candidates. Their GGUF source revisions
+and SHA256 values are pinned alongside the four published 8-9B artifacts.
+On 2026-11-18, all five published models passed a short admission run
+on the RTX 3060 Laptop GPU with context 4096, parallel 2, and three
+requests per model. The three candidate artifacts were verified against
+upstream metadata. Their GPU admission is pending a complete download.
+
+| Candidate | Artifact | Selection rationale |
+|---|---|---|
+| [DeepSeek-R1-0528-Qwen3-8B](https://huggingface.co/deepseek-ai/DeepSeek-R1-0528-Qwen3-8B) | IQ4_XS | Newer DeepSeek reasoning distill with a Qwen3-8B Base backbone and a DeepSeek tokenizer |
+| [Qwen3.5-9B](https://huggingface.co/Qwen/Qwen3.5-9B) | IQ4_XS, text-only | Newer Qwen hybrid-attention architecture. The full upstream checkpoint has 9.65B parameters including vision, and the GGUF is 5.50 GB before runtime buffers. |
+| [Spark-X2.6-4B](https://huggingface.co/XHToken/Spark-X2.6-4B) | Official Q4_K_M | Same 4.11B architecture as X2.5 with updated post-training. A same-quantization comparison with the IQ4_XS reference requires a separate IQ4_XS build. |
+
+Use a model ID from the registry to download and test it individually.
+
+```bash
+./scripts/download_models.sh deepseek_r1_0528_qwen3_8b
+SMOKE_REQS=3 OUT_LEN=32 ./scripts/admit.sh deepseek_r1_0528_qwen3_8b
+```
+
+The other candidate IDs are `qwen3_5_9b` and `spark_x2_6_4b`. The
+admission script saves the latest run to `.agent/admission.tsv` and returns
+a nonzero exit status if any selected model fails admission.
+
+Qwen also released the larger [Qwen3.8-27B](https://huggingface.co/Qwen/Qwen3.8-27B),
+outside this benchmark's parameter window.
+
+The historical small-model families also have newer releases, including
+[Qwen3.5-4B](https://huggingface.co/Qwen/Qwen3.5-4B),
+[Gemma 4 E4B](https://huggingface.co/google/gemma-4-E4B-it), and the
+reasoning variant [Phi-4-mini-reasoning](https://huggingface.co/microsoft/Phi-4-mini-reasoning).
+Z.ai's [GLM-4.6V-Flash](https://huggingface.co/zai-org/GLM-4.6V-Flash)
+is a roughly 10B multimodal option. The [Yi catalog](https://huggingface.co/01-ai/models)
+includes the task-specific Yi-Coder-9B-Chat and a longer-context Yi-1.5-9B
+Chat variant.
+
 ## Excluded
 
 - **Meta-Llama-3.1-8B-Instruct** and **gemma-2-9b-it** were considered as

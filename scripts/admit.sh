@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
 # Admission test for the current benchmark models (registry-driven).
 #
-# For each enabled model in the current cohorts (mainstream_8_9b and
-# spark_reference): serve with the correct engine image -> healthcheck ->
+# For each selected model: serve with the cohort engine -> healthcheck ->
 # /v1/models -> one generation -> 20-request smoke -> VRAM/OOM check -> stop.
 # One container at a time. The engine image is derived from the cohort via
 # configs/models.json (engines{} + cohorts{}), not a hardcoded table.
@@ -17,29 +16,23 @@ PARALLEL="${PARALLEL:-2}"
 N_GPU_LAYERS="${N_GPU_LAYERS:-999}"
 SMOKE_REQS="${SMOKE_REQS:-20}"
 OUT_LEN="${OUT_LEN:-128}"
-SELECT="${*:-}"
 
 need(){ command -v "$1" >/dev/null 2>&1 || { echo "ERROR: missing $1" >&2; exit 1; }; }
 need docker; need curl; need nvidia-smi; need python3
 
 # id<TAB>gguf<TAB>port<TAB>alias<TAB>image   (image resolved from cohort -> engine)
-MODELS="$(python3 - "$ROOT" <<'PY'
-import json, sys
-d = json.load(open(f"{sys.argv[1]}/configs/models.json"))
-img = {k: v.get("image", "") for k, v in d.get("engines", {}).items()}
-eng = {k: v.get("engine", "") for k, v in d.get("cohorts", {}).items()}
-for m in d["models"]:
-    if not m.get("enabled"):
-        continue
-    if m.get("cohort") not in ("mainstream_8_9b", "spark_reference"):
-        continue
-    image = img.get(eng.get(m.get("cohort", ""), ""), "")
-    print("\t".join([
-        m.get("id", ""), m.get("gguf_filename", ""), str(m.get("port", "")),
-        m.get("arm", ""), image,
-    ]))
-PY
-)"
+MODELS="$(python3 - "$ROOT" "$@" <<'PYTHON'
+import sys
+sys.path.insert(0, sys.argv[1])
+from bench.config import admission_models, cohort_engine, engine_image
+
+for m in admission_models(sys.argv[2:]):
+    image = engine_image(cohort_engine(m["cohort"]))
+    if not image:
+        sys.exit(f"No engine image for {m['id']}")
+    print("\t".join([m["id"], m["gguf_filename"], str(m["port"]), m["arm"], image]))
+PYTHON
+)" || exit 1
 
 vram(){ nvidia-smi --query-gpu=memory.used,memory.total --format=csv,noheader,nounits 2>/dev/null | head -n1 | tr -d ' '; }
 
@@ -74,7 +67,10 @@ smoke(){
 
 oom_check(){
   local c="$1"
-  if docker logs "$c" 2>&1 | grep -qiE "out of memory|CUDA error|OOM|failed to allocate"; then
+  local logs
+  if ! logs="$(docker logs "$c" 2>&1)"; then
+    echo "FAIL-LOGS"
+  elif grep -qiE 'out of memory|CUDA error|failed to allocate|\bOOM\b' <<< "$logs"; then
     echo "OOM-SUSPECT"
   else
     echo "no-oom"
@@ -82,19 +78,25 @@ oom_check(){
 }
 
 summary_file="$ROOT/.agent/admission.tsv"
-printf 'model\timage\tport\tctx\tparallel\tn_gpu_layers\tvram_used_mib\tvram_total_mib\tgen_tokens\tsmoke\tstatus\n' > "$summary_file"
+mkdir -p "$(dirname "$summary_file")" || exit 1
+printf 'model\timage\tport\tctx\tparallel\tn_gpu_layers\tvram_used_mib\tvram_total_mib\tgen_tokens\tsmoke\tstatus\n' > "$summary_file" || exit 1
+failed=0
 
 while IFS=$'\t' read -r id gguf port alias image; do
   [[ -n "$id" ]] || continue
-  [[ -z "$SELECT" || " $SELECT " == *" $id "* ]] || continue
   gguf_path="$MODEL_DIR/$gguf"
-  [[ -s "$gguf_path" ]] || { echo "[$id] SKIP: $gguf_path missing"; echo -e "$id\t$image\t$port\t$CTX_SIZE\t$PARALLEL\t$N_GPU_LAYERS\t-\t-\t-\tmissing-gguf\tSKIP" >> "$summary_file"; continue; }
-  [[ -n "$image" ]] || { echo "[$id] SKIP: no engine image resolved"; continue; }
+  if [[ ! -s "$gguf_path" ]]; then
+    echo "[$id] FAIL: $gguf_path missing"
+    printf '%s\t%s\t%s\t%s\t%s\t%s\t-\t-\t-\t-\tFAIL-MISSING\n' \
+      "$id" "$image" "$port" "$CTX_SIZE" "$PARALLEL" "$N_GPU_LAYERS" >> "$summary_file"
+    failed=1
+    continue
+  fi
 
   c="admit-${id//_/-}"
   docker rm -f "$c" >/dev/null 2>&1 || true
   echo "=== [$id] serving $gguf (image=$image ctx=$CTX_SIZE parallel=$PARALLEL) ==="
-  docker run -d --name "$c" --gpus all --ipc host \
+  if ! docker run -d --name "$c" --gpus all --ipc host \
     -p "127.0.0.1:${port}:8000" \
     -v "$MODEL_DIR:/models:ro" \
     --entrypoint /src/build/bin/llama-server \
@@ -102,13 +104,13 @@ while IFS=$'\t' read -r id gguf port alias image; do
     --model "/models/$gguf" --alias "$alias" \
     --host 0.0.0.0 --port 8000 \
     --ctx-size "$CTX_SIZE" --parallel "$PARALLEL" \
-    --cont-batching --metrics --n-gpu-layers "$N_GPU_LAYERS" >/dev/null
-
-  if ! wait_ready "$c" "$port"; then
+    --cont-batching --metrics --n-gpu-layers "$N_GPU_LAYERS" >/dev/null ||
+      ! wait_ready "$c" "$port"; then
     echo "[$id] FAIL: did not become ready"
-    docker logs --tail 30 "$c" >&2 2>/dev/null || true
+    docker logs --tail 30 "$c" >&2 || true
     echo -e "$id\t$image\t$port\t$CTX_SIZE\t$PARALLEL\t$N_GPU_LAYERS\t-\t-\t-\t-\tFAIL-START" >> "$summary_file"
     docker rm -f "$c" >/dev/null 2>&1 || true
+    failed=1
     continue
   fi
 
@@ -116,12 +118,15 @@ while IFS=$'\t' read -r id gguf port alias image; do
   used="${vr%%,*}"; total="${vr##*,}"
   echo "[$id] ready; VRAM ${used}/${total} MiB"
 
-  # /v1/models sanity
-  nmodels="$(curl -fsS --max-time 5 "http://127.0.0.1:${port}/v1/models" 2>/dev/null | python3 -c 'import sys,json; print(len(json.load(sys.stdin).get("data", [])))' 2>/dev/null || echo '?')"
-  echo "[$id] /v1/models count=$nmodels"
+  # Require the requested alias and a response with positive token usage.
+  model_ok=0
+  if curl -fsS --max-time 5 "http://127.0.0.1:$port/v1/models" |
+      python3 -c 'import sys,json; sys.exit(not any(m["id"] == sys.argv[1] for m in json.load(sys.stdin)["data"]))' "$alias"; then
+    model_ok=1
+  fi
+  echo "[$id] /v1/models alias present=$model_ok"
 
-  body="$(gen_once "$port" "$alias")"
-  toks="$(echo "$body" | python3 -c 'import sys,json; d=json.load(sys.stdin); print(d["usage"]["completion_tokens"] if "usage" in d else "?")' 2>/dev/null)"
+  toks="$(gen_once "$port" "$alias" | python3 -c 'import sys,json; print(json.load(sys.stdin)["usage"]["completion_tokens"])' 2>/dev/null)" || toks="-"
   echo "[$id] gen tokens=$toks"
 
   sm="$(smoke "$port" "$alias")"
@@ -133,8 +138,20 @@ while IFS=$'\t' read -r id gguf port alias image; do
   docker stop "$c" >/dev/null 2>&1 || true
   docker rm -f "$c" >/dev/null 2>&1 || true
 
-  echo -e "$id\t$image\t$port\t$CTX_SIZE\t$PARALLEL\t$N_GPU_LAYERS\t$used\t$total\t$toks\t$sm\t$oo" >> "$summary_file"
+  status="$oo"
+  if [[ "$status" == "no-oom" ]]; then
+    if [[ "$model_ok" != 1 || ! "$toks" =~ ^[1-9][0-9]*$ ||
+          "$sm" != "smoke ok=$SMOKE_REQS fail=0" ||
+          ! "$vr" =~ ^[0-9]+,[0-9]+$ ]]; then
+      status="FAIL-SMOKE"
+    fi
+  fi
+  [[ "$status" == "no-oom" ]] || failed=1
+  printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
+    "$id" "$image" "$port" "$CTX_SIZE" "$PARALLEL" "$N_GPU_LAYERS" \
+    "$used" "$total" "$toks" "$sm" "$status" >> "$summary_file"
 done <<< "$MODELS"
 
 echo "=== ADMISSION SUMMARY ==="
 cat "$summary_file"
+exit "$failed"

@@ -52,6 +52,18 @@ def models_for_cohort(cohort):
             if m.get("cohort") == cohort and m.get("enabled")]
 
 
+def admission_models(model_ids):
+    """Select the published cohorts by default or specific downloadable models."""
+    default_cohorts = ("mainstream_8_9b", "spark_reference")
+    available = [m for m in enabled_models() if m.get("gguf_source")]
+    if not model_ids:
+        return [m for m in available if m["cohort"] in default_cohorts]
+    unknown = set(model_ids) - {m["id"] for m in available}
+    if unknown:
+        raise SystemExit(f"Unavailable model IDs: {', '.join(sorted(unknown))}")
+    return [m for m in available if m["id"] in model_ids]
+
+
 def reference_models():
     """Return first-class reference models (cross-cohort baselines)."""
     return [m for m in models() if m.get("role") == "reference" and m.get("enabled")]

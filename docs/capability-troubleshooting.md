@@ -150,8 +150,8 @@ In roughly the order they surfaced.
    Fix: `_merge_rows` upserts by key columns (e.g. `model+dataset`,
    `task_id+model`).
 
-5. **security_check flagged `/home/jfang`** in a docstring example. Fix:
-   replace with `$HOME`.
+5. **security_check flagged a literal home-directory path** in a docstring
+   example. Fix: use `$HOME`.
 
 6. **XHToken (Spark) fork hangs on some prompts.** The Spark fork intermittently
    stops decoding on certain inputs. Fix: the restart-on-hang retry + resume
@@ -165,7 +165,8 @@ In roughly the order they surfaced.
 
 8. **mini-swe-agent first-time setup hang.** `mini` ran its interactive setup
    prompt on first use and blocked (no TTY). Fix: set `MSWEA_CONFIGURED=true`
-   and `OPENAI_API_KEY=sk-local` in the subprocess env.
+   and use `sk-local` as the placeholder value for `OPENAI_API_KEY` in the
+   subprocess environment.
 
 9. **litellm cost-tracking error.** The local model name isn't in litellm's
    price map, so cost calculation raised `RuntimeError`. Fix:

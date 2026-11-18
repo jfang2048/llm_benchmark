@@ -39,7 +39,7 @@ def read_manifest(path):
 def load_models():
     with open(MODELS) as f:
         data = json.load(f)
-    cur = set(data["cohorts"].keys()) - {"historical_4b"}
+    cur = ("mainstream_8_9b", "spark_reference")
     out = []
     for m in data["models"]:
         if m.get("enabled") and m.get("cohort") in cur:

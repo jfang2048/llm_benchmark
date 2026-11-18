@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Download / verify the current benchmark artifacts into models/ (never committed).
+# Download / verify benchmark artifacts into models/ (never committed).
+# Usage: ./scripts/download_models.sh [model_id ...] (default: published cohorts)
 #
 # Mainstream 8-9B: download the pinned IQ4_XS GGUFs from their recorded
 # Bartowski source repos, rename to the local names, and verify SHA256.
@@ -26,38 +27,37 @@ verify(){
   [[ "$(sha256sum "$file" | awk '{print $1}')" == "$want" ]]
 }
 
-# download <repo> <file> <dest> — resumable, prefers hf when available.
+# download <repo> <file> <dest> <revision> — resumable, prefers hf when available.
 download(){
-  local repo="$1" file="$2" dest="$3"
+  local repo="$1" file="$2" dest="$3" revision="$4"
   if command -v hf >/dev/null 2>&1; then
-    hf download "$repo" "$file" --local-dir "$(dirname "$dest")" --local-dir-use-symlinks False >/dev/null
+    hf download "$repo" "$file" --revision "$revision" --local-dir "$(dirname "$dest")" >/dev/null
   else
     curl -fL --retry 5 --retry-delay 3 -C - \
-      "https://huggingface.co/$repo/resolve/main/$file?download=true" -o "$dest.part"
+      "https://huggingface.co/$repo/resolve/$revision/$file?download=true" -o "$dest.part"
     mv "$dest.part" "$dest"
   fi
 }
 
-# Manifest lines: local_file<TAB>repo<TAB>source_file<TAB>sha256<TAB>quantize_from_f16
-manifest="$(python3 - "$ROOT" <<'PY'
-import json, sys
-d = json.load(open(f"{sys.argv[1]}/configs/models.json"))
-for m in d["models"]:
-    if not m.get("enabled"):
-        continue
-    if m.get("cohort") not in ("mainstream_8_9b", "spark_reference"):
-        continue
+# Manifest lines: local_file, repo, source_file, sha256, quantize_from_f16, revision.
+manifest="$(python3 - "$ROOT" "$@" <<'PYTHON'
+import sys
+sys.path.insert(0, sys.argv[1])
+from bench.config import admission_models
+
+for m in admission_models(sys.argv[2:]):
     print("\t".join([
-        m.get("gguf_filename", ""),
-        m.get("gguf_source", "") or "",
-        m.get("gguf_source_file", "") or "",
-        m.get("sha256", "") or "",
+        m["gguf_filename"],
+        m["gguf_source"],
+        m["gguf_source_file"],
+        m["sha256"],
         "1" if m.get("quantize_from_f16") else "0",
+        m.get("gguf_source_revision", "main"),
     ]))
-PY
+PYTHON
 )"
 
-while IFS=$'\t' read -r local repo src sha q16; do
+while IFS=$'\t' read -r local repo src sha q16 revision; do
   [[ -n "$local" ]] || continue
   dest="$MODEL_DIR/$local"
 
@@ -69,28 +69,31 @@ while IFS=$'\t' read -r local repo src sha q16; do
     fi
     echo "== Spark reference: quantizing $repo/$src -> $local (IQ4_XS) =="
     f16="$STAGING_DIR/$src"
-    [[ -s "$f16" ]] || download "$repo" "$src" "$f16"
+    [[ -s "$f16" ]] || download "$repo" "$src" "$f16" "$revision"
     [[ -s "$f16" ]] || { echo "ERROR: failed to obtain $src" >&2; exit 1; }
     docker image inspect "$SPARK_IMAGE" >/dev/null 2>&1 || {
-      echo "ERROR: image $SPARK_IMAGE not built — run 'make build' first" >&2
+      echo "ERROR: image $SPARK_IMAGE not built — run './scripts/build.sh' first" >&2
       exit 1
     }
     docker run --rm -v "$MODEL_DIR:/models:rw" -v "$STAGING_DIR:/staging:ro" \
       --entrypoint /src/build/bin/llama-quantize "$SPARK_IMAGE" \
       "/staging/$src" "/models/$local" IQ4_XS
   else
-    # Mainstream: direct download from the recorded source repo, then rename.
+    # Verify the staged download before replacing the local model.
     if verify "$dest" "$sha"; then
       echo "OK   $local present and verified"
       continue
     fi
     echo "== Downloading $local from $repo =="
     tmp="$STAGING_DIR/$src"
-    if [[ ! -s "$tmp" ]]; then
-      download "$repo" "$src" "$tmp"
+    [[ -s "$tmp" ]] || download "$repo" "$src" "$tmp" "$revision"
+    if ! verify "$tmp" "$sha"; then
+      echo "ERROR: SHA256 mismatch for staged $src; remove it and retry" >&2
+      exit 1
     fi
-    [[ -s "$tmp" ]] || { echo "ERROR: failed to obtain $src" >&2; exit 1; }
     mv -f "$tmp" "$dest"
+    echo "OK   $local verified (sha256 match)"
+    continue
   fi
 
   if verify "$dest" "$sha"; then
@@ -104,4 +107,4 @@ while IFS=$'\t' read -r local repo src sha q16; do
 done <<< "$manifest"
 
 echo
-echo "Model acquisition complete (mainstream 8-9B + Spark reference)."
+echo "Model acquisition complete."
