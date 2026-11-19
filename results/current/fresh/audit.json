@@ -1,0 +1,111 @@
+[
+  {
+    "arm": "deepseek_r1_8b",
+    "cache_disabled_log": true,
+    "prefill_log_requests": 194,
+    "nonzero_initial_prefixes": 0,
+    "context_shift_logs": 0,
+    "prompt_context_rejections": []
+  },
+  {
+    "arm": "phi4_mini_compact",
+    "cache_disabled_log": true,
+    "prefill_log_requests": 194,
+    "nonzero_initial_prefixes": 0,
+    "context_shift_logs": 0,
+    "prompt_context_rejections": []
+  },
+  {
+    "arm": "qwen3_5_2b_light",
+    "cache_disabled_log": true,
+    "prefill_log_requests": 194,
+    "nonzero_initial_prefixes": 0,
+    "context_shift_logs": 0,
+    "prompt_context_rejections": []
+  },
+  {
+    "arm": "glm4_9b",
+    "cache_disabled_log": true,
+    "prefill_log_requests": 194,
+    "nonzero_initial_prefixes": 0,
+    "context_shift_logs": 0,
+    "prompt_context_rejections": []
+  },
+  {
+    "arm": "lfm2_5_12b_light",
+    "cache_disabled_log": true,
+    "prefill_log_requests": 194,
+    "nonzero_initial_prefixes": 0,
+    "context_shift_logs": 0,
+    "prompt_context_rejections": []
+  },
+  {
+    "arm": "qwen3_8b",
+    "cache_disabled_log": true,
+    "prefill_log_requests": 194,
+    "nonzero_initial_prefixes": 0,
+    "context_shift_logs": 0,
+    "prompt_context_rejections": []
+  },
+  {
+    "arm": "gemma3_4b_compact",
+    "cache_disabled_log": true,
+    "prefill_log_requests": 194,
+    "nonzero_initial_prefixes": 0,
+    "context_shift_logs": 0,
+    "prompt_context_rejections": []
+  },
+  {
+    "arm": "qwen3_4b_compact",
+    "cache_disabled_log": true,
+    "prefill_log_requests": 194,
+    "nonzero_initial_prefixes": 0,
+    "context_shift_logs": 0,
+    "prompt_context_rejections": []
+  },
+  {
+    "arm": "qwen3_5_4b_compact",
+    "cache_disabled_log": true,
+    "prefill_log_requests": 194,
+    "nonzero_initial_prefixes": 0,
+    "context_shift_logs": 0,
+    "prompt_context_rejections": []
+  },
+  {
+    "arm": "qwen3_5_08b_light",
+    "cache_disabled_log": true,
+    "prefill_log_requests": 194,
+    "nonzero_initial_prefixes": 0,
+    "context_shift_logs": 0,
+    "prompt_context_rejections": []
+  },
+  {
+    "arm": "spark_llama",
+    "cache_disabled_log": true,
+    "prefill_log_requests": 194,
+    "nonzero_initial_prefixes": 0,
+    "context_shift_logs": 0,
+    "prompt_context_rejections": []
+  },
+  {
+    "arm": "yi_15_9b",
+    "cache_disabled_log": true,
+    "prefill_log_requests": 193,
+    "nonzero_initial_prefixes": 0,
+    "context_shift_logs": 0,
+    "prompt_context_rejections": [
+      {
+        "input_tokens": 2096,
+        "slot_tokens": 2048
+      }
+    ]
+  },
+  {
+    "arm": "smollm3_3b_light",
+    "cache_disabled_log": true,
+    "prefill_log_requests": 194,
+    "nonzero_initial_prefixes": 0,
+    "context_shift_logs": 0,
+    "prompt_context_rejections": []
+  }
+]

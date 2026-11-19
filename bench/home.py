@@ -165,6 +165,7 @@ def run_arm(model, tasks, settings, output, model_dir):
     url = f"http://127.0.0.1:{model['port']}"
     flags = ["--ctx-size", str(settings["context"]), "--parallel", str(settings["slots"]),
              "--cont-batching", "--metrics", "--n-gpu-layers", str(settings["gpu_layers"])]
+    flags += settings.get("server_flags", [])
     if arm in settings["disable_reasoning_for"]:
         flags += ["--reasoning", "off"]
     if not wait_for_temperature(70):
@@ -179,12 +180,18 @@ def run_arm(model, tasks, settings, output, model_dir):
         startup = (time.perf_counter() - start) * 1000
         idle = gpu_vram()
         telemetry.start()
-        request_task(url, arm, tasks[0], settings)
+        # Each larger run warms up on the source's first fixture, outside timed windows.
+        warmup_ids = settings.get("warmup_tasks", [tasks[0]["id"]])
+        tasks_by_id = {task["id"]: task for task in tasks}
+        for task_id in warmup_ids:
+            warmup = request_task(url, arm, tasks_by_id[task_id], settings)
+            if warmup["status"] == "transport_error" and settings.get("verify_offload"):
+                raise RuntimeError(f"{arm}: warm-up transport error")
         out = []
         windows = []
         scenarios = list(settings["scenarios"].items())
         for repeat in range(1, settings["repeats"] + 1):
-            ordered = random.Random(41 + repeat).sample(tasks, len(tasks))
+            ordered = random.Random(settings.get("order_seed", 41) + repeat).sample(tasks, len(tasks))
             for scenario, spec in scenarios if repeat % 2 else reversed(scenarios):
                 with ThreadPoolExecutor(max_workers=spec["concurrency"]) as pool:
                     start = time.perf_counter()
@@ -201,8 +208,21 @@ def run_arm(model, tasks, settings, output, model_dir):
         peak, _, _, temperature, _ = results.parse_gpu_csv(output / f"{arm}.gpu.csv")
         if oom_check(name):
             raise RuntimeError(f"{arm} emitted an allocation error")
+        checks = {}
+        if settings.get("verify_offload"):
+            log = subprocess.run(["docker", "logs", name], capture_output=True, text=True, check=True)
+            startup_log = log.stdout + log.stderr
+            offload = re.findall(r"offloaded\s+(\d+)\s*/\s*(\d+)\s+layers to GPU", startup_log)
+            if not offload or offload[-1][0] != offload[-1][1]:
+                raise RuntimeError(f"{arm}: could not verify all GPU layers")
+            checks["offloaded_layers"] = int(offload[-1][0])
+            slots = {int(value) for value in re.findall(r"n_ctx_slot\s*=\s*(\d+)", startup_log)}
+            expected_context = settings["context"] // settings["slots"]
+            if slots != {expected_context}:
+                raise RuntimeError(f"{arm}: could not verify context per slot")
+            checks["context_per_slot"] = expected_context
         return out, {
-            "arm": arm, "name": model["display_name"], "cohort": model["cohort"],
+            **checks, "arm": arm, "name": model["display_name"], "cohort": model["cohort"],
             "quantization": model["quantization"], "engine_image": image,
             "image_id": subprocess.check_output(["docker", "image", "inspect", image, "--format", "{{.Id}}"],
                                                 text=True).strip(),

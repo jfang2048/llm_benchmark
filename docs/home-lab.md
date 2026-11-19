@@ -5,6 +5,8 @@ are good reasons to keep a model on the laptop. The useful response is the
 one you can hand to the next local process. That calls for a simple contract,
 a response budget, and a record of what the machine had to keep in memory.
 
+The [expanded study](fresh.md) reports a later 192-case sweep with its own scoring budget and corpus provenance.
+
 ## The two jobs we give the server
 
 | Workload | Requests in flight | First visible answer | Complete reply |

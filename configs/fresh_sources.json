@@ -1,0 +1,27 @@
+{
+  "dataset": "LLMStructBench2 v1.0",
+  "dataset_url": "https://huggingface.co/datasets/HTW-KI-Werkstatt/LlmStructBench2",
+  "revision": "888c33f8dd94e0c503399fd478a763c772ca0d6a",
+  "authors": [
+    "Soenke Tenckhoff",
+    "Nicklas Jones",
+    "Mario Koddenbrock",
+    "Erik Rodner"
+  ],
+  "license": "CC BY 4.0",
+  "published_utc": "2026-11-10",
+  "source_file_sha256": {
+    "schemas.jsonl": "ddeb0d4b1706ee5b0279a5e36787665b9b312c29f20c6ced7fcebb3338fbeee1",
+    "data/borrowed_item_reminder.jsonl": "94f7ed4145871f774330326bf412ee24c08151a1e99211b06d21bf509792317a",
+    "data/employee_sickleave_request.jsonl": "48d0d5d379b3c5e4c61c618011a4d7f534a1f1c56b7f5303734beca3d992b3ec",
+    "data/employee_summit_requests.jsonl": "ac0cc1ffb9f8f0dbe8c3337c0e9831892c87102afe577701430af026020034af",
+    "data/invoice_payment_request.jsonl": "79cdcda50245f886758d783b5c8e1c309c966f26f7f557c69d7ad7771fe232ed",
+    "data/meeting_reschedule.jsonl": "76d196c5232adc7478f75572be7705be2970e7513f479909d54c8c7a85cc4870",
+    "data/permissions_change.jsonl": "c438eb2237e7c1737b6d9f1b1c4f293712a54175d845ddf65e44c2b25cc7aef1",
+    "data/shift_swap.jsonl": "74458bc94d9e621c5c7d09cc381a5aac9f17a22e8a68c4a5a0dd614f179d7ad2",
+    "data/visitor_access_notification.jsonl": "9a8d10d702f648c922bc36e47eed8598603acbec41d6333c5e722200e7349408"
+  },
+  "selection_seed": 20261119,
+  "holdout_created_local_date": "2026-11-19",
+  "task_sha256": "3826318242a6cf1ad0f3fe2bcd42b724809a7bbba6fc63821b3dba96ad8023b3"
+}

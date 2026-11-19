@@ -1,0 +1,52 @@
+{
+  "schema_version": 1,
+  "cohorts": [
+    "compact_4b",
+    "mainstream_8_9b",
+    "spark_reference",
+    "lightweight_1_3b"
+  ],
+  "context": 4096,
+  "slots": 2,
+  "gpu_layers": 999,
+  "repeats": 1,
+  "max_output_tokens": 512,
+  "request_timeout_s": 45,
+  "disable_reasoning_for": [
+    "qwen3_4b_compact",
+    "phi4_mini_compact",
+    "gemma3_4b_compact",
+    "qwen3_5_4b_compact",
+    "qwen3_8b",
+    "deepseek_r1_8b",
+    "glm4_9b",
+    "yi_15_9b",
+    "spark_llama",
+    "qwen3_5_08b_light",
+    "lfm2_5_12b_light",
+    "qwen3_5_2b_light",
+    "smollm3_3b_light"
+  ],
+  "scenarios": {
+    "two_clients": {
+      "label": "Two clients",
+      "concurrency": 2,
+      "first_answer_ms": 1000,
+      "complete_ms": 12000
+    }
+  },
+  "order_seed": 20261119,
+  "server_flags": [
+    "--fit",
+    "off",
+    "--cache-ram",
+    "0",
+    "-lv",
+    "4"
+  ],
+  "verify_offload": true,
+  "warmup_tasks": [
+    "lsb2-borrowed_item_reminder-050-short-clean",
+    "holdout-lookup-en-01"
+  ]
+}

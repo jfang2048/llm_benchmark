@@ -24,11 +24,12 @@ from html import escape
 from math import log10
 from pathlib import Path
 
-from current_figures import home_figure, paired_figure, write_paired_tsv
+from current_figures import (fresh_effects_figure, fresh_figure, home_figure,
+                             paired_figure, write_paired_tsv)
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
-from bench import config, controlled_report, home_report  # noqa: E402
+from bench import config, controlled_report, fresh, fresh_report, home_report  # noqa: E402
 
 RESULT_ROOT = ROOT / "results" / "current"
 DOCS = ROOT / "docs"
@@ -459,7 +460,7 @@ def _plotly_meta():
             "plotly_file": "assets/plotly.min.js"}
 
 
-def build_data(home_path=home_report.PUBLISHED):
+def build_data(home_path=home_report.PUBLISHED, fresh_path=fresh.PUBLISHED):
     m = manifest()
     models = models_meta()
     id_to_arm = {mm["id"]: mm["arm"] for mm in models}
@@ -491,6 +492,7 @@ def build_data(home_path=home_report.PUBLISHED):
         "compact_capacity": compact_capacity(),
         "home_lab": home_report.summarize(home_path) if home_path.exists() else None,
         "controlled": controlled_report.summarize(controlled_report.PUBLISHED),
+        "fresh": fresh_report.summarize(fresh_path) if fresh_path.is_dir() else None,
         "reliability": reliability(),
         "open_loop": open_loop(cap["aggregate"]),
         "shape": shape(profiles),
@@ -524,6 +526,7 @@ def render_html(data):
 <script src="assets/dashboard.js"></script>
 <script src="assets/home.js"></script>
 <script src="assets/controlled.js"></script>
+<script src="assets/fresh.js"></script>
 <script src="assets/capability.js"></script>
 </body>
 </html>
@@ -534,11 +537,14 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--out", default=str(DOCS / "index.html"))
     ap.add_argument("--home-run", type=Path, help="Use a local Home Lab run in the dashboard")
+    ap.add_argument("--fresh-run", type=Path, help="Use a local expanded-corpus run")
     args = ap.parse_args()
+    if args.fresh_run is not None and not args.fresh_run.is_dir():
+        ap.error("expanded run directory does not exist")
     if args.home_run is not None and not args.home_run.is_dir():
         ap.error("Home Lab run directory does not exist")
 
-    data, models, cap = build_data(args.home_run or home_report.PUBLISHED)
+    data, models, cap = build_data(args.home_run or home_report.PUBLISHED, args.fresh_run or fresh.PUBLISHED)
 
     DATA_PATH.parent.mkdir(parents=True, exist_ok=True)
     DATA_PATH.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
@@ -564,6 +570,10 @@ def main():
 
     if data["home_lab"]:
         home_figure(data["home_lab"], FIG_DIR / "home-lab.svg")
+
+    if data["fresh"]:
+        fresh_figure(data["fresh"], FIG_DIR / "fresh.svg")
+        fresh_effects_figure(data["fresh"], FIG_DIR / "fresh-effects.svg")
 
     model_count = len(models) + (len(compact["models"]) if compact else 0)
     home_count = len(data["home_lab"]["models"]) if data["home_lab"] else 0

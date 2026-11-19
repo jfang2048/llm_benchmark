@@ -74,6 +74,7 @@ const CONFIG = { displaylogo: false, responsive: true, modeBarButtonsToRemove: [
 // ---- filter UI -------------------------------------------------------------
 function buildShell() {
   const navItems = [
+    ...(D.fresh ? [["Expanded tests", "fresh"]] : []),
     ...(D.home_lab ? [["Home Lab", "home-lab"]] : []),
     ...(D.controlled ? [["Paired tests", "controlled"]] : []), ["Serving overview", "overview"], ...(D.compact_capacity ? [["Compact 4B", "compact"]] : []), ["Capacity", "capacity"], ["Trade-off", "tradeoff"],
     ["Open-loop", "openloop"], ["Workload shape", "shape"], ["Reliability", "reliability"],
@@ -102,6 +103,7 @@ function buildShell() {
 
   </div>
   <main>
+    ${D.fresh ? '<section class="home-lab" id="fresh"></section>' : ""}
     ${D.home_lab ? '<section class="home-lab" id="home-lab"></section>' : ""}
     ${D.controlled ? '<section class="home-lab paired-tests" id="controlled"></section>' : ""}
     <section id="overview"></section>

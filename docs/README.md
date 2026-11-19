@@ -5,6 +5,9 @@ into one score.
 
 ## Home Lab
 
+The [expanded study](fresh.md) replays 192 distinct cases per deployment,
+including a recent public email extraction dataset and a bilingual holdout.
+
 Start with the [local task benchmark](home-lab.md) for the WSL2 setup,
 response budgets and how to reproduce the results. The [scorecard](home-lab-results.md)
 covers all thirteen deployments. The [lightweight report](lightweight.md)

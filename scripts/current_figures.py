@@ -135,3 +135,57 @@ def write_paired_tsv(run, path):
                     a, b = pair["baseline"][metric], pair["changed"][metric]
                     delta = b - a if a is not None and b is not None else None
                     writer.writerow([experiment["id"], pair["number"], pair["order"][0], metric, unit, a, b, delta])
+
+
+def fresh_figure(run, path):
+    """Correctness and deadline attainment, split by corpus."""
+    models = sorted(run["models"], key=lambda model: (
+        -model["scores"]["llmstructbench2"]["correct"],
+        -model["scores"]["home_holdout"]["correct"], model["name"]))
+    names = [model["name"].replace(" (text-only)", " (text)") for model in models]
+    with mpl.rc_context(STYLE):
+        fig, axes = plt.subplots(1, 2, figsize=(7.4, 4.35), sharey=True)
+        fig.subplots_adjust(left=0.33, right=0.97, bottom=0.19, top=0.92, wspace=0.25)
+        for ax, (key, title) in zip(axes, (("correct", "a   Exact JSON match"),
+                                          ("timely", "b   Correct and on time")), strict=True):
+            ax.set_title(title, loc="left", fontsize=9, fontweight="bold")
+            for depth, (source, offset) in enumerate(zip(run["sources"], (-0.14, 0.14), strict=True)):
+                for row, model in enumerate(models):
+                    scores = model["scores"][source]
+                    ax.plot(100 * scores[key] / scores["n"], row + offset, **marker_style(depth == 0))
+            ax.set_yticks(range(len(names)), labels=names)
+            ax.set_ylim(len(names) - 0.5, -0.5)
+            ax.set_xlim(-3, 103)
+            ax.set_xticks([0, 25, 50, 75, 100])
+            ax.set_xlabel("Requests (%)")
+        fig.legend(handles=[legend_marker(label, **marker_style(index == 0))
+                            for index, label in enumerate(run["sources"].values())],
+                   loc="lower center", bbox_to_anchor=(0.61, 0.02), ncols=2, frameon=False)
+        save_svg(fig, path, "Expanded Home Lab deployment results",
+                 "Exact JSON match and correct on-time requests across 13 deployments and two evaluation corpora.")
+
+
+def fresh_effects_figure(run, path):
+    names = [item["label"].replace(" to ", " → ") for item in run["effects"]]
+    with mpl.rc_context(STYLE):
+        fig, axes = plt.subplots(1, 2, figsize=(7.4, 2.95), sharey=True)
+        fig.subplots_adjust(left=0.30, right=0.97, bottom=0.27, top=0.86, wspace=0.23)
+        for ax, (metric, title) in zip(axes, (("correct", "a   Exact JSON match"),
+                                              ("timely", "b   Correct and on time")), strict=True):
+            ax.set_title(title, loc="left", fontsize=9, fontweight="bold")
+            ax.axvline(0, color="#b5b5b5", linewidth=0.85, zorder=0)
+            for i, item in enumerate(run["effects"]):
+                for depth, (source, offset) in enumerate(zip(run["sources"], (-0.17, 0.17), strict=True)):
+                    result = item["results"][source][metric]
+                    y = i + offset
+                    ax.hlines(y, result["lo_pp"], result["hi_pp"], colors=RANGE, linewidth=0.85)
+                    ax.plot(result["delta_pp"], y, zorder=4, **marker_style(depth == 0))
+            ax.set_yticks(range(len(names)), labels=names)
+            ax.set_ylim(len(names) - 0.5, -0.5)
+            ax.xaxis.set_major_locator(MaxNLocator(5, integer=True))
+            ax.set_xlabel("Paired change (percentage points)")
+        fig.legend(handles=[legend_marker(label, **marker_style(index == 0))
+                            for index, label in enumerate(run["sources"].values())],
+                   loc="lower center", bbox_to_anchor=(0.60, 0.018), ncols=2, frameon=False)
+        save_svg(fig, path, "Paired exact-match and deadline attainment effects",
+                 "Paired percentage point differences and stratified case-bootstrap intervals by corpus.")
