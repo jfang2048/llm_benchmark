@@ -35,13 +35,24 @@ def utc_now():
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path, default=ROOT / ".agent/fresh-run")
+    parser.add_argument("--model", action="append", metavar="ARM",
+                        help="Select a registered arm, repeat to compare several deployments")
     args = parser.parse_args()
     settings = json.loads(SETTINGS.read_text())
     sources = json.loads(SOURCES.read_text())
     if sources["task_sha256"] != home.sha(TASKS):
         raise ValueError("task corpus does not match the frozen provenance")
     tasks = [json.loads(line) for line in TASKS.read_text().splitlines()]
-    models = [model for cohort in settings["cohorts"] for model in config.models_for_cohort(cohort)]
+    if args.model:
+        registry = {model["arm"]: model for model in config.enabled_models()}
+        selection = list(dict.fromkeys(args.model))
+        unknown = set(selection) - registry.keys()
+        if unknown:
+            parser.error(f"unknown or disabled arms: {', '.join(sorted(unknown))}")
+        models = [registry[arm] for arm in selection]
+        settings["disable_reasoning_for"] = list(dict.fromkeys(settings["disable_reasoning_for"] + selection))
+    else:
+        models = [model for cohort in settings["cohorts"] for model in config.models_for_cohort(cohort)]
     random.Random(settings["order_seed"]).shuffle(models)
     model_dir = Path(os.environ.get("MODEL_DIR", ROOT / "models")).resolve()
     plan = {
@@ -102,4 +113,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

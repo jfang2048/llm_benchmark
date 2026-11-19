@@ -7,6 +7,8 @@ into one score.
 
 The [expanded study](fresh.md) replays 192 distinct cases per deployment,
 including a recent public email extraction dataset and a bilingual holdout.
+The [model refresh](model-refresh.md) adds new checkpoints under that same 192-case protocol.
+The [troubleshooting knowledge base](troubleshooting.md) records symptoms, evidence and recovery steps.
 
 Start with the [local task benchmark](home-lab.md) for the WSL2 setup,
 response budgets and how to reproduce the results. The [scorecard](home-lab-results.md)

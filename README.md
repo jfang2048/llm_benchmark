@@ -4,6 +4,13 @@ With 18 test cases, I'd have stopped at Qwen3.5-2B. On a larger test, I’d
 give Qwen3.5-4B the everyday job. It got **69 of 96** new English and Chinese
 tasks right and on time, compared with **56** for the 2B model. Peak VRAM
 rose from **1,591 to 3,239 MiB** on the same RTX 3060 laptop under WSL2.
+Six new deployments joined the test. Nemotron 3 Nano 4B came close on
+everyday jobs, with **65 of 96** on time at **3,003 MiB**.
+
+![Two charts showing success rate versus peak GPU memory for bilingual jobs and email extraction](docs/assets/figures/home-lab-lead.svg)
+
+*Each dot is one deployment. Labels show the highest score within 2, 3.5
+and 6 GiB budgets. Each panel uses 96 cases.*
 
 ## An inbox is harder than a short note
 
@@ -14,17 +21,32 @@ November 2026 LLMStructBench2 release, **Qwen3-8B got 61 right**. Qwen3.5-4B got
 extra memory on structured email extraction, and use the 4B for the mix
 of shorter jobs tested here.
 
-The two corpora test different work. We replayed **192 different cases on
-each of 13 deployments**, giving 2,496 measured requests. The public dataset
-was released after all the tested GGUF checkpoints were already available.
-The second corpus contains new, invented notes, identifiers and archive
-records, generated after the weights were published. [Methods, figures and data](docs/fresh.md)
+The two corpora test different work. We replayed **192 cases on each of
+19 deployments**. A bridge run repeated Qwen3.5-4B on the same cases and
+reproduced every scoring verdict. The first sweep pinned weights published
+before the public email set. The bilingual set contains newly generated
+notes, identifiers and archive records. [Methods](docs/fresh.md) · [Refresh and bridge run](docs/model-refresh.md)
+
+## The JSON was inside a code fence
+
+Ministral 3 3B scored zero with the raw JSON contract. Accepting a single
+Markdown code fence recovered **46 email records and 41 everyday replies**
+from the same output. Gemma 4 E4B went from 34 to **78 correct everyday
+replies** under the same adapter. That parser choice can change which model
+is workable for an automation.
+
+![Raw correct replies and correct replies after accepting one JSON fence](docs/assets/figures/home-lab-format.svg)
+
+*Both markers score the same replies. Shown are the five deployments
+with the most fence recoveries across the two corpora.*
+[Scoring and recovery notes](docs/troubleshooting.md#json-looks-right-but-the-exact-match-score-is-zero)
 
 ## Explore and reproduce
 
-- [Expanded results](https://jfang2048.github.io/llm_benchmark/#fresh) · [中文说明](docs/zh/home-lab.md) · [Raw request rows](results/current/fresh/)
+- [Expanded results](https://jfang2048.github.io/llm_benchmark/#fresh) · [中文说明](docs/zh/home-lab.md) · [Raw request rows](results/current/fresh/) · [New run files](results/current/fresh-refresh/)
 - [Replay the expanded study](docs/fresh.md#5-data-and-reproduction) · [Start with one local model](docs/home-lab.md#start-with-one-model)
 - [Single-factor tests](docs/controlled.md) cover size, client load, context and engine builds on the earlier short workload. [WSL2 storage check](docs/home-lab.md#wsl2-is-part-of-the-machine) covers load time from Linux and Windows paths.
+- [Troubleshooting knowledge base](docs/troubleshooting.md) covers download, startup, context, generation and scoring issues.
 - [Earlier deployment scorecard](docs/home-lab-results.md) · [Serving sweeps](docs/results.md) · [Coding evaluations](docs/capability-results.md) · [Documentation index](docs/README.md)
 
 Model weights are distributed by their publishers under the

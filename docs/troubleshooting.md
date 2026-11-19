@@ -1,113 +1,152 @@
-# Troubleshooting
+# Home Lab troubleshooting
 
-Real failure modes observed while running this benchmark, distilled from the
-experiment logs. Each entry lists symptom, cause, verification, and fix.
+Find the failing stage first. Acquisition, model loading, prompt admission,
+generation and scoring each leave different evidence.
 
-## 1. `ServerDisconnectedError` during the benchmark
+| Symptom | First place to look |
+|---|---|
+| Download stalls or fails verification | Expected size, partial file, HTTP status and SHA-256 |
+| Container exits before `/health` | Server log, exit state and free device memory |
+| vLLM reports `UVA is not available` | Runner selection and WSL pinned-memory messages |
+| The server rejects one long prompt | Tokenized input length and `n_ctx_slot` |
+| The stream ends with `length` or empty visible text | Finish reason, usage and reasoning fields |
+| JSON looks right but scores zero | Exact values, types, array order, duplicate keys and fences |
+| Startup time is missing or implausible | Manifest field type and readiness probe |
 
-**Symptom** — AIPerf reports a nonzero error rate; the classified error output
-shows `ServerDisconnectedError` for a fraction of requests.
+## GGUF download stalls or checksum differs
 
-**Cause** — The llama.cpp server drops in-flight streaming connections under
-load; AIPerf's default pooled connection reuse races with the server closing
-keep-alive connections.
+**Observed.** Multi-gigabyte Hub downloads sometimes fell below 1 MB/s per
+transfer. Interrupted downloads left staged `.part` files.
 
-**Verification** — Inspect `server.log` in the cell directory and the error
-types in the reliability summary.
+**Check.** Compare the final size and SHA-256 with the pinned artifact.
+A byte-range download should return HTTP 206 and the exact `Content-Range`
+for the offset and total size. A 200 carries the full representation.
+A 403 on a cached signed URL calls for a fresh redirect from the pinned revision.
 
-**Fix** — Run every request with `--connection-reuse-strategy never` (the
-runner does this by default). A cell that still fails is reported as
-`UNSTABLE` and is not presented as a ranking point.
+**Recover.** Re-run `scripts/download_models.sh MODEL_ID`, which resumes
+staged downloads with curl when the Hub CLI is unavailable. For persistent
+stalls, try the Hub CLI or a trusted alternate transfer route. Accept the
+assembled artifact only when its SHA-256 matches the pinned source. In the model refresh, the Ollama
+blob for Granite 4.1 matched IBM's Hub GGUF exactly. The Gemma and
+Nemotron blobs are separately pinned quantizations with their own digests.
+[Refresh artifact provenance](model-refresh.md#candidate-selection)
 
-## 2. Container starts but never becomes API-ready
+## The container exits before it becomes ready
 
-**Symptom** — `admit.sh` or the runner logs that the container never
-became ready.
+Check host and container GPU visibility, then inspect the named service.
 
-**Cause** — Model load exceeds VRAM (OOM at startup), the GGUF path is wrong,
-or the model is still loading past `STARTUP_TIMEOUT`.
+```bash
+nvidia-smi --query-gpu=name,memory.total,memory.used --format=csv
+docker run --rm --gpus all nvidia/cuda:13.3.1-base-ubuntu24.04 nvidia-smi
+docker inspect --format '{{.State.ExitCode}} {{.State.OOMKilled}}' CONTAINER
+docker logs --tail 100 CONTAINER
+```
 
-**Verification** — `docker logs --tail 200 <container>`; look for OOM / CUDA
-allocation errors. `docker inspect -f '{{.State.OOMKilled}}' <container>`.
+- If host GPU visibility works and the container probe fails, check the
+  NVIDIA runtime configuration for Docker. [CUDA on WSL](https://docs.nvidia.com/cuda/wsl-user-guide/index.html)
+- For an unknown architecture or missing tensor, verify the GGUF digest
+  and serving build. A compatible image or conversion is a new configuration.
+- For CUDA allocation failures, check device usage and the model, KV and
+  compute buffers in the log. A userspace CUDA allocation error can occur
+  with `OOMKilled=false`. Lower context, smaller quantization and CPU
+  offload are options for a separate deployment configuration.
+- When logs show continued progress, extend the readiness timeout.
+  Check the registered port and health URL before judging a slow startup.
 
-**Fix** — Confirm the model file exists and matches its SHA256 (see
-`models/README.md` and `configs/models.json`), free VRAM (stop other GPU
-containers), or reduce `--ctx-size` / `--n-gpu-layers`.
+[llama.cpp server options](https://github.com/ggml-org/llama.cpp/blob/5ac847190e979e0da7c4a21806630805f396d487/tools/server/README.md)
 
-## 3. GPU passthrough fails
+## Startup is slow from a Windows mount
 
-**Symptom** — `docker run --gpus all … nvidia-smi` errors with "could not
-select device driver … unknown capability gpu".
+The same Phi-4-mini weight reached health in a median of 3.36 s on the
+WSL Linux filesystem and 22.85 s on `/mnt/c`. Each path had three
+pre-read launches. Keep frequently loaded weights on the Linux filesystem
+and mount that directory into Docker. [Storage measurements](home-lab.md#wsl2-is-part-of-the-machine)
 
-**Cause** — NVIDIA Container Toolkit not installed/enabled in the WSL2 distro.
+## vLLM exits with `UVA is not available`
 
-**Verification** — `./scripts/preflight.sh` reports
-`[WARN] docker GPU passthrough failed`.
+**Observed.** vLLM 0.26.0 with the GGUF plugin failed on this WSL2 host
+while initializing the V2 runner in `worker/gpu/buffer_utils.py`.
 
-**Fix** — Install `nvidia-container-toolkit`, restart Docker, re-run preflight.
+**Mechanism.** WSL2 limits pinned host memory. The V2 runner can request
+a UVA-backed buffer when vLLM has disabled pinned-memory allocation.
+[NVIDIA WSL limitations](https://docs.nvidia.com/cuda/wsl-user-guide/index.html) · [vLLM issue #50239](https://github.com/vllm-project/vllm/issues/50239)
 
-## 4. Insufficient VRAM at higher concurrency
+**Resolved on this host.** With the same Qwen3-4B Q4_K_M GGUF, the V2
+runner passed the UVA stage after setting `VLLM_WSL2_ENABLE_PIN_MEMORY=1`
+on the container. It reached health in 116.49 s and served an eight-token
+completion. The earlier 90 s check stopped during initialization. A
+240 s deadline allowed the verification to finish. Switching to the V1
+runner also advanced to model loading within the 90 s check.
 
-**Symptom** — Cells at higher concurrency fail or the server restarts mid-run.
+The successful smoke used a pinned local tokenizer, `--max-model-len 2048`,
+`--max-num-seqs 2`, `--enforce-eager` and a 576 MiB explicit KV cache. The
+environment switch applies to the observed WSL and driver stack. Treat
+the result as a startup and completion smoke test. [Smoke record](../results/current/fresh-refresh/vllm-smoke.json)
 
-**Cause** — KV cache and activations for concurrent requests exceed 6 GiB VRAM.
 
-**Verification** — Watch `peak_vram_mib` in `repeats.tsv`; check for OOM in
-`server.log`.
 
-**Fix** — The published matrix (C=1,2,4,6,8) fits by design at
-`--ctx-size 4096 --parallel 2`. For heavier loads, reduce `--ctx-size` or cap
-`--parallel`.
+## The prompt exceeds the slot context
 
-## 5. Wrong port
+**Observed.** Yi-1.5-9B encoded one invoice prompt as 2,096 tokens. Its
+2,048-token slot rejected the request. The client classified the HTTP
+failure as `transport_error`. The server log establishes the cause.
+Ministral encountered the same limit on eight email prompts, with
+tokenized inputs from 2,060 to 2,217 tokens.
 
-**Symptom** — `curl` to the endpoint returns connection refused.
+**Check.** Read `n_ctx_slot` at startup. Count the input with the GGUF's
+tokenizer and chat template, including the schema. Leave room for the reply.
 
-**Cause** — The everyday deployments use 8000/8001; the 8-9B benchmark arms use
-8200-8203 and the Spark reference uses 8100 (historical 4B arms used 8101-8105).
+**Recover.** Shorten the input or schema, raise total context, or use fewer
+slots. Keep the original rejection in fixed-configuration results.
+[Run audit](../results/current/fresh/audit.json) · [Context comparison](controlled.md)
 
-**Verification** — `./scripts/preflight.sh` port checks; check `configs/models.json`
-for the per-model port.
+## Generation reaches its limit before visible JSON
 
-**Fix** — Point clients at the correct port for the arm.
+**Observed.** The first 192-case sweep recorded 255 `length` stops.
+Some responses spent tokens on reasoning or repetition. Others reached
+the context boundary. Older Spark replies could begin in
+`reasoning_content` while visible `content` was empty.
 
-## 6. Startup timeout
+**Check.** Compare `finish_reason`, token counts, first emitted token and
+first visible answer. Compare input plus output against the slot size as
+well as the output cap.
 
-**Symptom** — The container is healthy but slow to load the model.
+**Recover.** Try direct-answer mode where the model template supports it.
+Adjust output or context budgets as their own test configuration. Timing
+from the first emitted token and timing from visible content describe
+two different waits.
 
-**Cause** — First load compiles CUDA graphs / loads a multi-GB GGUF; on this
-laptop it can exceed the default timeout.
+## JSON looks right but the exact-match score is zero
 
-**Verification** — `docker logs --timestamps` shows the model still loading.
+A single Markdown fence, duplicate key, wrong array order, extra field
+or numeric string can change the result. Replay the same parser with
+the reference object and inspect the exact mismatch. In the refresh,
+Ministral 3 3B scored zero under the raw format. One-fence parsing
+recovered 46/96 public-case and 41/96 holdout-case exact matches. A deterministic
+fence adapter or a structured decoding constraint can help in deployment.
+Measure its effect under a fixed model and runtime. The expanded study
+tracks fence recovery and the raw score separately.
+[Scoring rules](fresh.md#3-outcomes-and-analysis)
 
-**Fix** — Raise `STARTUP_TIMEOUT` (e.g. `STARTUP_TIMEOUT=300`).
+## The log shows cached tokens with prompt reuse disabled
 
-## 7. Spark-X2.5-4B returns empty `content` (reasoning model)
+A pilot audit flagged nonzero cached-token messages during chunked
+prefill. Later chunks can use state computed earlier within that request.
+Group by task ID and inspect the first `cached n_tokens` message. The
+published audit checks initial reuse under `--cache-ram 0` and
+`cache_prompt=false`. [Paired cache policy](controlled.md#2-execution-and-instrumentation)
 
-**Symptom** — A short generation against the Spark reference returns an empty
-`choices[0].message.content` even though `usage.completion_tokens > 0`.
+## Startup timing is missing from the first expanded sweep
 
-**Cause** — Spark-X2.5-4B is a reasoning model; its first tokens are emitted in
-`message.reasoning_content`, and `content` stays empty until reasoning ends.
+The launch verifier reused the startup-time variable for the server log.
+The original archive records null for that metadata field. Request and
+window timers have distinct fields. The fix keeps the log and numeric
+`startup_ms` separate. [Original manifest](../results/current/fresh/manifest.json)
 
-**Verification** — Inspect the full response: `message` has both `content` and
-`reasoning_content` keys.
+## Streaming disconnects during historical AIPerf runs
 
-**Fix** — None needed for the benchmark. AIPerf runs with
-`--use-server-token-count`, so the server's `usage.completion_tokens` (which
-includes reasoning tokens) drives the metrics.
-
-## 8. Spark-X2.5-4B drops requests at long inputs
-
-**Symptom** — The Spark reference is transport-unreliable at input lengths
-&ge; 256 tokens; shape cells at higher ISL (256/512/768) show a nonzero error
-rate.
-
-**Cause** — The XHToken fork's HTTP server drops streaming connections under
-long-prefill load; this is specific to the fork, not the upstream build.
-
-**Verification** — The `shape` suite aggregate marks these cells `UNSTABLE` or
-`FAIL`.
-
-**Fix** — The affected shape cells are reported as `UNSTABLE` and excluded
-from ranking. Short-prompt suites (capacity, reliability) are unaffected.
+Older shape cells reported `ServerDisconnectedError` at longer inputs.
+Pooled keep-alive reuse and server behavior during long prefill were both
+investigated. The runner now uses `--connection-reuse-strategy never`.
+If the error persists, compare the server log and response error before
+marking the cell unstable. [Serving results](results.md) · [Historical engine experiments](experiment-history.md)

@@ -8,9 +8,10 @@ if (D.fresh) {
     <div class="home-lead"><div>
       <h2>Expanded Home Lab tests</h2>
       <p>${data.task_count} distinct cases × ${data.models.length} deployments.
-         Two clients and two GPU slots. An on-time reply starts within
+         Two clients and two server slots. An on-time reply starts within
          ${data.budget.first_answer_ms / 1000} s and finishes within ${data.budget.complete_ms / 1000} s.</p>
-      <a href="https://github.com/jfang2048/llm_benchmark/blob/main/docs/fresh.md">Methods, figures and raw data</a>
+      <a href="https://github.com/jfang2048/llm_benchmark/blob/main/docs/fresh.md">Methods, figures and raw data</a>${data.extension ?
+        ' · <a href="https://github.com/jfang2048/llm_benchmark/blob/main/docs/model-refresh.md">Model refresh and bridge run</a>' : ""}
     </div></div>
     <div class="home-controls">
       <label class="home-control" for="fresh-source">Corpus
@@ -28,13 +29,14 @@ if (D.fresh) {
     <div id="fresh-plot"></div>
     <div class="datatable-wrap home-table" role="region" tabindex="0" aria-label="Expanded tests model results">
       <table class="datatable"><thead><tr>
-        <th scope="col">Deployment</th><th scope="col">Exact match</th>
+        <th scope="col">Deployment</th>${data.extension ? '<th scope="col">Sweep</th>' : ""}<th scope="col">Exact match</th>
         <th scope="col">Correct on time</th><th scope="col">First visible p95 (ms)</th>
         <th scope="col">Completion p95 (ms)</th><th scope="col">Peak VRAM (MiB)</th>
       </tr></thead><tbody id="fresh-rows"></tbody></table>
     </div>
     <p class="note">Latency percentiles use completed streams. First visible p95 also requires visible text.
-      Each VRAM peak comes from the full mixed-corpus run. † Spark uses the XHToken build.</p>`;
+      Each VRAM peak comes from the full mixed-corpus run. † Spark uses the XHToken build.
+      ${data.extension ? "Open squares mark refresh models." : ""}</p>`;
   const corpus = document.getElementById("fresh-source");
   const metric = document.getElementById("fresh-outcome");
   const slice = document.getElementById("fresh-stratum");
@@ -58,7 +60,8 @@ if (D.fresh) {
       model, score: slice.value ? model.strata[source][slice.value] : model.scores[source],
     })).sort((a, b) => b.score[key] - a.score[key] || label(a.model).localeCompare(label(b.model)));
     table.innerHTML = rows.map(({model, score}) => `<tr>
-      <th scope="row">${label(model)}</th><td>${score.correct}/${score.n}</td>
+      <th scope="row">${label(model)}</th>${data.extension ? `<td>${model.batch === "refresh" ? "Refresh" : "Original"}</td>` : ""}
+      <td>${score.correct}/${score.n}</td>
       <td>${score.timely}/${score.n}</td><td>${pretty(score.first_p95_ms)}</td>
       <td>${pretty(score.complete_p95_ms)}</td><td>${pretty(model.peak_mib)}</td>
     </tr>`).join("");
@@ -79,7 +82,7 @@ if (D.fresh) {
     Plotly.react(chart, [{
       type: "scatter", mode: "markers", y: names, x: rows.map(({score}) => share(score[key], score.n)),
       customdata: rows.map(({score}) => [score[key], score.n]),
-      marker: {color: "#175a87", size: 8, symbol: rows.map(({model}) => model.arm === "spark_llama" ? "square-open" : "circle")},
+      marker: {color: "#175a87", size: 8, symbol: rows.map(({model}) => model.arm === "spark_llama" ? "diamond-open" : model.batch === "refresh" ? "square-open" : "circle")},
       hovertemplate: "%{y}<br>%{customdata[0]}/%{customdata[1]} (%{x:.1f}%)<extra></extra>",
     }], layout, {...CONFIG, displayModeBar: false});
   }

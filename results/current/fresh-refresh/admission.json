@@ -1,0 +1,80 @@
+[
+  {
+    "arm": "gemma4_e4b",
+    "sha256": "370c2879f17648d337b0ab4e208fdce348e24d1060064e93d7645daafd56d39c",
+    "status": "admitted",
+    "peak_vram_mib": 3427.0,
+    "offloaded_layers": 43,
+    "context_per_slot": 2048,
+    "image_id": "sha256:427c7b1be34bd9fb0d817eab9d372947fcc63204fa43e9a3f369e15cc91be4bc",
+    "replies": [
+      "correct",
+      "invalid_json"
+    ]
+  },
+  {
+    "arm": "granite40_1b",
+    "sha256": "22ec0f9cc99a90185312de3c882c84e7bd6789bdd050389844380a01a831d7f1",
+    "status": "admitted",
+    "peak_vram_mib": 1513.0,
+    "offloaded_layers": 41,
+    "context_per_slot": 2048,
+    "image_id": "sha256:427c7b1be34bd9fb0d817eab9d372947fcc63204fa43e9a3f369e15cc91be4bc",
+    "replies": [
+      "correct",
+      "wrong_value"
+    ]
+  },
+  {
+    "arm": "gemma4_e2b",
+    "sha256": "6dd7ac24fe13a238898e16e253ebc7a72fa27fb83f2658c2f6c241df3af5937d",
+    "status": "admitted",
+    "peak_vram_mib": 1811.0,
+    "offloaded_layers": 36,
+    "context_per_slot": 2048,
+    "image_id": "sha256:427c7b1be34bd9fb0d817eab9d372947fcc63204fa43e9a3f369e15cc91be4bc",
+    "replies": [
+      "invalid_json",
+      "invalid_json"
+    ]
+  },
+  {
+    "arm": "granite41_3b",
+    "sha256": "662b0626cd58f443baea23559b469df6576a81d349649c59413b36a9fb32eb29",
+    "status": "admitted",
+    "peak_vram_mib": 2523.0,
+    "offloaded_layers": 41,
+    "context_per_slot": 2048,
+    "image_id": "sha256:427c7b1be34bd9fb0d817eab9d372947fcc63204fa43e9a3f369e15cc91be4bc",
+    "replies": [
+      "correct",
+      "correct"
+    ]
+  },
+  {
+    "arm": "ministral3_3b",
+    "sha256": "9ed150d4367e68df0ac8e1540f6ddc65b42d0ee26378329d1ecbca60f93fc5f8",
+    "status": "admitted",
+    "peak_vram_mib": 2669.0,
+    "offloaded_layers": 27,
+    "context_per_slot": 2048,
+    "image_id": "sha256:427c7b1be34bd9fb0d817eab9d372947fcc63204fa43e9a3f369e15cc91be4bc",
+    "replies": [
+      "invalid_json",
+      "invalid_json"
+    ]
+  },
+  {
+    "arm": "nemotron3_nano_4b",
+    "sha256": "527db2cf6c705d8fabb95693d038d9c06b4a2b0b8b0a4bbdbd01212d37242970",
+    "status": "admitted",
+    "peak_vram_mib": 2967.0,
+    "offloaded_layers": 43,
+    "context_per_slot": 2048,
+    "image_id": "sha256:427c7b1be34bd9fb0d817eab9d372947fcc63204fa43e9a3f369e15cc91be4bc",
+    "replies": [
+      "correct",
+      "wrong_value"
+    ]
+  }
+]

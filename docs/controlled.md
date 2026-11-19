@@ -103,7 +103,8 @@ of 2 s and 8 s and computes its latency percentiles on correct replies.
 The vLLM 0.26.0 GGUF preflight stopped at worker initialization with
 `RuntimeError: UVA is not available`. It used the Qwen3-4B GGUF, eager
 execution, 2,048 tokens per sequence and two sequences. Table 2 covers
-the two llama.cpp images that completed both arms.
+the two llama.cpp images that completed both arms. A later vLLM smoke
+reached health after enabling WSL pinned memory. [Recovery details](troubleshooting.md#vllm-exits-with-uva-is-not-available)
 
 ## 5. Data and reproduction
 

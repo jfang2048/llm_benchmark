@@ -1,0 +1,112 @@
+[
+  {
+    "arm": "granite40_1b",
+    "cache_disabled_log": true,
+    "logged_prefills": 194,
+    "nonzero_initial_prefixes": 0,
+    "model_buffers_mib": {
+      "CPU_Mapped": 160.78,
+      "CUDA0": 972.82
+    },
+    "context_prompt_rejections": []
+  },
+  {
+    "arm": "ministral3_3b",
+    "cache_disabled_log": true,
+    "logged_prefills": 186,
+    "nonzero_initial_prefixes": 0,
+    "model_buffers_mib": {
+      "CPU_Mapped": 315.0,
+      "CUDA0": 2039.54
+    },
+    "context_prompt_rejections": [
+      {
+        "input_tokens": 2060,
+        "slot_tokens": 2048
+      },
+      {
+        "input_tokens": 2217,
+        "slot_tokens": 2048
+      },
+      {
+        "input_tokens": 2065,
+        "slot_tokens": 2048
+      },
+      {
+        "input_tokens": 2098,
+        "slot_tokens": 2048
+      },
+      {
+        "input_tokens": 2063,
+        "slot_tokens": 2048
+      },
+      {
+        "input_tokens": 2113,
+        "slot_tokens": 2048
+      },
+      {
+        "input_tokens": 2153,
+        "slot_tokens": 2048
+      },
+      {
+        "input_tokens": 2117,
+        "slot_tokens": 2048
+      }
+    ]
+  },
+  {
+    "arm": "qwen3_5_4b_compact",
+    "cache_disabled_log": true,
+    "logged_prefills": 194,
+    "nonzero_initial_prefixes": 0,
+    "model_buffers_mib": {
+      "CPU_Mapped": 497.31,
+      "CUDA0": 2740.75
+    },
+    "context_prompt_rejections": []
+  },
+  {
+    "arm": "gemma4_e2b",
+    "cache_disabled_log": true,
+    "logged_prefills": 194,
+    "nonzero_initial_prefixes": 0,
+    "model_buffers_mib": {
+      "CPU_Mapped": 2152.5,
+      "CUDA0": 1487.66
+    },
+    "context_prompt_rejections": []
+  },
+  {
+    "arm": "granite41_3b",
+    "cache_disabled_log": true,
+    "logged_prefills": 194,
+    "nonzero_initial_prefixes": 0,
+    "model_buffers_mib": {
+      "CPU_Mapped": 200.98,
+      "CUDA0": 1998.84
+    },
+    "context_prompt_rejections": []
+  },
+  {
+    "arm": "gemma4_e4b",
+    "cache_disabled_log": true,
+    "logged_prefills": 194,
+    "nonzero_initial_prefixes": 0,
+    "model_buffers_mib": {
+      "CPU_Mapped": 2730.0,
+      "CUDA0": 3018.87
+    },
+    "context_prompt_rejections": []
+  },
+  {
+    "arm": "nemotron3_nano_4b",
+    "cache_disabled_log": true,
+    "logged_prefills": 194,
+    "nonzero_initial_prefixes": 0,
+    "model_buffers_mib": {
+      "CPU_Mapped": 269.5,
+      "CUDA0": 2428.65
+    },
+    "context_prompt_rejections": []
+  }
+]

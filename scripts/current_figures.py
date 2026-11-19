@@ -189,3 +189,81 @@ def fresh_effects_figure(run, path):
                    loc="lower center", bbox_to_anchor=(0.60, 0.018), ncols=2, frameon=False)
         save_svg(fig, path, "Paired exact-match and deadline attainment effects",
                  "Paired percentage point differences and stratified case-bootstrap intervals by corpus.")
+
+
+def home_lab_lead_figure(run, path):
+    """Show the quality and memory trade-off for both current corpora."""
+    exposed = (
+        ("home_holdout", "timely", "a   Everyday jobs on time"),
+        ("llmstructbench2", "correct", "b   Complete email records"),
+    )
+    with mpl.rc_context(STYLE):
+        fig, axes = plt.subplots(1, 2, figsize=(7.4, 3.30), sharey=True)
+        fig.subplots_adjust(left=0.09, right=0.96, top=0.89, bottom=0.25, wspace=0.14)
+        for ax, (source, metric, title) in zip(axes, exposed, strict=True):
+            ax.set_title(title, loc="left", fontsize=9.5, fontweight="bold")
+            scores = [(model, model["scores"][source][metric], model["scores"][source]["n"])
+                      for model in run["models"]]
+            for model, correct, n in scores:
+                style = marker_style(model.get("batch") != "refresh")
+                ax.plot(model["peak_mib"] / 1024, 100 * correct / n, **style)
+            winners = {}
+            for budget in (2048, 3584, 6144):
+                eligible = [point for point in scores if point[0]["peak_mib"] <= budget]
+                if eligible:
+                    model, correct, n = max(eligible, key=lambda p: (p[1] / p[2], -p[0]["peak_mib"]))
+                    winners[model["arm"]] = (model, correct, n)
+            for index, (model, correct, n) in enumerate(winners.values()):
+                x = model["peak_mib"] / 1024
+                below = index % 2 == 1
+                name = model["name"].replace(" (text-only)", "").replace(" (text)", "")
+                ax.annotate(f"{name}\n{correct}/{n}", (x, 100 * correct / n), ha="center",
+                            va="top" if below else "bottom", xytext=(0, -6 if below else 6),
+                            textcoords="offset points", fontsize=7.0, color=INK, linespacing=1.1)
+            ax.set_xlabel("Peak device VRAM (GiB)")
+            ax.set_xlim(0.4, 6.3)
+            ax.set_ylim(-3, 103)
+            ax.set_xticks(range(1, 7))
+            ax.set_yticks([0, 25, 50, 75, 100])
+            ax.axvline(6, color="#9e9e9e", linestyle="--", linewidth=0.65, zorder=0)
+            ax.grid(axis="y", color="#e5e5e5", linewidth=0.65)
+            ax.set_axisbelow(True)
+        axes[0].set_ylabel("Successful cases (%)")
+        symbols = [legend_marker("Original sweep", **marker_style(True))]
+        if run.get("extension"):
+            symbols.append(legend_marker("New models", **marker_style(False)))
+        fig.legend(handles=symbols, loc="lower center", bbox_to_anchor=(0.51, 0.035),
+                   ncols=2, frameon=False)
+        save_svg(fig, path, "Local model quality and peak VRAM by workload",
+                 "Two panels plot each deployment by GPU memory and correctness for everyday jobs "
+                 "or email extraction. Labels mark the best deployment in each displayed memory budget.")
+
+
+def fresh_format_figure(run, path):
+    """Compare raw and fence-adapted scoring on the same model replies."""
+    names = sorted(run["models"], key=lambda model: -sum(
+        score["fence_recovered"] for score in model["scores"].values()))[:5]
+    with mpl.rc_context(STYLE):
+        fig, axes = plt.subplots(1, 2, figsize=(7.4, 2.50), sharey=True)
+        fig.subplots_adjust(left=0.27, right=0.96, top=0.83, bottom=0.27, wspace=0.20)
+        for i, (ax, (source, name)) in enumerate(zip(axes, run["sources"].items(), strict=True)):
+            ax.set_title(f"{chr(97 + i)}   {name}", loc="left", fontsize=9, fontweight="bold")
+            for row, model in enumerate(names):
+                score = model["scores"][source]
+                raw, adapted = score["correct"], score["correct"] + score["fence_recovered"]
+                ax.plot([raw, adapted], [row - 0.10, row + 0.10], color=RANGE, linewidth=0.8)
+                ax.plot(raw, row - 0.10, **marker_style(True))
+                ax.plot(adapted, row + 0.10, **marker_style(False))
+            ax.set_yticks(range(len(names)),
+                          labels=[m["name"].replace(" (text-only)", "") for m in names])
+            ax.set_ylim(len(names) - 0.5, -0.5)
+            n = run["source_counts"][source]
+            ax.set_xlim(-3, n + 3)
+            ax.set_xticks([0, n // 4, n // 2, 3 * n // 4, n])
+            ax.set_xlabel(f"Correct replies (of {n})")
+        fig.legend(handles=[legend_marker("Raw JSON", **marker_style(True)),
+                            legend_marker("One JSON fence accepted", **marker_style(False))],
+                   loc="lower center", bbox_to_anchor=(0.58, 0.02), ncols=2, frameon=False)
+        save_svg(fig, path, "Correct replies recovered by one JSON fence",
+                 "Two panels show the five deployments with the most recovered replies. "
+                 "Each pair of markers scores the same replies using two parsing rules.")

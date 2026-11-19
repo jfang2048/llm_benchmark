@@ -16,6 +16,16 @@ not marketing names. All four models are MIT or Apache-2.0 and ungated.
 | GLM-4-9B-0414 | 9,400,279,040 | Dense GQA (glm4) | 131,072 | MIT | Yes | Mainstream 9B, native glm4 support |
 | Yi-1.5-9B-Chat | 8,829,407,232 | Dense GQA (llama family) | 4,096 | Apache-2.0 | Yes | Mainstream 9B, llama arch |
 
+
+## Home Lab model refresh
+
+The opt-in `home_refresh` cohort adds six Q4_K_M instruction deployments
+from Google, IBM, Mistral and NVIDIA. Each candidate passes the same
+4,096-token, two-slot CUDA admission check before replaying the 192-case
+corpus. The registry pins the GGUF blob and serving build. Gemma 4 uses
+effective-parameter names and has larger total parameter counts.
+[Refresh candidates, results and provenance](model-refresh.md)
+
 ## Notes on accuracy
 
 - **DeepSeek-R1-Distill-Llama-8B** is a DeepSeek-distilled Llama-3.1-8B dense

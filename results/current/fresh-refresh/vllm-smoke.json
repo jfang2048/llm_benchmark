@@ -1,0 +1,20 @@
+{
+  "gguf_sha256": "7485fe6f11af29433bc51cab58009521f205840f5b4ae3a32fa7f92e8534fdf5",
+  "image_id": "sha256:81bbc04a8551364c110592e1a3164b571007ea2fdd78498c18dc4cc176c70be8",
+  "image_tag": "vllm-openai-gguf:v0.26.0",
+  "tokenizer_revision": "1cfa9a7208912126459214e8b04321603b3df60c",
+  "env": {
+    "VLLM_WSL2_ENABLE_PIN_MEMORY": "1",
+    "HF_HUB_OFFLINE": "1"
+  },
+  "context": 2048,
+  "sequences": 2,
+  "kv_cache_bytes": 603979776,
+  "readiness_timeout_s": 240,
+  "ready_s": 116.49,
+  "prompt_tokens": 4,
+  "completion_tokens": 8,
+  "finish_reason": "length",
+  "earlier_result": "V2 runner raised RuntimeError: UVA is not available with the default WSL pin-memory setting",
+  "purpose": "Readiness and completion smoke test"
+}

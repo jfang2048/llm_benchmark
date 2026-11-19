@@ -5,7 +5,8 @@
 Each of 13 deployments submits the same 192 distinct cases in the same
 seeded queue order, for 2,496 measured requests. The two corpora are evaluated
 separately. Each deployment runs one pass with two clients and two server
-slots.
+slots. The [later model refresh](model-refresh.md) extends the same protocol
+with additional deployments and a repeated bridge arm.
 
 **Table 1 | Corpus composition.**
 

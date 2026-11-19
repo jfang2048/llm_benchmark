@@ -81,6 +81,8 @@ jobs:
           test -s docs/data/controlled-pairs.tsv
           test -s docs/assets/figures/fresh.svg
           test -s docs/assets/figures/fresh-effects.svg
+          test -s docs/assets/figures/home-lab-lead.svg
+          test -s docs/assets/figures/home-lab-format.svg
           echo "Current dashboard regenerated"
 
       - name: Forbidden large files (GitHub 100 MiB guard)

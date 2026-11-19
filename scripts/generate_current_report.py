@@ -24,7 +24,7 @@ from html import escape
 from math import log10
 from pathlib import Path
 
-from current_figures import (fresh_effects_figure, fresh_figure, home_figure,
+from current_figures import (fresh_effects_figure, fresh_figure, fresh_format_figure, home_figure, home_lab_lead_figure,
                              paired_figure, write_paired_tsv)
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -461,6 +461,8 @@ def _plotly_meta():
 
 
 def build_data(home_path=home_report.PUBLISHED, fresh_path=fresh.PUBLISHED):
+    extension = (fresh_report.EXTENSION if fresh_path.resolve() == fresh.PUBLISHED.resolve()
+                 and fresh_report.EXTENSION.is_dir() else None)
     m = manifest()
     models = models_meta()
     id_to_arm = {mm["id"]: mm["arm"] for mm in models}
@@ -492,7 +494,7 @@ def build_data(home_path=home_report.PUBLISHED, fresh_path=fresh.PUBLISHED):
         "compact_capacity": compact_capacity(),
         "home_lab": home_report.summarize(home_path) if home_path.exists() else None,
         "controlled": controlled_report.summarize(controlled_report.PUBLISHED),
-        "fresh": fresh_report.summarize(fresh_path) if fresh_path.is_dir() else None,
+        "fresh": fresh_report.summarize(fresh_path, extension) if fresh_path.is_dir() else None,
         "reliability": reliability(),
         "open_loop": open_loop(cap["aggregate"]),
         "shape": shape(profiles),
@@ -572,7 +574,11 @@ def main():
         home_figure(data["home_lab"], FIG_DIR / "home-lab.svg")
 
     if data["fresh"]:
-        fresh_figure(data["fresh"], FIG_DIR / "fresh.svg")
+        original = dict(data["fresh"], models=[model for model in data["fresh"]["models"]
+                                              if model.get("batch") != "refresh"])
+        fresh_figure(original, FIG_DIR / "fresh.svg")
+        home_lab_lead_figure(data["fresh"], FIG_DIR / "home-lab-lead.svg")
+        fresh_format_figure(data["fresh"], FIG_DIR / "home-lab-format.svg")
         fresh_effects_figure(data["fresh"], FIG_DIR / "fresh-effects.svg")
 
     model_count = len(models) + (len(compact["models"]) if compact else 0)

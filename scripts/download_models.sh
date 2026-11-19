@@ -27,10 +27,13 @@ verify(){
   [[ "$(sha256sum "$file" | awk '{print $1}')" == "$want" ]]
 }
 
-# download <repo> <file> <dest> <revision> — resumable, prefers hf when available.
+# download <repo> <file> <dest> <revision> [blob_url] — resumable.
 download(){
-  local repo="$1" file="$2" dest="$3" revision="$4"
-  if command -v hf >/dev/null 2>&1; then
+  local repo="$1" file="$2" dest="$3" revision="$4" blob_url="${5:-}"
+  if [[ -n "$blob_url" ]]; then
+    curl -fL --retry 5 --retry-delay 3 -C - "$blob_url" -o "$dest.part"
+    mv "$dest.part" "$dest"
+  elif command -v hf >/dev/null 2>&1; then
     hf download "$repo" "$file" --revision "$revision" --local-dir "$(dirname "$dest")" >/dev/null
   else
     curl -fL --retry 5 --retry-delay 3 -C - \
@@ -39,7 +42,7 @@ download(){
   fi
 }
 
-# Manifest lines: local_file, repo, source_file, sha256, quantize_from_f16, revision.
+# Manifest lines: local_file, repo, source_file, sha256, quantize_from_f16, revision, blob_url.
 manifest="$(python3 - "$ROOT" "$@" <<'PYTHON'
 import sys
 sys.path.insert(0, sys.argv[1])
@@ -53,11 +56,12 @@ for m in admission_models(sys.argv[2:]):
         m["sha256"],
         "1" if m.get("quantize_from_f16") else "0",
         m.get("gguf_source_revision", "main"),
+        m.get("gguf_blob_url", ""),
     ]))
 PYTHON
 )"
 
-while IFS=$'\t' read -r local repo src sha q16 revision; do
+while IFS=$'\t' read -r local repo src sha q16 revision blob_url; do
   [[ -n "$local" ]] || continue
   dest="$MODEL_DIR/$local"
 
@@ -86,7 +90,7 @@ while IFS=$'\t' read -r local repo src sha q16 revision; do
     fi
     echo "== Downloading $local from $repo =="
     tmp="$STAGING_DIR/$src"
-    [[ -s "$tmp" ]] || download "$repo" "$src" "$tmp" "$revision"
+    [[ -s "$tmp" ]] || download "$repo" "$src" "$tmp" "$revision" "$blob_url"
     if ! verify "$tmp" "$sha"; then
       echo "ERROR: SHA256 mismatch for staged $src; remove it and retry" >&2
       exit 1

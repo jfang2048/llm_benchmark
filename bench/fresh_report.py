@@ -9,6 +9,8 @@ from . import config, fresh, home_report
 from .stats import percentile
 
 ANALYSIS = config.ROOT / "configs/fresh_analysis.json"
+EXTENSION = config.ROOT / "results/current/fresh-refresh"
+ANCHOR = "qwen3_5_4b_compact"
 SOURCES = {"llmstructbench2": "LLMStructBench2", "home_holdout": "Home Lab holdout"}
 
 
@@ -54,10 +56,9 @@ def wins(row, outcome, budget):
     return int(row["status"] == "correct") if outcome == "correct" else int(home_report.timely(row, budget))
 
 
-def summarize(path):
+def measure(path):
     manifest, groups, _ = home_report.read_run(path)
     settings = manifest["settings"]
-    analysis = json.loads(ANALYSIS.read_text())
     scenario, budget = next(iter(settings["scenarios"].items()))
     if len(settings["scenarios"]) != 1 or settings["repeats"] != 1:
         raise ValueError("the expanded study uses one measured request per case and model")
@@ -65,7 +66,6 @@ def summarize(path):
     by_source = {key: [task for task in tasks.values() if task["source"] == key] for key in SOURCES}
     if set(tasks) != {task["id"] for group in by_source.values() for task in group}:
         raise ValueError("invalid task-source coverage")
-    source_counts = {key: len(group) for key, group in by_source.items()}
     arms, case_rows = [], {}
     for run in manifest["arms"]:
         arm = run["arm"]
@@ -91,6 +91,13 @@ def summarize(path):
         arms.append({"arm": arm, "name": run["name"], "engine": run["engine_image"],
                      "peak_mib": run["peak_vram_mib"], "scores": source_scores,
                      "strata": strata, "mixed": mixed})
+    return manifest, by_source, budget, arms, case_rows
+
+
+def summarize(path, extension=None):
+    manifest, by_source, budget, arms, case_rows = measure(path)
+    analysis = json.loads(ANALYSIS.read_text())
+    source_counts = {key: len(group) for key, group in by_source.items()}
     effects = []
     for comparison in analysis["comparisons"]:
         left, right = (case_rows[comparison[side]] for side in ("baseline", "changed"))
@@ -107,12 +114,49 @@ def summarize(path):
                 results[source][outcome] = bootstrap(differences, analysis["bootstrap_replicates"],
                                                       analysis["bootstrap_seed"], analysis["confidence_level"])
         effects.append(comparison | {"results": results})
-    return {
-        "sources": SOURCES, "source_counts": source_counts, "task_count": len(tasks),
+    data = {
+        "sources": SOURCES, "source_counts": source_counts, "task_count": sum(source_counts.values()),
         "n_requests": sum(arm["mixed"]["n"] for arm in arms),
         "budget": budget, "analysis": analysis, "effects": effects, "models": arms,
         "gpu": manifest["gpu"], "platform": manifest["platform"],
         "started_utc": manifest["started_utc"], "finished_utc": manifest["finished_utc"],
+    }
+    if extension:
+        add_extension(data, manifest, case_rows[ANCHOR], extension)
+    return data
+
+
+def add_extension(data, baseline, original_cases, path):
+    refresh, _, budget, models, case_rows = measure(path)
+    invariant = ("tasks_sha256", "gpu", "platform")
+    if any(refresh[key] != baseline[key] for key in invariant):
+        raise ValueError("refresh must share the original corpus and GPU environment")
+    original = {item["arm"]: item for item in baseline["arms"]}
+    repeated = {item["arm"]: item for item in refresh["arms"]}
+    if original.keys() & repeated.keys() != {ANCHOR}:
+        raise ValueError("refresh must repeat exactly the bridge deployment")
+    before = original[ANCHOR]
+    after = repeated[ANCHOR]
+    if any(before[key] != after[key] for key in ("gguf_sha256", "image_id", "flags")):
+        raise ValueError("refresh bridge uses different weights, image or flags")
+    allowed_metadata = {"disable_reasoning_for"}
+    settings = lambda run: {key: value for key, value in run["settings"].items()
+                            if key not in allowed_metadata}
+    if settings(baseline) != settings(refresh):
+        raise ValueError("refresh serving protocol differs")
+    if any(run["image_id"] != before["image_id"] or run["flags"] != before["flags"]
+           for run in repeated.values()):
+        raise ValueError("a refresh arm changed serving image or flags")
+    data["models"].extend(model | {"batch": "refresh"} for model in models if model["arm"] != ANCHOR)
+    data["extension"] = {
+        "n_requests": sum(model["mixed"]["n"] for model in models),
+        "started_utc": refresh["started_utc"], "finished_utc": refresh["finished_utc"],
+        "anchor": next(model for model in models if model["arm"] == ANCHOR),
+        "anchor_discordant": {
+            outcome: sum(wins(row, outcome, budget) != wins(case_rows[ANCHOR][case], outcome, budget)
+                         for case, row in original_cases.items())
+            for outcome in ("correct", "timely")
+        },
     }
 
 
@@ -211,6 +255,9 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("directory", nargs="?", type=Path, default=fresh.PUBLISHED)
     parser.add_argument("--markdown", action="store_true", help="Emit the publication tables and captions")
+    parser.add_argument("--extension", type=Path, help="Include a compatible Home Lab extension archive")
     args = parser.parse_args()
-    data = summarize(args.directory)
+    if args.markdown and args.extension:
+        parser.error("the original report tables are generated from the first sweep")
+    data = summarize(args.directory, args.extension)
     print(markdown(data) if args.markdown else json.dumps(data, ensure_ascii=False, indent=2))
